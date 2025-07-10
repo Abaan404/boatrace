@@ -1,0 +1,19 @@
+{
+    "schemaVersion": 1,
+    "id": "boatrace",
+    "version": "${version}",
+    "name": "Boat-Race",
+    "description": "A Boat Racing Minigame!",
+    "authors": ["abaan404"],
+    "license": "MIT",
+    "environment": "*",
+    "entrypoints": {
+        "main": ["com.abaan404.boatrace.boatrace.BoatRace"]
+    },
+    "depends": {
+        "fabricloader": ">=0.16.9",
+        "fabric-api": "*",
+        "minecraft": ">=1.21.4",
+        "plasmid": ">=0.6.2"
+    }
+}
