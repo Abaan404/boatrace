@@ -1,0 +1,6 @@
+{
+    "type": "boatrace:game",
+    "map": {
+        "track": "boatrace:tracks/test_1"
+    }
+}
