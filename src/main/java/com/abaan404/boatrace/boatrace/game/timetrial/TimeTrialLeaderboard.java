@@ -1,65 +1,90 @@
 package com.abaan404.boatrace.boatrace.game.timetrial;
 
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import it.unimi.dsi.fastutil.floats.Float2ObjectRBTreeMap;
-import it.unimi.dsi.fastutil.floats.Float2ObjectSortedMap;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.PersistentState;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
+import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.util.Uuids;
 
 /**
- * Holds the leaderboard for a track stored on disk.
+ * Holds the leaderboard for a track stored persistently.
  */
-public class TimeTrialLeaderboard extends PersistentState {
-    private final Float2ObjectSortedMap<PlayerRef> leaderboard;
+public record TimeTrialLeaderboard(Map<String, List<PersonalBest>> leaderboard) {
+    public static final Codec<TimeTrialLeaderboard> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.unboundedMap(
+                    Codec.STRING,
+                    PersonalBest.CODEC.listOf())
+                    .fieldOf("leaderboard").forGetter(TimeTrialLeaderboard::leaderboard))
+            .apply(instance, TimeTrialLeaderboard::new));
 
-    public TimeTrialLeaderboard(TrackMap map) {
-        this.leaderboard = new Float2ObjectRBTreeMap<>();
-        Random random = Random.create();
-
-        this.leaderboard.put(60.0f, new PlayerRef(MathHelper.randomUuid(random)));
-        this.leaderboard.put(120.0f, new PlayerRef(MathHelper.randomUuid(random)));
-        this.leaderboard.put(3600.0f, new PlayerRef(MathHelper.randomUuid(random)));
-        this.leaderboard.put(10.0f, new PlayerRef(MathHelper.randomUuid(random)));
+    /**
+     * Get the track's leaderboard sorted by time.
+     *
+     * @param track The track.
+     * @return A map of personal bests.
+     */
+    public List<PersonalBest> getTrackLeaderboard(TrackMap track) {
+        return this.leaderboard.getOrDefault(String.valueOf(track.hashCode()), List.of());
     }
 
     /**
-     * Submit a time.
+     * Gets the personal best for this player on this track.
      *
-     * @param player  The player.
-     * @param lapTime Their time.
-     * @return success
+     * @param track      The track.
+     * @param playerUuid The player's uuid.
+     * @return Their personal best.
      */
-    public boolean submit(ServerPlayerEntity player, float lapTime) {
-        PlayerRef ref = PlayerRef.of(player);
-
-        float existingTime = Float.MAX_VALUE;
-        for (var entry : this.leaderboard.float2ObjectEntrySet()) {
-            if (entry.getValue().equals(ref)) {
-                existingTime = entry.getFloatKey();
-                break;
-            }
-        }
-
-        if (lapTime >= existingTime) {
-            return false;
-        }
-
-        this.leaderboard.remove(existingTime);
-        this.leaderboard.put(lapTime, ref);
-
-        return true;
+    public PersonalBest getPersonalBest(TrackMap track, UUID playerUuid) {
+        return this.leaderboard
+                .getOrDefault(String.valueOf(track.hashCode()), List.of()).stream()
+                .filter(pair -> pair.id().equals(playerUuid))
+                .findFirst()
+                .orElse(PersonalBest.EMPTY);
     }
 
     /**
-     * Get the leaderboard.
+     * Sets the personal best for this player on this track.
      *
-     * @return the leaderboard.
+     * @param track        The track.
+     * @param personalBest Personal best to create or overwrite.
+     * @return A new leaderboard with the new personal best.
      */
-    public Float2ObjectSortedMap<PlayerRef> getLeaderboards() {
-        return this.leaderboard;
+    public TimeTrialLeaderboard setPersonalBest(TrackMap track, PersonalBest personalBest) {
+        // invalid number of splits, reject
+        if (personalBest.splits().size() != track.getRegions().checkpoints().size()) {
+            return this;
+        }
+
+        List<PersonalBest> newTrackLeaderboard = new ObjectArrayList<>(this.getTrackLeaderboard(track));
+
+        newTrackLeaderboard.removeIf(pb -> pb.id().equals(personalBest.id()));
+        newTrackLeaderboard.add(personalBest);
+
+        newTrackLeaderboard.sort((a, b) -> Float.compare(a.timer(), b.timer()));
+
+        Map<String, List<PersonalBest>> newLeaderboard = new Object2ObjectOpenHashMap<>(this.leaderboard);
+        newLeaderboard.put(String.valueOf(track.hashCode()), newTrackLeaderboard);
+
+        return new TimeTrialLeaderboard(newLeaderboard);
+    }
+
+    /**
+     * Stores the player's time and splits and their info.
+     */
+    public record PersonalBest(String offlineName, UUID id, float timer, List<Float> splits) {
+        public static final PersonalBest EMPTY = new PersonalBest("Herobrine", UUID.randomUUID(), Float.NaN, List.of());
+
+        public static final Codec<PersonalBest> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.STRING.fieldOf("offlineName").forGetter(PersonalBest::offlineName),
+                Uuids.CODEC.fieldOf("uuid").forGetter(PersonalBest::id),
+                Codec.FLOAT.fieldOf("timer").forGetter(PersonalBest::timer),
+                Codec.FLOAT.listOf().fieldOf("splits").forGetter(PersonalBest::splits))
+                .apply(instance, PersonalBest::new));
     }
 }

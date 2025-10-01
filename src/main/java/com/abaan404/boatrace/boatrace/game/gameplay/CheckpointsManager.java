@@ -1,10 +1,11 @@
 package com.abaan404.boatrace.boatrace.game.gameplay;
 
+import java.util.Map;
+
 import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
 
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
@@ -15,16 +16,16 @@ import xyz.nucleoid.plasmid.api.util.PlayerRef;
 public class CheckpointsManager {
     private final TrackMap.Regions regions;
 
-    private Object2IntMap<PlayerRef> checkpoints = new Object2IntOpenHashMap<>();
-    private Object2IntMap<PlayerRef> laps = new Object2IntOpenHashMap<>();
+    private Map<PlayerRef, Integer> checkpoints = new Object2IntOpenHashMap<>();
+    private Map<PlayerRef, Integer> laps = new Object2IntOpenHashMap<>();
 
     /**
      * A checkpoint manager.
      *
-     * @param map The track to use this on.
+     * @param track The track to use this on.
      */
-    public CheckpointsManager(TrackMap map) {
-        this.regions = map.getRegions();
+    public CheckpointsManager(TrackMap track) {
+        this.regions = track.getRegions();
     }
 
     /**
@@ -34,7 +35,7 @@ public class CheckpointsManager {
      * @param player The player to tick.
      * @return The resulting tick.
      */
-    public TickResult tick(ServerPlayerEntity player) {
+    public TickResult tick(PlayerEntity player) {
         PlayerRef ref = PlayerRef.of(player);
 
         // no checkpoints, this is just an adhoc implementation just to avoid division
@@ -76,10 +77,9 @@ public class CheckpointsManager {
      *
      * @param player The player to reset.
      */
-    public void reset(ServerPlayerEntity player) {
-        PlayerRef ref = PlayerRef.of(player);
-        this.checkpoints.removeInt(ref);
-        this.laps.removeInt(ref);
+    public void reset(PlayerRef player) {
+        this.checkpoints.remove(player);
+        this.laps.remove(player);
     }
 
     /**
@@ -88,8 +88,8 @@ public class CheckpointsManager {
      * @param player The player to check.
      * @return Their laps.
      */
-    public int getLaps(ServerPlayerEntity player) {
-        return this.laps.getOrDefault(PlayerRef.of(player), 0);
+    public int getLaps(PlayerRef player) {
+        return this.laps.getOrDefault(player, 0);
     }
 
     /**
@@ -98,19 +98,27 @@ public class CheckpointsManager {
      * @param player The player to get from.
      * @return The bounds of their relevant checkpoint.
      */
-    public BlockBounds getCheckpoint(ServerPlayerEntity player) {
+    public BlockBounds getCheckpoint(PlayerRef player) {
         // no checkpoints, return finish
         if (this.regions.checkpoints().size() == 0) {
             return this.regions.finish();
         }
 
         // return the last checkpoint if the player has just spawned
-        int prevCheckpointIdx = this.checkpoints.getOrDefault(PlayerRef.of(player),
-                this.regions.checkpoints().size() - 1);
+        int checkpointIdx = this.checkpoints.getOrDefault(player, this.regions.checkpoints().size() - 1);
 
-        return this.regions.checkpoints().get(prevCheckpointIdx);
+        return this.regions.checkpoints().get(checkpointIdx);
     }
 
+    public int getCheckpointIndex(PlayerRef player) {
+        return this.checkpoints.getOrDefault(player, -1);
+    }
+
+    /**
+     * Get regions for this track.
+     *
+     * @return The track regions.
+     */
     public TrackMap.Regions getRegions() {
         return this.regions;
     }

@@ -18,27 +18,22 @@ import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 /**
- * Singleplayer game to practice a map and set a best time against a leaderboard.
+ * Singleplayer game to practice a map and set a best time against a
+ * leaderboard.
  */
 public class TimeTrial {
-    private final GameSpace gameSpace;
-    private final ServerWorld world;
-
     private final TimeTrialStageManager stageManager;
-    private final TimeTrialLeaderboard leaderboard;
     private final TimeTrialWidgets widgets;
 
-    private TimeTrial(GameSpace gameSpace, ServerWorld world, TrackMap map, GlobalWidgets widgets, BoatRaceConfig config) {
-        this.gameSpace = gameSpace;
-        this.world = world;
-        this.stageManager = new TimeTrialStageManager(world, map);
-        this.widgets = new TimeTrialWidgets(widgets, map);
-        this.leaderboard = new TimeTrialLeaderboard(map);
+    private TimeTrial(GameSpace gameSpace, ServerWorld world, TrackMap track, GlobalWidgets widgets,
+            BoatRaceConfig config) {
+        this.stageManager = new TimeTrialStageManager(gameSpace, world, track);
+        this.widgets = new TimeTrialWidgets(gameSpace, widgets, track);
     }
 
-    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, TrackMap map) {
+    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, TrackMap track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
-        TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, map, widgets, config);
+        TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets, config);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
 
@@ -57,7 +52,8 @@ public class TimeTrial {
         game.listen(GamePlayerEvents.ADD, timeTrial::addPlayer);
         game.listen(GamePlayerEvents.REMOVE, timeTrial::removePlayer);
 
-        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, map.getRegions().finish().center()));
+        game.listen(GamePlayerEvents.ACCEPT,
+                joinAcceptor -> joinAcceptor.teleport(world, track.getRegions().finish().center()));
         game.listen(GamePlayerEvents.OFFER, JoinOffer::acceptParticipants);
 
         game.listen(GameActivityEvents.TICK, timeTrial::tick);
@@ -80,12 +76,7 @@ public class TimeTrial {
     }
 
     private void tick() {
-        TimeTrialStageManager.TickResult result = this.stageManager.tick(this.gameSpace, this.world);
-        this.widgets.tick(this.gameSpace, this.stageManager, this.leaderboard);
-        switch (result) {
-            case IDLE:
-                return;
-        }
-
+        this.stageManager.tick();
+        this.widgets.tick(this.stageManager);
     }
 }

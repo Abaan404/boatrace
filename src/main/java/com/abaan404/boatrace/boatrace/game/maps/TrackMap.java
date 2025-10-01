@@ -153,7 +153,7 @@ public class TrackMap {
      *
      * @return The regions.
      */
-    public Meta getMetadata() {
+    public Meta getMetaData() {
         return this.meta;
     }
 
