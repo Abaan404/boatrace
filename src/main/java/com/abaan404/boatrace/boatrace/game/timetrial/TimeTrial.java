@@ -1,11 +1,18 @@
 package com.abaan404.boatrace.boatrace.game.timetrial;
 
 import com.abaan404.boatrace.boatrace.game.BoatRaceConfig;
+import com.abaan404.boatrace.boatrace.game.events.BoatRacePlayerEvent;
+import com.abaan404.boatrace.boatrace.game.items.BoatRaceItems;
 import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.item.Item;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.math.Vec3d;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
@@ -14,6 +21,7 @@ import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
 import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
 import xyz.nucleoid.stimuli.event.EventResult;
+import xyz.nucleoid.stimuli.event.item.ItemUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
@@ -44,39 +52,66 @@ public class TimeTrial {
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
-        game.setRule(GameRuleType.DISMOUNT_VEHICLE, EventResult.DENY);
 
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, timeTrial::onPlayerDeath);
+        game.listen(ItemUseEvent.EVENT, timeTrial::onItemUse);
+
+        game.listen(BoatRacePlayerEvent.DISMOUNT, timeTrial::onDismount);
 
         game.listen(GamePlayerEvents.ADD, timeTrial::addPlayer);
         game.listen(GamePlayerEvents.REMOVE, timeTrial::removePlayer);
-
-        game.listen(GamePlayerEvents.ACCEPT,
-                joinAcceptor -> joinAcceptor.teleport(world, track.getRegions().finish().center()));
+        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
         game.listen(GamePlayerEvents.OFFER, JoinOffer::acceptParticipants);
 
         game.listen(GameActivityEvents.TICK, timeTrial::tick);
     }
 
     private EventResult addPlayer(ServerPlayerEntity player) {
+        this.stageManager.toParticipant(player);
         this.stageManager.spawnPlayer(player);
-
         return EventResult.DENY;
     }
 
     private EventResult removePlayer(ServerPlayerEntity player) {
+        this.stageManager.despawnPlayer(player);
         return EventResult.DENY;
     }
 
     private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
         player.setHealth(20.0f);
-        this.stageManager.spawnPlayer(player);
+        this.stageManager.respawnPlayer(player);
         return EventResult.DENY;
     }
 
+    private EventResult onDismount(ServerPlayerEntity player, Entity vehicle) {
+        vehicle.discard();
+        this.stageManager.toSpectator(player);
+
+        return EventResult.DENY;
+    }
+
+    private ActionResult onItemUse(ServerPlayerEntity player, Hand hand) {
+        Item item = player.getStackInHand(hand).getItem();
+
+        // resets everything
+        if (item.equals(BoatRaceItems.TIME_TRIAL_RESET)) {
+            this.stageManager.toParticipant(player);
+            this.stageManager.spawnPlayer(player);
+            return ActionResult.CONSUME;
+        }
+
+        // dont reset anything, just respawn at the last checkpoint
+        else if (item.equals(BoatRaceItems.TIME_TRIAL_RESPAWN)) {
+            this.stageManager.respawnPlayer(player);
+            return ActionResult.CONSUME;
+        }
+
+        return ActionResult.PASS;
+    }
+
     private void tick() {
-        this.stageManager.tick();
-        this.widgets.tick(this.stageManager);
+        this.widgets.tick(stageManager);
+        this.stageManager.tickPlayers();
     }
 }

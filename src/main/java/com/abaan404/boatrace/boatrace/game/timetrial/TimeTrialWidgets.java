@@ -45,29 +45,34 @@ public final class TimeTrialWidgets {
      * @param stageManager The game's state.
      */
     public void tick(TimeTrialStageManager stageManager) {
-        // use the overworld to store persistent data
-        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
-        TimeTrialLeaderboard leaderboard = overworld.getAttachedOrCreate(BoatRace.LEADERBOARD_ATTACHMENT);
-
-        this.tickActionBar(leaderboard, stageManager);
-        this.tickSidebar(leaderboard);
+        this.tickActionBar(stageManager);
+        this.tickSidebar();
     }
 
     /**
-     * Display splits and timers
+     * Display splits and timers on the client's action bar.
      *
-     * @param leaderboard The leaderboard for pbs
-     * @param stageManager The stage manager
+     * @param stageManager The stage manager.
      */
-    private void tickActionBar(TimeTrialLeaderboard leaderboard, TimeTrialStageManager stageManager) {
-        this.gameSpace.getPlayers().forEach(player -> {
+    private void tickActionBar(TimeTrialStageManager stageManager) {
+        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
+        TimeTrialLeaderboard leaderboard = overworld.getAttachedOrCreate(TimeTrialLeaderboard.ATTACHMENT);
+
+        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+            if (stageManager.isSpectator(player)) {
+                Text freeRoamText = Text.literal("Free Roaming").formatted(Formatting.GRAY, Formatting.ITALIC,
+                        Formatting.BOLD);
+                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(freeRoamText));
+                continue;
+            }
+
             PlayerRef ref = PlayerRef.of(player);
             PersonalBest pb = leaderboard.getPersonalBest(this.track, ref.id());
 
-            MutableText actionBarText = Text.literal(formatTime((long) stageManager.getTimer(ref), true))
+            MutableText actionBarText = Text.literal(formatTime((long) stageManager.splits.getTimer(ref), true))
                     .formatted(Formatting.BOLD);
 
-            List<Float> currentSplits = stageManager.getSplits(ref);
+            List<Float> currentSplits = stageManager.splits.getSplits(ref);
             List<Float> pbSplits = pb.splits();
 
             // player has no pb or hasnt started a run yet
@@ -89,7 +94,7 @@ public final class TimeTrialWidgets {
             long pbSplit;
 
             try {
-                int checkpointIndex = stageManager.getCheckpointIndex(ref);
+                int checkpointIndex = stageManager.checkpoints.getCheckpointIndex(ref);
 
                 currentSplit = currentSplits.get(checkpointIndex).longValue();
                 pbSplit = pbSplits.get(checkpointIndex).longValue();
@@ -121,16 +126,17 @@ public final class TimeTrialWidgets {
             }
 
             player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
-        });
+        }
     }
 
     /**
-     * Displays track meta and leaderboard
-     *
-     * @param leaderboards The leaderboards
+     * Displays track meta and track leaderboard.
      */
-    private void tickSidebar(TimeTrialLeaderboard leaderboards) {
-        this.gameSpace.getPlayers().forEach(player -> {
+    private void tickSidebar() {
+        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
+        TimeTrialLeaderboard leaderboard = overworld.getAttachedOrCreate(TimeTrialLeaderboard.ATTACHMENT);
+
+        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
             PlayerRef ref = PlayerRef.of(player);
 
             if (!this.sidebars.containsKey(ref)) {
@@ -163,10 +169,10 @@ public final class TimeTrialWidgets {
 
                 content.add(Text.literal(""));
 
-                List<PersonalBest> leaderboard = leaderboards.getTrackLeaderboard(this.track);
+                List<PersonalBest> pbs = leaderboard.getTrackLeaderboard(this.track);
                 SortedMap<Integer, PersonalBest> toDisplay = new Int2ObjectRBTreeMap<>();
 
-                if (leaderboard.isEmpty()) {
+                if (pbs.isEmpty()) {
                     content.add(
                             Text.literal(" No records submitted.").formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
                 }
@@ -174,8 +180,8 @@ public final class TimeTrialWidgets {
                 int playerIndex = -1;
 
                 // find player and add top 3
-                for (int i = 0; i < leaderboard.size(); i++) {
-                    PersonalBest pb = leaderboard.get(i);
+                for (int i = 0; i < pbs.size(); i++) {
+                    PersonalBest pb = pbs.get(i);
 
                     if (pb.id().equals(ref.id())) {
                         playerIndex = i;
@@ -191,10 +197,10 @@ public final class TimeTrialWidgets {
                 if (playerIndex != -1) {
                     // add rankings above and below the player
                     int min = Math.max(0, playerIndex - SIDEBAR_RANKING_COMPARED);
-                    int max = Math.min(leaderboard.size() - 1, playerIndex + SIDEBAR_RANKING_COMPARED);
+                    int max = Math.min(pbs.size() - 1, playerIndex + SIDEBAR_RANKING_COMPARED);
 
                     for (int i = min; i <= max; i++) {
-                        toDisplay.putIfAbsent(i + 1, leaderboard.get(i));
+                        toDisplay.putIfAbsent(i + 1, pbs.get(i));
                     }
                 }
 
@@ -210,7 +216,7 @@ public final class TimeTrialWidgets {
                 }
 
                 // add padding if needed
-                if (leaderboard.size() > SIDEBAR_RANKING_TOP && !toDisplay.containsKey(SIDEBAR_RANKING_TOP + 1)) {
+                if (pbs.size() > SIDEBAR_RANKING_TOP && !toDisplay.containsKey(SIDEBAR_RANKING_TOP + 1)) {
                     content.add(Text.literal("   ○ ○ ○").formatted(Formatting.DARK_GRAY));
                 }
 
@@ -223,13 +229,20 @@ public final class TimeTrialWidgets {
                 }
 
                 // add padding at the end
-                if (leaderboard.size() > lastDisplayedPlayer && lastDisplayedPlayer != lastDisplayedTop) {
+                if (pbs.size() > lastDisplayedPlayer && lastDisplayedPlayer != lastDisplayedTop) {
                     content.add(Text.literal("   ○ ○ ○").formatted(Formatting.DARK_GRAY));
                 }
             });
-        });
+        }
     }
 
+    /**
+     * Format the time into a string.
+     *
+     * @param time        The time in ms.
+     * @param showMinutes If should show empty minutes (00:).
+     * @return The formatted time.
+     */
     private static String formatTime(long time, boolean showMinutes) {
         long seconds = Math.abs(time) / 1000;
 
@@ -247,10 +260,24 @@ public final class TimeTrialWidgets {
         }
     }
 
+    /**
+     * Format the time into a string.
+     *
+     * @param time The time in ms
+     * @return The formatted time.
+     */
     private static String formatTime(long time) {
         return TimeTrialWidgets.formatTime(time, false);
     }
 
+    /**
+     * Format a player's personal best to a line text thats ready to be shown on the leaderboard.
+     *
+     * @param position The player's position in the leaderboard.
+     * @param pb The player's personal best.
+     * @param player The player.
+     * @return A text ready to be displayed on the leaderboard.
+     */
     private Text toScoreboardLeaderboardText(int position, PersonalBest pb, PlayerRef player) {
         MutableText text = Text.literal("");
 

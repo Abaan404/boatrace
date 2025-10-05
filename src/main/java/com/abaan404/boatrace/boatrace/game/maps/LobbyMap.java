@@ -18,11 +18,6 @@ import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
  * A lobby.
  */
 public class LobbyMap {
-    public record Regions(
-            BlockPos spawn,
-            BlockPos trackSelect, BlockPos formatSelect, BlockPos modeSelect) {
-    }
-
     private final MapTemplate template;
     private final Regions regions;
 
@@ -67,8 +62,8 @@ public class LobbyMap {
     /**
      * Load the lobby map
      *
-     * @param server The server to load from
-     * @param config The game's config
+     * @param server     The server to load from
+     * @param identifier The game's config
      * @return A lobby map
      */
     public static Optional<LobbyMap> load(MinecraftServer server, Identifier identifier) {
@@ -101,5 +96,10 @@ public class LobbyMap {
      */
     public Regions getRegions() {
         return this.regions;
+    }
+
+    public record Regions(
+            BlockPos spawn,
+            BlockPos trackSelect, BlockPos formatSelect, BlockPos modeSelect) {
     }
 }

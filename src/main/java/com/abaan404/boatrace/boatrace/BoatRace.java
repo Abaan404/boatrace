@@ -1,13 +1,13 @@
 package com.abaan404.boatrace.boatrace;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.abaan404.boatrace.boatrace.game.BoatRaceConfig;
+import com.abaan404.boatrace.boatrace.game.items.BoatRaceItems;
 import com.abaan404.boatrace.boatrace.game.lobby.Lobby;
 import com.abaan404.boatrace.boatrace.game.maps.LobbyMap;
 import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
@@ -17,8 +17,6 @@ import com.abaan404.boatrace.boatrace.game.timetrial.TimeTrial;
 import com.abaan404.boatrace.boatrace.game.timetrial.TimeTrialLeaderboard;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
-import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
@@ -30,11 +28,6 @@ import xyz.nucleoid.plasmid.api.game.GameType;
 public class BoatRace implements ModInitializer {
     public static final String ID = "boatrace";
     public static final Logger LOGGER = LogManager.getLogger(ID);
-
-    public static final AttachmentType<TimeTrialLeaderboard> LEADERBOARD_ATTACHMENT = AttachmentRegistry.create(
-            Identifier.of(BoatRace.ID, "time_trial_leaderboard"), builder -> builder
-                    .initializer(() -> new TimeTrialLeaderboard(Map.of()))
-                    .persistent(TimeTrialLeaderboard.CODEC));
 
     public static final GameType<BoatRaceConfig> TYPE = GameType.register(
             Identifier.of(ID, "game"),
@@ -92,5 +85,7 @@ public class BoatRace implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        BoatRaceItems.initialize();
+        TimeTrialLeaderboard.initialize();
     }
 }

@@ -4,24 +4,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.abaan404.boatrace.boatrace.BoatRace;
 import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.Uuids;
 
 /**
  * Holds the leaderboard for a track stored persistently.
  */
 public record TimeTrialLeaderboard(Map<String, List<PersonalBest>> leaderboard) {
+    public static void initialize() {
+    }
+
     public static final Codec<TimeTrialLeaderboard> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.unboundedMap(
                     Codec.STRING,
                     PersonalBest.CODEC.listOf())
                     .fieldOf("leaderboard").forGetter(TimeTrialLeaderboard::leaderboard))
             .apply(instance, TimeTrialLeaderboard::new));
+
+    public static final AttachmentType<TimeTrialLeaderboard> ATTACHMENT = AttachmentRegistry.create(
+            Identifier.of(BoatRace.ID, "time_trial_leaderboard"), builder -> builder
+                    .initializer(() -> new TimeTrialLeaderboard(Map.of()))
+                    .persistent(TimeTrialLeaderboard.CODEC));
 
     /**
      * Get the track's leaderboard sorted by time.

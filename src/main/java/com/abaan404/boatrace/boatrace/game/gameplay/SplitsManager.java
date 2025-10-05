@@ -3,29 +3,55 @@ package com.abaan404.boatrace.boatrace.game.gameplay;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.world.tick.TickManager;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import net.minecraft.server.world.ServerWorld;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 /**
  * Records splits and times an active run.
  */
 public class SplitsManager {
+    private Set<PlayerRef> running = new ObjectOpenHashSet<>();
+
     private Map<PlayerRef, Float> timer = new Object2FloatOpenHashMap<>();
     private Map<PlayerRef, List<Float>> splits = new Object2ObjectOpenHashMap<>();
 
     /**
-     * Update the timer according to the server's tick rate.
+     * Continuously run the timer for this player.
      *
-     * @param player      The player to update.
-     * @param tickManager The server's tick manager.
+     * @param player The player.
      */
-    public void tick(PlayerRef player, TickManager tickManager) {
+    public void run(PlayerRef player) {
+        this.running.add(player);
+    }
+
+    /**
+     * Stop running the timer for this player.
+     *
+     * @param player The player.
+     */
+    public void stop(PlayerRef player) {
+        this.running.remove(player);
+    }
+
+    /**
+     * Update the timer according to the world's tick rate.
+     *
+     * @param player The player to update.
+     * @param world  The world to fetch mspt from.
+     */
+    public void tick(PlayerRef player, ServerWorld world) {
+        if (!this.running.contains(player)) {
+            return;
+        }
+
         float split = this.timer.getOrDefault(player, 0.0f);
-        split += tickManager.getMillisPerTick();
+        split += world.getTickManager().getMillisPerTick();
         this.timer.put(player, split);
     }
 

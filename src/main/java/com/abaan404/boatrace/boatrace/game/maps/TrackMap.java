@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.abaan404.boatrace.boatrace.BoatRace;
 
@@ -23,15 +22,6 @@ import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
  * A track.
  */
 public class TrackMap {
-    public record Regions(
-            BlockBounds finish, List<BlockBounds> checkpoints,
-            BlockBounds pitEntry, BlockBounds pitExit, List<BlockBounds> pitBoxes) {
-    }
-
-    public record Meta(
-            String name, List<String> authors) {
-    }
-
     private final Regions regions;
     private final Meta meta;
     private final MapTemplate template;
@@ -39,39 +29,49 @@ public class TrackMap {
     private TrackMap(MapTemplate template) {
         this.template = template;
 
-        BlockBounds finish = template.getMetadata()
+        RespawnRegion finish = template.getMetadata()
                 .getRegions("finish")
-                .map(TemplateRegion::getBounds)
+                .map(RespawnRegion::of)
                 .findFirst()
-                .orElse(new BlockBounds(BlockPos.ORIGIN, BlockPos.ORIGIN));
+                .orElse(RespawnRegion.of());
 
-        List<BlockBounds> checkpoints = template.getMetadata()
-                .getRegions("checkpoints")
+        List<RespawnRegion> checkpoints = template.getMetadata()
+                .getRegions("checkpoint")
                 .filter(cp -> cp.getData().getInt("index").isPresent())
-                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index").get()))
-                .map(TemplateRegion::getBounds)
+                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index").orElseThrow()))
+                .map(RespawnRegion::of)
+                .toList();
+
+        List<RespawnRegion> gridBoxes = template.getMetadata()
+                .getRegions("grid_box")
+                .filter(gb -> gb.getData().getInt("index").isPresent())
+                .sorted(Comparator.comparingInt(gb -> gb.getData().getInt("index", -1)))
+                .map(RespawnRegion::of)
                 .toList();
 
         BlockBounds pitEntry = template.getMetadata()
                 .getRegions("pit_entry")
                 .map(TemplateRegion::getBounds)
                 .findFirst()
-                .orElse(new BlockBounds(BlockPos.ORIGIN, BlockPos.ORIGIN));
+                .orElse(BlockBounds.ofBlock(BlockPos.ORIGIN));
 
         BlockBounds pitExit = template.getMetadata()
                 .getRegions("pit_exit")
                 .map(TemplateRegion::getBounds)
                 .findFirst()
-                .orElse(new BlockBounds(BlockPos.ORIGIN, BlockPos.ORIGIN));
+                .orElse(BlockBounds.ofBlock(BlockPos.ORIGIN));
 
         List<BlockBounds> pitBoxes = template.getMetadata()
-                .getRegions("pit_boxes")
+                .getRegions("pit_box")
+                .filter(pb -> pb.getData().getInt("index").isPresent())
+                .sorted(Comparator.comparingInt(pb -> pb.getData().getInt("index").orElseThrow()))
                 .map(TemplateRegion::getBounds)
                 .toList();
 
         this.regions = new Regions(
                 finish,
                 checkpoints,
+                gridBoxes,
                 pitEntry,
                 pitExit,
                 pitBoxes);
@@ -86,7 +86,7 @@ public class TrackMap {
                 .map(nbtList -> nbtList.stream()
                         .filter(e -> e instanceof NbtString)
                         .map(e -> ((NbtString) e).asString().orElse("Unknown"))
-                        .collect(Collectors.toList()))
+                        .toList())
                 .orElse(List.of());
 
         this.meta = new Meta(name, authors);
@@ -95,8 +95,8 @@ public class TrackMap {
     /**
      * Represents a track loaded from a resource.
      *
-     * @param server    The server to load from.
-     * @param trackName The name of the track.
+     * @param server     The server to load from.
+     * @param identifier The resource id of the track
      * @return A loaded track.
      */
     public static Optional<TrackMap> load(MinecraftServer server, Identifier identifier) {
@@ -186,5 +186,28 @@ public class TrackMap {
         } else if (!meta.equals(other.meta))
             return false;
         return true;
+    }
+
+    public record RespawnRegion(BlockBounds bounds, float respawnYaw, float respawnPitch) {
+        static RespawnRegion of() {
+            return new RespawnRegion(BlockBounds.ofBlock(BlockPos.ORIGIN), 0.0f, 0.0f);
+        }
+
+        static RespawnRegion of(TemplateRegion templateRegion) {
+            return new RespawnRegion(
+                    templateRegion.getBounds(),
+                    templateRegion.getData().getFloat("respawnYaw", 0.0f),
+                    templateRegion.getData().getFloat("respawnPitch", 0.0f));
+        }
+    }
+
+    public record Regions(
+            RespawnRegion finish, List<RespawnRegion> checkpoints,
+            List<RespawnRegion> gridBoxes,
+            BlockBounds pitEntry, BlockBounds pitExit, List<BlockBounds> pitBoxes) {
+    }
+
+    public record Meta(
+            String name, List<String> authors) {
     }
 }

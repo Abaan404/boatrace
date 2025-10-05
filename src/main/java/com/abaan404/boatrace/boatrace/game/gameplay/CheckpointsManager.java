@@ -3,10 +3,10 @@ package com.abaan404.boatrace.boatrace.game.gameplay;
 import java.util.Map;
 
 import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.boatrace.game.maps.TrackMap.RespawnRegion;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.entity.player.PlayerEntity;
-import xyz.nucleoid.map_templates.BlockBounds;
+import net.minecraft.server.network.ServerPlayerEntity;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 /**
@@ -19,11 +19,6 @@ public class CheckpointsManager {
     private Map<PlayerRef, Integer> checkpoints = new Object2IntOpenHashMap<>();
     private Map<PlayerRef, Integer> laps = new Object2IntOpenHashMap<>();
 
-    /**
-     * A checkpoint manager.
-     *
-     * @param track The track to use this on.
-     */
     public CheckpointsManager(TrackMap track) {
         this.regions = track.getRegions();
     }
@@ -33,16 +28,16 @@ public class CheckpointsManager {
      * results.
      *
      * @param player The player to tick.
-     * @return The resulting tick.
+     * @return The resulting tick event.
      */
-    public TickResult tick(PlayerEntity player) {
+    public TickResult tick(ServerPlayerEntity player) {
         PlayerRef ref = PlayerRef.of(player);
 
         // no checkpoints, this is just an adhoc implementation just to avoid division
         // by zero
         if (this.regions.checkpoints().size() == 0) {
-            // only check finish, may cause alot of laps to get counted
-            if (this.regions.finish().contains(player.getBlockPos())) {
+            // only check finish, will cause alot of laps to get counted
+            if (this.regions.finish().bounds().contains(player.getBlockPos())) {
                 this.laps.put(ref, this.laps.getOrDefault(ref, 0) + 1);
                 return TickResult.FINISH;
             }
@@ -50,22 +45,25 @@ public class CheckpointsManager {
             return TickResult.IDLE;
         }
 
-        int prevCheckpointIdx = this.checkpoints.getOrDefault(ref, -1);
+        int prevCheckpointIdx = getCheckpointIndex(ref);
         int nextCheckpointIdx = (prevCheckpointIdx + 1) % this.regions.checkpoints().size();
 
-        // player has reached the next checkpoint
-        if (this.regions.checkpoints().get(nextCheckpointIdx).contains(player.getBlockPos())) {
-            this.checkpoints.put(ref, nextCheckpointIdx);
+        // player just started the run
+        if (prevCheckpointIdx == -1 && this.regions.finish().bounds().contains(player.getBlockPos())) {
+            return TickResult.BEGIN;
+        }
 
+        // player has reached the next checkpoint
+        else if (this.regions.checkpoints().get(nextCheckpointIdx).bounds().contains(player.getBlockPos())) {
+            this.checkpoints.put(ref, nextCheckpointIdx);
             return TickResult.CHECKPOINT;
         }
 
         // player has claimed every checkpoint and has reached the finish
-        if (this.regions.finish().contains(player.getBlockPos())
+        else if (this.regions.finish().bounds().contains(player.getBlockPos())
                 && prevCheckpointIdx == this.regions.checkpoints().size() - 1) {
             this.laps.put(ref, this.laps.getOrDefault(ref, 0) + 1);
             this.checkpoints.put(ref, -1);
-
             return TickResult.FINISH;
         }
 
@@ -93,19 +91,22 @@ public class CheckpointsManager {
     }
 
     /**
-     * Get the last checkpoint the player used, or the checkpoint before the finish.
+     * Get the last checkpoint the player used
      *
      * @param player The player to get from.
      * @return The bounds of their relevant checkpoint.
      */
-    public BlockBounds getCheckpoint(PlayerRef player) {
+    public RespawnRegion getCheckpoint(PlayerRef player) {
         // no checkpoints, return finish
         if (this.regions.checkpoints().size() == 0) {
             return this.regions.finish();
         }
 
         // return the last checkpoint if the player has just spawned
-        int checkpointIdx = this.checkpoints.getOrDefault(player, this.regions.checkpoints().size() - 1);
+        int checkpointIdx = getCheckpointIndex(player);
+        if (checkpointIdx == -1) {
+            return this.regions.finish();
+        }
 
         return this.regions.checkpoints().get(checkpointIdx);
     }
@@ -124,6 +125,11 @@ public class CheckpointsManager {
     }
 
     public enum TickResult {
+        /**
+         * Begin the lap.
+         */
+        BEGIN,
+
         /**
          * Valid lap, lap incremented.
          */
