@@ -9,6 +9,7 @@ import com.abaan404.boatrace.game.maps.TrackMap;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -42,7 +43,7 @@ public record TimeTrialLeaderboard(Map<String, List<PersonalBest>> leaderboard) 
      * @return A map of personal bests.
      */
     public List<PersonalBest> getTrackLeaderboard(TrackMap track) {
-        return this.leaderboard.getOrDefault(String.valueOf(track.hashCode()), List.of());
+        return this.leaderboard.getOrDefault(String.valueOf(track.hashCode()), ObjectArrayList.of());
     }
 
     /**
@@ -54,7 +55,7 @@ public record TimeTrialLeaderboard(Map<String, List<PersonalBest>> leaderboard) 
      */
     public PersonalBest getPersonalBest(TrackMap track, UUID playerUuid) {
         return this.leaderboard
-                .getOrDefault(String.valueOf(track.hashCode()), List.of()).stream()
+                .getOrDefault(String.valueOf(track.hashCode()), ObjectArrayList.of()).stream()
                 .filter(pair -> pair.id().equals(playerUuid))
                 .findFirst()
                 .orElse(PersonalBest.EMPTY);
@@ -90,7 +91,8 @@ public record TimeTrialLeaderboard(Map<String, List<PersonalBest>> leaderboard) 
      * Stores the player's time and splits and their info.
      */
     public record PersonalBest(String offlineName, UUID id, float timer, List<Float> splits) {
-        public static final PersonalBest EMPTY = new PersonalBest("Herobrine", UUID.randomUUID(), Float.NaN, List.of());
+        public static final PersonalBest EMPTY = new PersonalBest("Herobrine", UUID.randomUUID(), Float.NaN,
+                FloatArrayList.of());
 
         public static final Codec<PersonalBest> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.fieldOf("offlineName").forGetter(PersonalBest::offlineName),

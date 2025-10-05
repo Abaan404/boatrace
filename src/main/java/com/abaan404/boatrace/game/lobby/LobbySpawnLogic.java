@@ -7,9 +7,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.GameMode;
 
-import java.util.Set;
-
 import com.abaan404.boatrace.game.maps.LobbyMap;
+
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 
 /**
  * Handle's spawning in the lobby.
@@ -47,6 +47,6 @@ public class LobbySpawnLogic {
         float x = pos.getX() + MathHelper.nextFloat(player.getRandom(), -radius, radius);
         float z = pos.getZ() + MathHelper.nextFloat(player.getRandom(), -radius, radius);
 
-        player.teleport(this.world, x, pos.getY(), z, Set.of(), 0.0F, 0.0F, true);
+        player.teleport(this.world, x, pos.getY(), z, ObjectArraySet.of(), 0.0F, 0.0F, true);
     }
 }

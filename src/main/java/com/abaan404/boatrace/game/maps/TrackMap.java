@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import com.abaan404.boatrace.BoatRace;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
@@ -87,7 +88,7 @@ public class TrackMap {
                         .filter(e -> e instanceof NbtString)
                         .map(e -> ((NbtString) e).asString().orElse("Unknown"))
                         .toList())
-                .orElse(List.of());
+                .orElse(ObjectArrayList.of());
 
         this.meta = new Meta(name, authors);
     }

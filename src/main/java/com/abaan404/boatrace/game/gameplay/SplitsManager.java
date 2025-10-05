@@ -100,7 +100,7 @@ public class SplitsManager {
      * @return The player's splits.
      */
     public List<Float> getSplits(PlayerRef player) {
-        return Collections.unmodifiableList(this.splits.getOrDefault(player, List.of()));
+        return Collections.unmodifiableList(this.splits.getOrDefault(player, FloatArrayList.of()));
     }
 
     /**
