@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.boatrace.game.gameplay;
+package com.abaan404.boatrace.game.gameplay;
 
 import java.util.Collections;
 import java.util.List;

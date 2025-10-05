@@ -1,13 +1,13 @@
-package com.abaan404.boatrace.boatrace.game.timetrial;
+package com.abaan404.boatrace.game.timetrial;
 
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.stream.Collectors;
 
-import com.abaan404.boatrace.boatrace.BoatRace;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
-import com.abaan404.boatrace.boatrace.game.timetrial.TimeTrialLeaderboard.PersonalBest;
+import com.abaan404.boatrace.BoatRace;
+import com.abaan404.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.game.timetrial.TimeTrialLeaderboard.PersonalBest;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;

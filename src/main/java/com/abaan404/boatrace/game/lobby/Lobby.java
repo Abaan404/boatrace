@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.boatrace.game.lobby;
+package com.abaan404.boatrace.game.lobby;
 
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -12,10 +12,10 @@ import net.minecraft.world.GameMode;
 
 import java.util.List;
 
-import com.abaan404.boatrace.boatrace.game.BoatRaceConfig;
-import com.abaan404.boatrace.boatrace.game.maps.LobbyMap;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
-import com.abaan404.boatrace.boatrace.game.timetrial.TimeTrial;
+import com.abaan404.boatrace.game.BoatRaceConfig;
+import com.abaan404.boatrace.game.maps.LobbyMap;
+import com.abaan404.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.game.timetrial.TimeTrial;
 
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameResult;

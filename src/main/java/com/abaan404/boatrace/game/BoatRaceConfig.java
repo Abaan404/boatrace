@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.boatrace.game;
+package com.abaan404.boatrace.game;
 
 import java.util.Optional;
 

@@ -1,9 +1,9 @@
-package com.abaan404.boatrace.boatrace.game.gameplay;
+package com.abaan404.boatrace.game.gameplay;
 
 import java.util.Map;
 
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap.RespawnRegion;
+import com.abaan404.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.game.maps.TrackMap.RespawnRegion;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.server.network.ServerPlayerEntity;

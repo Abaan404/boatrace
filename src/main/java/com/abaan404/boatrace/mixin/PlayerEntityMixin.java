@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.boatrace.mixin;
+package com.abaan404.boatrace.mixin;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.abaan404.boatrace.boatrace.game.events.BoatRacePlayerEvent;
+import com.abaan404.boatrace.game.events.BoatRacePlayerEvent;
 
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin extends LivingEntity {

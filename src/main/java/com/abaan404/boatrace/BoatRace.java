@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.boatrace;
+package com.abaan404.boatrace;
 
 import java.util.List;
 import java.util.Optional;
@@ -6,15 +6,15 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.abaan404.boatrace.boatrace.game.BoatRaceConfig;
-import com.abaan404.boatrace.boatrace.game.items.BoatRaceItems;
-import com.abaan404.boatrace.boatrace.game.lobby.Lobby;
-import com.abaan404.boatrace.boatrace.game.maps.LobbyMap;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
-import com.abaan404.boatrace.boatrace.game.qualifying.Qualifying;
-import com.abaan404.boatrace.boatrace.game.race.Race;
-import com.abaan404.boatrace.boatrace.game.timetrial.TimeTrial;
-import com.abaan404.boatrace.boatrace.game.timetrial.TimeTrialLeaderboard;
+import com.abaan404.boatrace.game.BoatRaceConfig;
+import com.abaan404.boatrace.game.items.BoatRaceItems;
+import com.abaan404.boatrace.game.lobby.Lobby;
+import com.abaan404.boatrace.game.maps.LobbyMap;
+import com.abaan404.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.game.qualifying.Qualifying;
+import com.abaan404.boatrace.game.race.Race;
+import com.abaan404.boatrace.game.timetrial.TimeTrial;
+import com.abaan404.boatrace.game.timetrial.TimeTrialLeaderboard;
 
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.text.Text;

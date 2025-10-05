@@ -1,14 +1,14 @@
-package com.abaan404.boatrace.boatrace.game.timetrial;
+package com.abaan404.boatrace.game.timetrial;
 
 import java.util.Set;
 
-import com.abaan404.boatrace.boatrace.game.gameplay.CheckpointsManager;
-import com.abaan404.boatrace.boatrace.game.gameplay.SplitsManager;
-import com.abaan404.boatrace.boatrace.game.items.BoatRaceItems;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap.Regions;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap.RespawnRegion;
-import com.abaan404.boatrace.boatrace.game.timetrial.TimeTrialLeaderboard.PersonalBest;
+import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
+import com.abaan404.boatrace.game.gameplay.SplitsManager;
+import com.abaan404.boatrace.game.items.BoatRaceItems;
+import com.abaan404.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.game.maps.TrackMap.Regions;
+import com.abaan404.boatrace.game.maps.TrackMap.RespawnRegion;
+import com.abaan404.boatrace.game.timetrial.TimeTrialLeaderboard.PersonalBest;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;

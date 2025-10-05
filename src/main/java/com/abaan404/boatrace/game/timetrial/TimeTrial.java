@@ -1,9 +1,9 @@
-package com.abaan404.boatrace.boatrace.game.timetrial;
+package com.abaan404.boatrace.game.timetrial;
 
-import com.abaan404.boatrace.boatrace.game.BoatRaceConfig;
-import com.abaan404.boatrace.boatrace.game.events.BoatRacePlayerEvent;
-import com.abaan404.boatrace.boatrace.game.items.BoatRaceItems;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.game.BoatRaceConfig;
+import com.abaan404.boatrace.game.events.BoatRacePlayerEvent;
+import com.abaan404.boatrace.game.items.BoatRaceItems;
+import com.abaan404.boatrace.game.maps.TrackMap;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;

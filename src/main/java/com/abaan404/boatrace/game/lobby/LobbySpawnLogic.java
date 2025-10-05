@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.boatrace.game.lobby;
+package com.abaan404.boatrace.game.lobby;
 
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -9,7 +9,7 @@ import net.minecraft.world.GameMode;
 
 import java.util.Set;
 
-import com.abaan404.boatrace.boatrace.game.maps.LobbyMap;
+import com.abaan404.boatrace.game.maps.LobbyMap;
 
 /**
  * Handle's spawning in the lobby.

@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.boatrace.game.events;
+package com.abaan404.boatrace.game.events;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;

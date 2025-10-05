@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.boatrace.game.timetrial;
+package com.abaan404.boatrace.game.timetrial;
 
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.entity.EntityType;
@@ -10,7 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.TeleportTarget;
 
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap.RespawnRegion;
+import com.abaan404.boatrace.game.maps.TrackMap.RespawnRegion;
 
 /**
  * Handle's spawning in the lobby.

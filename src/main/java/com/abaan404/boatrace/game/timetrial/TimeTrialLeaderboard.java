@@ -1,11 +1,11 @@
-package com.abaan404.boatrace.boatrace.game.timetrial;
+package com.abaan404.boatrace.game.timetrial;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.abaan404.boatrace.boatrace.BoatRace;
-import com.abaan404.boatrace.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.BoatRace;
+import com.abaan404.boatrace.game.maps.TrackMap;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 

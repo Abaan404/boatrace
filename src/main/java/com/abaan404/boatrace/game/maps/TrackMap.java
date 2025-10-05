@@ -1,11 +1,11 @@
-package com.abaan404.boatrace.boatrace.game.maps;
+package com.abaan404.boatrace.game.maps;
 
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import com.abaan404.boatrace.boatrace.BoatRace;
+import com.abaan404.boatrace.BoatRace;
 
 import net.minecraft.nbt.NbtString;
 import net.minecraft.server.MinecraftServer;

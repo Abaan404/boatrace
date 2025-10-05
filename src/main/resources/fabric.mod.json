@@ -8,7 +8,7 @@
     "license": "MIT",
     "environment": "*",
     "entrypoints": {
-        "main": ["com.abaan404.boatrace.boatrace.BoatRace"]
+        "main": ["com.abaan404.boatrace.BoatRace"]
     },
     "depends": {
         "fabricloader": ">=0.16.14",
