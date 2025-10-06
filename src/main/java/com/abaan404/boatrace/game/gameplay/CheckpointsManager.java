@@ -2,8 +2,7 @@ package com.abaan404.boatrace.game.gameplay;
 
 import java.util.Map;
 
-import com.abaan404.boatrace.game.maps.TrackMap;
-import com.abaan404.boatrace.game.maps.TrackMap.RespawnRegion;
+import com.abaan404.boatrace.maps.TrackMap;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -96,7 +95,7 @@ public class CheckpointsManager {
      * @param player The player to get from.
      * @return The bounds of their relevant checkpoint.
      */
-    public RespawnRegion getCheckpoint(PlayerRef player) {
+    public TrackMap.RespawnRegion getCheckpoint(PlayerRef player) {
         // no checkpoints, return finish
         if (this.regions.checkpoints().size() == 0) {
             return this.regions.finish();

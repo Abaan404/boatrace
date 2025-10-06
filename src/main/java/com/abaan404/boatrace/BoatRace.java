@@ -7,14 +7,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.abaan404.boatrace.game.BoatRaceConfig;
-import com.abaan404.boatrace.game.items.BoatRaceItems;
 import com.abaan404.boatrace.game.lobby.Lobby;
-import com.abaan404.boatrace.game.maps.LobbyMap;
-import com.abaan404.boatrace.game.maps.TrackMap;
 import com.abaan404.boatrace.game.qualifying.Qualifying;
 import com.abaan404.boatrace.game.race.Race;
 import com.abaan404.boatrace.game.timetrial.TimeTrial;
-import com.abaan404.boatrace.game.timetrial.TimeTrialLeaderboard;
+import com.abaan404.boatrace.items.BoatRaceItems;
+import com.abaan404.boatrace.leaderboard.Leaderboard;
+import com.abaan404.boatrace.maps.LobbyMap;
+import com.abaan404.boatrace.maps.TrackMap;
 
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.text.Text;
@@ -86,6 +86,6 @@ public class BoatRace implements ModInitializer {
     @Override
     public void onInitialize() {
         BoatRaceItems.initialize();
-        TimeTrialLeaderboard.initialize();
+        Leaderboard.initialize();
     }
 }

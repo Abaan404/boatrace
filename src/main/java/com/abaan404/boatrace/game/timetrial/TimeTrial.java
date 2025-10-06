@@ -1,9 +1,9 @@
 package com.abaan404.boatrace.game.timetrial;
 
+import com.abaan404.boatrace.events.BoatRacePlayerEvent;
 import com.abaan404.boatrace.game.BoatRaceConfig;
-import com.abaan404.boatrace.game.events.BoatRacePlayerEvent;
-import com.abaan404.boatrace.game.items.BoatRaceItems;
-import com.abaan404.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.items.BoatRaceItems;
+import com.abaan404.boatrace.maps.TrackMap;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
@@ -95,7 +95,7 @@ public class TimeTrial {
         Item item = player.getStackInHand(hand).getItem();
 
         // resets everything
-        if (item.equals(BoatRaceItems.TIME_TRIAL_RESET)) {
+        if (item.equals(BoatRaceItems.RESET)) {
             this.stageManager.toParticipant(player);
             this.stageManager.spawnPlayer(player);
             return ActionResult.CONSUME;

@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game.maps;
+package com.abaan404.boatrace.maps;
 
 import java.io.IOException;
 import java.util.Optional;

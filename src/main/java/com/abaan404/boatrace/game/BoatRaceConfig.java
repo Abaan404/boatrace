@@ -8,9 +8,10 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import net.minecraft.util.Identifier;
+import net.minecraft.util.StringIdentifiable;
 
-public record BoatRaceConfig(BoatRaceConfig.Map map, Optional<BoatRaceConfig.Qualifying> qualifying,
-        Optional<BoatRaceConfig.Race> race) {
+public record BoatRaceConfig(Map map, Optional<Qualifying> qualifying,
+        Optional<Race> race) {
 
     public static final MapCodec<BoatRaceConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Map.CODEC.fieldOf("map").forGetter(BoatRaceConfig::map),
@@ -26,11 +27,30 @@ public record BoatRaceConfig(BoatRaceConfig.Map map, Optional<BoatRaceConfig.Qua
     }
 
     public record Qualifying(
-            float duration) {
+            float duration,
+            StartFrom startFrom) {
 
         public static final Codec<Qualifying> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.FLOAT.fieldOf("duration").forGetter(Qualifying::duration))
+                Codec.FLOAT.fieldOf("duration").forGetter(Qualifying::duration),
+                StartFrom.CODEC.optionalFieldOf("start_from", StartFrom.FINISH).forGetter(Qualifying::startFrom))
                 .apply(instance, Qualifying::new));
+
+        public enum StartFrom implements StringIdentifiable {
+            PIT_BOX("pit_box"), FINISH("finish");
+
+            private final String name;
+
+            public static final Codec<StartFrom> CODEC = StringIdentifiable.createCodec(StartFrom::values);
+
+            StartFrom(String name) {
+                this.name = name;
+            }
+
+            @Override
+            public String asString() {
+                return name;
+            }
+        }
     }
 
     public record Race(

@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game.items;
+package com.abaan404.boatrace.items;
 
 import java.util.function.Function;
 
@@ -28,7 +28,7 @@ public class BoatRaceItems {
             .displayName(Text.translatable("itemGroup.boatrace"))
             .build();
 
-    public static final SimplePolymerItem TIME_TRIAL_RESET = register("time_trial_reset", SimplePolymerItem::new,
+    public static final SimplePolymerItem RESET = register("reset", SimplePolymerItem::new,
             new SimplePolymerItem.Settings());
 
     public static final SimplePolymerItem TIME_TRIAL_RESPAWN = register("time_trial_respawn", SimplePolymerItem::new,
@@ -37,7 +37,7 @@ public class BoatRaceItems {
     public static void initialize() {
         Registry.register(Registries.ITEM_GROUP, ITEM_GROUP_KEY, ITEM_GROUP);
         ItemGroupEvents.modifyEntriesEvent(ITEM_GROUP_KEY).register(itemGroup -> {
-            itemGroup.add(TIME_TRIAL_RESET);
+            itemGroup.add(RESET);
             itemGroup.add(TIME_TRIAL_RESPAWN);
         });
     }

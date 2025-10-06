@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game.maps;
+package com.abaan404.boatrace.maps;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -46,7 +46,7 @@ public class TrackMap {
         List<RespawnRegion> gridBoxes = template.getMetadata()
                 .getRegions("grid_box")
                 .filter(gb -> gb.getData().getInt("index").isPresent())
-                .sorted(Comparator.comparingInt(gb -> gb.getData().getInt("index", -1)))
+                .sorted(Comparator.comparingInt(gb -> gb.getData().getInt("index").orElseThrow()))
                 .map(RespawnRegion::of)
                 .toList();
 
@@ -62,11 +62,11 @@ public class TrackMap {
                 .findFirst()
                 .orElse(BlockBounds.ofBlock(BlockPos.ORIGIN));
 
-        List<BlockBounds> pitBoxes = template.getMetadata()
+        List<RespawnRegion> pitBoxes = template.getMetadata()
                 .getRegions("pit_box")
                 .filter(pb -> pb.getData().getInt("index").isPresent())
                 .sorted(Comparator.comparingInt(pb -> pb.getData().getInt("index").orElseThrow()))
-                .map(TemplateRegion::getBounds)
+                .map(RespawnRegion::of)
                 .toList();
 
         this.regions = new Regions(
@@ -205,7 +205,7 @@ public class TrackMap {
     public record Regions(
             RespawnRegion finish, List<RespawnRegion> checkpoints,
             List<RespawnRegion> gridBoxes,
-            BlockBounds pitEntry, BlockBounds pitExit, List<BlockBounds> pitBoxes) {
+            BlockBounds pitEntry, BlockBounds pitExit, List<RespawnRegion> pitBoxes) {
     }
 
     public record Meta(

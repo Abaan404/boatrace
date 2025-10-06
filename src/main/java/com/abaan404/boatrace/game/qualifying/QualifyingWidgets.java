@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game.timetrial;
+package com.abaan404.boatrace.game.qualifying;
 
 import java.util.List;
 import java.util.Map;
@@ -15,28 +15,31 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.World;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.api.game.common.widget.SidebarWidget;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
-public final class TimeTrialWidgets {
+public class QualifyingWidgets {
     private final GameSpace gameSpace;
+    private final ServerWorld world;
     private final GlobalWidgets widgets;
     private final TrackMap track;
-
-    private final Map<PlayerRef, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
 
     private static final int SIDEBAR_RANKING_COMPARED = 1;
     private static final int SIDEBAR_RANKING_TOP = 5;
 
-    public TimeTrialWidgets(GameSpace gameSpace, GlobalWidgets widgets, TrackMap track) {
+    private final Map<PlayerRef, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
+
+    public QualifyingWidgets(GameSpace gameSpace, ServerWorld world, GlobalWidgets widgets, TrackMap track) {
         this.gameSpace = gameSpace;
+        this.world = world;
         this.track = track;
         this.widgets = widgets;
+
     }
 
     /**
@@ -44,9 +47,9 @@ public final class TimeTrialWidgets {
      *
      * @param stageManager The game's state.
      */
-    public void tick(TimeTrialStageManager stageManager) {
+    public void tick(QualifyingStageManager stageManager) {
         this.tickActionBar(stageManager);
-        this.tickSidebar();
+        this.tickSidebar(stageManager);
     }
 
     /**
@@ -54,15 +57,11 @@ public final class TimeTrialWidgets {
      *
      * @param stageManager The stage manager.
      */
-    private void tickActionBar(TimeTrialStageManager stageManager) {
-        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
-        Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+    private void tickActionBar(QualifyingStageManager stageManager) {
+        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
             if (!stageManager.isParticipant(player)) {
-                Text freeRoamText = Text.literal("Free Roaming").formatted(Formatting.GRAY, Formatting.ITALIC,
-                        Formatting.BOLD);
-                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(freeRoamText));
                 continue;
             }
 
@@ -100,7 +99,10 @@ public final class TimeTrialWidgets {
                 return;
             }
 
-            Text actionBarText = WidgetTextUtil.actionBarTimerSplit(timer, currentSplit, pbSplit);
+            int position = leaderboard.getTrackLeaderboardPosition(this.track, ref.id());
+            MutableText actionBarText = Text.empty()
+                    .append(Text.literal(String.format("P%d ", position)).formatted(Formatting.BOLD))
+                    .append(WidgetTextUtil.actionBarTimerSplit(timer, currentSplit, pbSplit));
 
             player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
         }
@@ -109,19 +111,17 @@ public final class TimeTrialWidgets {
     /**
      * Displays track meta and track leaderboard.
      */
-    private void tickSidebar() {
-        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
-        Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+    private void tickSidebar(QualifyingStageManager stageManager) {
+        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
             PlayerRef ref = PlayerRef.of(player);
 
             if (!this.sidebars.containsKey(ref)) {
                 SidebarWidget newSidebar = this.widgets.addSidebar(
-                        WidgetTextUtil.scoreboardTitleText("TimeTrial"),
+                        WidgetTextUtil.scoreboardTitleText("Qualifying"),
                         p -> PlayerRef.of(p).equals(ref));
                 newSidebar.addPlayer(player);
-
                 this.sidebars.put(ref, newSidebar);
             }
 
@@ -130,13 +130,13 @@ public final class TimeTrialWidgets {
             sidebar.set(content -> {
                 WidgetTextUtil.scoreboardTrackText(this.track.getMetaData()).forEach(content::add);
 
+                Text timeLeft = Text.literal(WidgetTextUtil.formatTime(stageManager.getTimeLeft(), true))
+                        .formatted(Formatting.BOLD, Formatting.DARK_AQUA);
+
+                content.add(timeLeft);
+
                 List<PersonalBest> pbs = leaderboard.getTrackLeaderboard(this.track);
                 SortedMap<Integer, PersonalBest> toDisplay = new Int2ObjectRBTreeMap<>();
-
-                if (pbs.isEmpty()) {
-                    content.add(Text.literal(" No records submitted.")
-                            .formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
-                }
 
                 int playerIndex = -1;
 
@@ -173,7 +173,7 @@ public final class TimeTrialWidgets {
                         int position = entry.getKey();
                         content.add(WidgetTextUtil.scoreboardLeaderboardText(
                                 entry.getValue(),
-                                position,
+                                entry.getKey(),
                                 entry.getValue().id().equals(ref.id())));
 
                         lastDisplayedTop = position;

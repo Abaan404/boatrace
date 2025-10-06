@@ -1,15 +1,14 @@
 package com.abaan404.boatrace.game.lobby;
 
-import net.minecraft.util.math.Vec3d;
+import com.abaan404.boatrace.maps.LobbyMap;
+
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
-
-import com.abaan404.boatrace.game.maps.LobbyMap;
-
-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 
 /**
  * Handle's spawning in the lobby.

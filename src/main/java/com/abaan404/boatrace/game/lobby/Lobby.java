@@ -1,22 +1,21 @@
 package com.abaan404.boatrace.game.lobby;
 
+import java.util.List;
+
+import com.abaan404.boatrace.game.BoatRaceConfig;
+import com.abaan404.boatrace.game.timetrial.TimeTrial;
+import com.abaan404.boatrace.maps.LobbyMap;
+import com.abaan404.boatrace.maps.TrackMap;
+
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.GameMode;
-
-import java.util.List;
-
-import com.abaan404.boatrace.game.BoatRaceConfig;
-import com.abaan404.boatrace.game.maps.LobbyMap;
-import com.abaan404.boatrace.game.maps.TrackMap;
-import com.abaan404.boatrace.game.timetrial.TimeTrial;
-
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameResult;
 import xyz.nucleoid.plasmid.api.game.GameSpace;

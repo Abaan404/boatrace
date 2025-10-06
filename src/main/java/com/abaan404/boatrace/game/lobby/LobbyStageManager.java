@@ -3,7 +3,7 @@ package com.abaan404.boatrace.game.lobby;
 import java.util.List;
 import java.util.Optional;
 
-import com.abaan404.boatrace.game.maps.TrackMap;
+import com.abaan404.boatrace.maps.TrackMap;
 
 /**
  * Handles lobby state.
