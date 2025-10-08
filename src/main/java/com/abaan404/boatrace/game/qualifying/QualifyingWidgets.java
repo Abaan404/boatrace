@@ -66,10 +66,10 @@ public class QualifyingWidgets {
             PlayerRef ref = PlayerRef.of(player);
             PersonalBest pb = leaderboard.getPersonalBest(this.track, ref.id());
 
-            List<Float> currentSplits = stageManager.splits.getSplits(ref);
-            List<Float> pbSplits = pb.splits();
+            List<Long> currentSplits = stageManager.splits.getSplits(ref);
+            List<Long> pbSplits = pb.splits();
 
-            long timer = (long) stageManager.splits.getTimer(ref);
+            long timer = stageManager.splits.getTimer(ref);
             int position = leaderboard.getTrackLeaderboardPosition(this.track, ref.id());
 
             // player has no pb or hasnt started a run yet

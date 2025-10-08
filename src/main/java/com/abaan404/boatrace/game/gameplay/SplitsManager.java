@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.server.world.ServerWorld;
@@ -18,8 +18,8 @@ import xyz.nucleoid.plasmid.api.util.PlayerRef;
 public class SplitsManager {
     private Set<PlayerRef> running = new ObjectOpenHashSet<>();
 
-    private Map<PlayerRef, Float> timer = new Object2FloatOpenHashMap<>();
-    private Map<PlayerRef, List<Float>> splits = new Object2ObjectOpenHashMap<>();
+    private Map<PlayerRef, Long> timer = new Object2LongOpenHashMap<>();
+    private Map<PlayerRef, List<Long>> splits = new Object2ObjectOpenHashMap<>();
 
     /**
      * Continuously run the timer for this player.
@@ -30,7 +30,7 @@ public class SplitsManager {
         this.running.add(player);
 
         // reset everything but the lap count.
-        this.timer.put(player, 0.0f);
+        this.timer.put(player, 0l);
         this.splits.remove(player);
     }
 
@@ -43,7 +43,7 @@ public class SplitsManager {
         this.running.remove(player);
 
         // reset everything but the lap count.
-        this.timer.put(player, 0.0f);
+        this.timer.put(player, 0l);
         this.splits.remove(player);
     }
 
@@ -54,7 +54,7 @@ public class SplitsManager {
      */
     public void tick(ServerWorld world) {
         for (PlayerRef player : this.running) {
-            float timer = this.timer.getOrDefault(player, 0.0f);
+            long timer = this.timer.getOrDefault(player, 0l);
             timer += world.getTickManager().getMillisPerTick();
             this.timer.put(player, timer);
         }
@@ -66,11 +66,11 @@ public class SplitsManager {
      * @param player The player to record.
      * @return The recorded split time.
      */
-    public float recordSplit(PlayerRef player) {
-        float lap = this.timer.getOrDefault(player, 0.0f);
+    public long recordSplit(PlayerRef player) {
+        long lap = this.timer.getOrDefault(player, 0l);
 
         if (!this.splits.containsKey(player)) {
-            List<Float> splits = new FloatArrayList();
+            List<Long> splits = new LongArrayList();
             splits.add(lap);
 
             this.splits.put(player, splits);
@@ -78,7 +78,7 @@ public class SplitsManager {
             return lap;
         }
 
-        List<Float> splits = this.splits.get(player);
+        List<Long> splits = this.splits.get(player);
         splits.add(lap);
 
         return lap;
@@ -90,8 +90,8 @@ public class SplitsManager {
      * @param player The player to reset for.
      * @return The last timer before a reset.
      */
-    public float reset(PlayerRef player) {
-        float timer = this.timer.getOrDefault(player, 0.0f);
+    public long reset(PlayerRef player) {
+        long timer = this.timer.getOrDefault(player, 0l);
         this.timer.remove(player);
         this.splits.remove(player);
 
@@ -104,8 +104,8 @@ public class SplitsManager {
      * @param player The player the get splits for.
      * @return The player's splits.
      */
-    public List<Float> getSplits(PlayerRef player) {
-        return Collections.unmodifiableList(this.splits.getOrDefault(player, FloatArrayList.of()));
+    public List<Long> getSplits(PlayerRef player) {
+        return Collections.unmodifiableList(this.splits.getOrDefault(player, LongArrayList.of()));
     }
 
     /**
@@ -114,7 +114,7 @@ public class SplitsManager {
      * @param player The player the get timer for.
      * @return The player's time.
      */
-    public float getTimer(PlayerRef player) {
-        return this.timer.getOrDefault(player, 0.0f);
+    public long getTimer(PlayerRef player) {
+        return this.timer.getOrDefault(player, 0l);
     }
 }

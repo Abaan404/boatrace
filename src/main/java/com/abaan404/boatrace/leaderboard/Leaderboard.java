@@ -106,7 +106,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
         newTrackLeaderboard.removeIf(pb -> pb.id().equals(personalBest.id()));
         newTrackLeaderboard.add(personalBest);
 
-        newTrackLeaderboard.sort((a, b) -> Float.compare(a.timer(), b.timer()));
+        newTrackLeaderboard.sort((a, b) -> Long.compare(a.timer(), b.timer()));
 
         Map<String, List<PersonalBest>> newLeaderboard = new Object2ObjectOpenHashMap<>(this.leaderboard);
         newLeaderboard.put(String.valueOf(track.hashCode()), newTrackLeaderboard);
@@ -123,7 +123,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      */
     private boolean validatePersonalBest(TrackMap track, PersonalBest newPersonalBest) {
         PersonalBest currentPersonalBest = this.getPersonalBest(track, newPersonalBest.id());
-        if (newPersonalBest.timer() > currentPersonalBest.timer() && !Float.isNaN(newPersonalBest.timer())) {
+        if (newPersonalBest.timer() > currentPersonalBest.timer()) {
             // not a better pb
             return false;
         }
@@ -149,9 +149,9 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
                 break;
         }
 
-        float prevFloat = 0.0f;
-        for (float split : newPersonalBest.splits()) {
-            if (split < prevFloat) {
+        long prevSplit = 0l;
+        for (long split : newPersonalBest.splits()) {
+            if (split < prevSplit) {
                 BoatRace.LOGGER.warn("Splits dont ascend in the personal best ({}) for track \"{}\"",
                         newPersonalBest.toString(), track.getMeta().name());
                 return false;
@@ -163,7 +163,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
                 return false;
             }
 
-            prevFloat = split;
+            prevSplit = split;
         }
 
         return true;
