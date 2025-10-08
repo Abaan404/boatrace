@@ -147,7 +147,19 @@ public class QualifyingStageManager {
                     break;
                 }
 
-                case LOOP:
+                case LOOP: {
+                    leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
+                            player.getNameForScoreboard(),
+                            player.getUuid(),
+                            this.splits.getTimer(ref),
+                            this.splits.getSplits(ref)));
+
+                    // start a new run
+                    this.splits.reset(ref);
+                    this.splits.recordSplit(ref);
+                    break;
+                }
+
                 case FINISH: {
                     leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
                             player.getNameForScoreboard(),
@@ -155,8 +167,8 @@ public class QualifyingStageManager {
                             this.splits.getTimer(ref),
                             this.splits.getSplits(ref)));
 
-                    this.splits.reset(ref);
-                    this.splits.recordSplit(ref);
+                    // stop the timer
+                    this.splits.stop(ref);
                     break;
                 }
 

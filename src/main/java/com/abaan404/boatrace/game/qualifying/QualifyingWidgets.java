@@ -38,7 +38,6 @@ public class QualifyingWidgets {
         this.world = world;
         this.track = track;
         this.widgets = widgets;
-
     }
 
     /**
