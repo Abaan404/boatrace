@@ -68,7 +68,6 @@ public class CheckpointsManager {
                 case CIRCULAR: {
                     // checkpoint was looped back to the start
                     if (start.bounds().contains(player.getBlockPos())) {
-                        this.checkpoints.remove(ref);
                         this.laps.put(ref, this.laps.getOrDefault(ref, 0) + 1);
                         return TickResult.LOOP;
                     }
