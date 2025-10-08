@@ -21,42 +21,72 @@ public final class WidgetTextUtil {
     public static final Text PAD_SCOREBOARD_POSITION = Text.literal("   ○ ○ ○").formatted(Formatting.DARK_GRAY);
 
     /**
-     * Create a timer and split text for the action bar seperated by arrows to
-     * compare runs with personal bests.
+     * Create a text for player position on the leaderboard.
      *
-     * @param currentTimer The player's current timer.
-     * @param currentSplit The player's current split.
-     * @param pbSplit      The player's best split to compare against.
+     * @param position The player's position to display.
+     * @return A text if the position was valid otherwise an empty text.
      */
-    public static Text actionBarTimerSplit(int position, long currentTimer, long currentSplit, long pbSplit) {
+    public static Text actionBarPosition(int position) {
+        if (position > -1) {
+            return Text.literal(String.format("P%d", position + 1)).formatted(Formatting.AQUA, Formatting.BOLD);
+        } else {
+            return Text.empty();
+        }
+    }
+
+    /**
+     * Create a text to show remaining checkpoints.
+     *
+     * @param checkpoint     The current checkpoint
+     * @param maxCheckpoints The total number of checkpoints
+     * @return The text showing checkpoints.
+     */
+    public static Text actionBarCheckpoint(int checkpoint, int maxCheckpoints) {
+        return Text.literal(String.format("(%d/%d)", checkpoint, maxCheckpoints))
+                .formatted(Formatting.DARK_GRAY, Formatting.BOLD);
+    }
+
+    /**
+     * Create a text to show the current timer.
+     *
+     * @param timer The time in ms.
+     * @return The timer text.
+     */
+    public static Text actionBarTimer(long timer) {
+        return Text.literal(WidgetTextUtil.formatTime(timer, true))
+                .formatted(Formatting.BOLD);
+    }
+
+    /**
+     * Create a text to show the current timer along with splits.
+     *
+     * @param timer        The timer in ms.
+     * @param currentSplit The current split in ms.
+     * @param pbSplit      The best split in ms to be compared against.
+     * @return The timer and splits text seperated by a symbol.
+     */
+    public static Text actionBarTimerDelta(long timer, long currentSplit, long pbSplit) {
         long delta = currentSplit - pbSplit;
 
-        MutableText text = Text.empty();
-
-        if (position > -1) {
-            text.append(Text.literal(String.format("P%d ", position + 1))
-                    .formatted(Formatting.AQUA));
-        }
-
-        text.append(Text.literal(WidgetTextUtil.formatTime(currentTimer, true)));
-
-        // faster
         if (pbSplit > currentSplit) {
-            return text
+            return Text.empty()
+                    .append(WidgetTextUtil.actionBarTimer(timer))
                     .append(Text.literal(" ▲ ").formatted(Formatting.BLUE))
                     .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.BLUE))
                     .formatted(Formatting.BOLD);
         }
         // slower
         else if (pbSplit < currentSplit) {
-            return text
+            return Text.empty()
+                    .append(WidgetTextUtil.actionBarTimer(timer))
                     .append(Text.literal(" ▼ ").formatted(Formatting.RED))
                     .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.RED))
                     .formatted(Formatting.BOLD);
         }
         // equal
         else {
-            return text
+            return Text.empty()
+                    .append(WidgetTextUtil.actionBarTimer(timer))
                     .append(Text.literal(" ◇ ").formatted(Formatting.GRAY))
                     .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.GRAY))
                     .formatted(Formatting.BOLD);
@@ -112,7 +142,7 @@ public final class WidgetTextUtil {
      * @param pb        The player's personal best.
      * @param position  The player's position in the leaderboard.
      * @param highlight Should this text be highlighted (bolded).
-     * @return A text ready to be displayed on the leaderboard.
+     * @return A text ready to display player's pb.
      */
     public static Text scoreboardLeaderboardText(PersonalBest pb, int position, boolean highlight) {
         MutableText text = Text.empty();

@@ -14,6 +14,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
@@ -57,6 +58,13 @@ public final class TimeTrialWidgets {
         ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
         Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
+        int maxCheckpoints = switch (this.track.getMeta().layout()) {
+            // dont count start
+            case CIRCULAR -> this.track.getRegions().checkpoints().size() - 1;
+            // dont count start and end
+            case LINEAR -> this.track.getRegions().checkpoints().size() - 2;
+        };
+
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
             if (!stageManager.isParticipant(player)) {
                 Text freeRoamText = Text.literal("Free Roaming").formatted(Formatting.GRAY, Formatting.ITALIC,
@@ -73,30 +81,26 @@ public final class TimeTrialWidgets {
 
             long timer = stageManager.splits.getTimer(ref);
             int position = leaderboard.getTrackLeaderboardPosition(this.track, ref.id());
+            int checkpoint = stageManager.checkpoints.getCheckpointIndex(ref);
 
-            // player has no pb or hasnt started a run yet
-            if (pbSplits.isEmpty() || currentSplits.isEmpty()) {
-                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
-                        WidgetTextUtil.actionBarTimerSplit(position, timer, 0, 0)));
-                return;
+            MutableText actionBarText = Text.empty();
+
+            // player has a position
+            if (!pbSplits.isEmpty()) {
+                actionBarText.append(WidgetTextUtil.actionBarPosition(position)).append(" ");
             }
-
-            long currentSplit;
-            long pbSplit;
 
             try {
-                int checkpointIndex = stageManager.checkpoints.getCheckpointIndex(ref);
+                long currentSplit = currentSplits.get(checkpoint).longValue();
+                long pbSplit = pbSplits.get(checkpoint).longValue();
+                actionBarText.append(WidgetTextUtil.actionBarTimerDelta(timer, currentSplit, pbSplit)).append(" ");
 
-                currentSplit = currentSplits.get(checkpointIndex).longValue();
-                pbSplit = pbSplits.get(checkpointIndex).longValue();
             } catch (IndexOutOfBoundsException e) {
-                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
-                        WidgetTextUtil.actionBarTimerSplit(position, timer, 0, 0)));
-                return;
+                actionBarText.append(WidgetTextUtil.actionBarTimer(timer)).append(" ");
             }
 
-            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
-                    WidgetTextUtil.actionBarTimerSplit(position, timer, currentSplit, pbSplit)));
+            actionBarText.append(WidgetTextUtil.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
+            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
         }
     }
 
