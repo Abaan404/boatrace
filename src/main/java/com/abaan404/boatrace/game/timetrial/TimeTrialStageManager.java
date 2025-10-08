@@ -31,7 +31,7 @@ public class TimeTrialStageManager {
     public final SplitsManager splits;
 
     private final BoatRaceSpawnLogic spawnLogic;
-    private final Set<PlayerRef> spectators;
+    private final Set<PlayerRef> participants;
 
     public TimeTrialStageManager(GameSpace gameSpace, ServerWorld world, TrackMap track) {
         this.gameSpace = gameSpace;
@@ -42,35 +42,46 @@ public class TimeTrialStageManager {
         this.splits = new SplitsManager();
 
         this.spawnLogic = new BoatRaceSpawnLogic(world);
-        this.spectators = new ObjectOpenHashSet<>();
+        this.participants = new ObjectOpenHashSet<>();
     }
 
     /**
-     * Spawn a player on the track, if they are a spectator, spawn them with a boat.
-     *
+     * Spawn a player on the track with a boat. Spectators spawn in free roam
+     * 
      * @param player The player.
      */
     public void spawnPlayer(ServerPlayerEntity player) {
         PlayerRef ref = PlayerRef.of(player);
         TrackMap.Regions regions = this.track.getRegions();
+        TrackMap.Meta meta = this.track.getMeta();
 
-        spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
+        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
 
-        if (this.spectators.contains(ref)) {
-            this.spawnLogic.spawnPlayer(player, regions.finish());
+        TrackMap.RespawnRegion respawn = regions.checkpoints().getFirst();
+
+        // spawn spectators at spawn without boats
+        if (!this.participants.contains(ref)) {
+            this.spawnLogic.spawnPlayer(player, respawn);
             return;
         }
-
-        TrackMap.RespawnRegion respawn = regions.finish();
 
         if (!regions.gridBoxes().isEmpty()) {
             respawn = regions.gridBoxes().getFirst();
         } else if (!regions.checkpoints().isEmpty()) {
-            respawn = regions.checkpoints().getLast();
+            switch (meta.layout()) {
+                case CIRCULAR: {
+                    respawn = regions.checkpoints().getLast();
+                    break;
+                }
+                case LINEAR: {
+                    respawn = regions.checkpoints().getFirst();
+                    break;
+                }
+            }
         }
 
         this.spawnLogic.spawnPlayer(player, respawn);
-        this.spawnLogic.spawnVehicle(player).orElseThrow();
+        this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
     }
 
     /**
@@ -85,7 +96,7 @@ public class TimeTrialStageManager {
 
         if (this.checkpoints.getCheckpointIndex(ref) != -1) {
             this.spawnLogic.spawnPlayer(player, this.checkpoints.getCheckpoint(ref));
-            this.spawnLogic.spawnVehicle(player).orElseThrow();
+            this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
 
         } else {
             this.spawnPlayer(player);
@@ -93,13 +104,37 @@ public class TimeTrialStageManager {
     }
 
     /**
-     * Despawn (or untrack) a player from the game.
+     * Gives the players items to control their state on track.
+     *
+     * @param player The player
+     */
+    public void updatePlayerInventory(ServerPlayerEntity player) {
+        PlayerInventory inventory = player.getInventory();
+        inventory.clear();
+
+        if (this.participants.contains(PlayerRef.of(player))) {
+            inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+            inventory.setStack(7, BoatRaceItems.TIME_TRIAL_RESPAWN.getDefaultStack());
+        } else {
+            inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+        }
+    }
+
+    /**
+     * Despawn a player from the game.
      *
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
         PlayerRef ref = PlayerRef.of(player);
-        this.spectators.remove(ref);
+        this.participants.remove(ref);
+
+        this.checkpoints.reset(ref);
+        this.splits.reset(ref);
+        this.splits.stop(ref);
+
+        PlayerInventory inventory = player.getInventory();
+        inventory.clear();
     }
 
     /**
@@ -109,35 +144,44 @@ public class TimeTrialStageManager {
         ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
         Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
+        this.splits.tick(this.world);
+
         for (ServerPlayerEntity player : this.gameSpace.getPlayers().participants()) {
             PlayerRef ref = PlayerRef.of(player);
 
-            if (this.spectators.contains(ref)) {
+            if (!this.participants.contains(ref)) {
                 continue;
             }
-
-            this.splits.tick(ref, this.world);
 
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
                     this.splits.run(ref);
+                    this.splits.recordSplit(ref);
+                    break;
+                }
+
+                case LOOP: {
+                    leaderboard = leaderboard.trySubmit(overworld, this.track, new PersonalBest(
+                            player.getNameForScoreboard(),
+                            player.getUuid(),
+                            this.splits.getTimer(ref),
+                            this.splits.getSplits(ref)));
+
+                    // start a new run
+                    this.splits.reset(ref);
+                    this.splits.recordSplit(ref);
                     break;
                 }
 
                 case FINISH: {
-                    PersonalBest pb = leaderboard.getPersonalBest(this.track, ref.id());
-                    float currentTimer = this.splits.getTimer(ref);
+                    leaderboard = leaderboard.trySubmit(overworld, this.track, new PersonalBest(
+                            player.getNameForScoreboard(),
+                            player.getUuid(),
+                            this.splits.getTimer(ref),
+                            this.splits.getSplits(ref)));
 
-                    if (currentTimer < pb.timer() || Float.isNaN(pb.timer())) {
-                        leaderboard = overworld.setAttached(Leaderboard.ATTACHMENT,
-                                leaderboard.setPersonalBest(this.track, new PersonalBest(
-                                        player.getNameForScoreboard(),
-                                        player.getUuid(),
-                                        currentTimer,
-                                        this.splits.getSplits(ref))));
-                    }
-
-                    this.splits.reset(ref);
+                    // stop the timer
+                    this.splits.stop(ref);
                     break;
                 }
 
@@ -157,40 +201,28 @@ public class TimeTrialStageManager {
      * Transition the player to a spectator. They can roam freely and explore the
      * track.
      *
-     * @param player The player
+     * @param player The player's ref
      */
-    public void toSpectator(ServerPlayerEntity player) {
-        PlayerRef ref = PlayerRef.of(player);
-        this.spectators.add(ref);
+    public void toSpectator(PlayerRef player) {
+        this.participants.remove(player);
 
-        this.checkpoints.reset(ref);
-        this.splits.reset(ref);
-        this.splits.stop(ref);
-
-        PlayerInventory inventory = player.getInventory();
-
-        inventory.clear();
-        inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+        this.checkpoints.reset(player);
+        this.splits.reset(player);
+        this.splits.stop(player);
     }
 
     /**
      * Transition a player to a participant. They can set and submit runs in this
      * mode.
      *
-     * @param player The player.
+     * @param player The player's ref
      */
-    public void toParticipant(ServerPlayerEntity player) {
-        PlayerRef ref = PlayerRef.of(player);
-        this.spectators.remove(ref);
+    public void toParticipant(PlayerRef player) {
+        this.participants.add(player);
 
-        this.checkpoints.reset(ref);
-        this.splits.reset(ref);
-        this.splits.stop(ref);
-
-        PlayerInventory inventory = player.getInventory();
-        inventory.clear();
-        inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
-        inventory.setStack(7, BoatRaceItems.TIME_TRIAL_RESPAWN.getDefaultStack());
+        this.checkpoints.reset(player);
+        this.splits.reset(player);
+        this.splits.stop(player);
     }
 
     /**
@@ -200,6 +232,6 @@ public class TimeTrialStageManager {
      * @return If they are on track ready to set a time.
      */
     public boolean isParticipant(ServerPlayerEntity player) {
-        return !this.spectators.contains(PlayerRef.of(player));
+        return this.participants.contains(PlayerRef.of(player));
     }
 }

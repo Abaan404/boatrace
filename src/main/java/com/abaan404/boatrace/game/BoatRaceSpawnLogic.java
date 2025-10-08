@@ -33,7 +33,7 @@ public class BoatRaceSpawnLogic {
      * @param player The player.
      */
     public void resetPlayer(ServerPlayerEntity player, GameMode gameMode) {
-        player.changeGameMode(GameMode.ADVENTURE);
+        player.changeGameMode(gameMode);
         player.setVelocity(Vec3d.ZERO);
         player.fallDistance = 0.0f;
     }
@@ -44,7 +44,7 @@ public class BoatRaceSpawnLogic {
      * @param player The player to mount.
      * @return The entity spawned.
      */
-    public Optional<VehicleEntity> spawnVehicle(ServerPlayerEntity player) {
+    public Optional<VehicleEntity> spawnVehicleAndRide(ServerPlayerEntity player) {
         BoatEntity boat = EntityType.OAK_BOAT.create(this.world, SpawnReason.COMMAND);
         if (boat == null) {
             return Optional.empty();

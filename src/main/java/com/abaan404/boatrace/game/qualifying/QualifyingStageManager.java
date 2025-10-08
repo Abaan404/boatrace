@@ -6,10 +6,13 @@ import com.abaan404.boatrace.game.BoatRaceConfig;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
+import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameMode;
@@ -21,34 +24,34 @@ public class QualifyingStageManager {
     private final ServerWorld world;
     private final BoatRaceConfig.Qualifying config;
     private final TrackMap track;
-    private final Map<PlayerRef, QualifyingPlayer> participants;
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
 
     private final BoatRaceSpawnLogic spawnLogic;
+    private final Map<PlayerRef, QualifyingPlayer> participants;
 
     private long timeLeft;
 
     public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig.Qualifying config, ServerWorld world,
-            TrackMap track, Map<PlayerRef, QualifyingPlayer> participants) {
+            TrackMap track) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
         this.track = track;
-        this.participants = participants;
 
         this.checkpoints = new CheckpointsManager(track);
         this.splits = new SplitsManager();
 
         this.spawnLogic = new BoatRaceSpawnLogic(world);
+        this.participants = new Object2ObjectOpenHashMap<>();
 
         this.timeLeft = (long) (config.duration() * 1000.0f); // duration stored in seconds
     }
 
     /**
-     * Spawn a player on the track, if they aren't a spectator, spawn them with a
-     * boat.
+     * Spawn a player on the track with a boat. Spectators spawn in minecraft's
+     * spectator gamemode
      *
      * @param player The player.
      */
@@ -56,39 +59,63 @@ public class QualifyingStageManager {
         PlayerRef ref = PlayerRef.of(player);
         TrackMap.Regions regions = this.track.getRegions();
 
-        if (this.participants.containsKey(ref)) {
-            spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-            this.spawnLogic.spawnPlayer(player, regions.finish());
+        // spawn spectators at spawn without boats
+        if (!this.participants.containsKey(ref)) {
+            this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+            this.spawnLogic.spawnPlayer(player, regions.checkpoints().getFirst());
             return;
         }
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
-        TrackMap.RespawnRegion respawn = regions.finish();
+        TrackMap.RespawnRegion respawn = regions.checkpoints().getFirst();
 
         switch (this.config.startFrom()) {
-            case FINISH: {
-                respawn = regions.finish();
+            case GRID_BOX: {
+                if (!regions.gridBoxes().isEmpty()) {
+                    respawn = regions.gridBoxes().getLast();
+                }
                 break;
             }
 
             case PIT_BOX: {
-                respawn = regions.pitBoxes().getLast();
+                if (!regions.pitBoxes().isEmpty()) {
+                    respawn = regions.pitBoxes().getLast();
+                }
                 break;
             }
         }
 
         this.spawnLogic.spawnPlayer(player, respawn);
-        this.spawnLogic.spawnVehicle(player).orElseThrow();
+        this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
     }
 
     /**
-     * Despawn (or untrack) a player from the game.
+     * Gives the players items to control their state on track.
+     *
+     * @param player The player
+     */
+    public void updatePlayerInventory(ServerPlayerEntity player) {
+        PlayerInventory inventory = player.getInventory();
+        inventory.clear();
+
+        inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+    }
+
+    /**
+     * Despawn a player from the game.
      *
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
         PlayerRef ref = PlayerRef.of(player);
         this.participants.remove(ref);
+
+        this.checkpoints.reset(ref);
+        this.splits.reset(ref);
+        this.splits.stop(ref);
+
+        PlayerInventory inventory = player.getInventory();
+        inventory.clear();
     }
 
     /**
@@ -96,13 +123,15 @@ public class QualifyingStageManager {
      * of this game.
      */
     public TickResult tickPlayers() {
-        // time ran out
-        if (this.timeLeft < 0) {
+        if (this.timeLeft <= 0) {
             return TickResult.END;
         }
 
-        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
         this.timeLeft -= this.world.getTickManager().getMillisPerTick();
+
+        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+
+        this.splits.tick(this.world);
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers().participants()) {
             PlayerRef ref = PlayerRef.of(player);
@@ -111,28 +140,23 @@ public class QualifyingStageManager {
                 continue;
             }
 
-            this.splits.tick(ref, this.world);
-
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
                     this.splits.run(ref);
+                    this.splits.recordSplit(ref);
                     break;
                 }
 
+                case LOOP:
                 case FINISH: {
-                    PersonalBest pb = leaderboard.getPersonalBest(this.track, ref.id());
-                    float currentTimer = this.splits.getTimer(ref);
-
-                    if (currentTimer < pb.timer() || Float.isNaN(pb.timer())) {
-                        leaderboard = this.world.setAttached(Leaderboard.ATTACHMENT,
-                                leaderboard.setPersonalBest(this.track, new PersonalBest(
-                                        player.getNameForScoreboard(),
-                                        player.getUuid(),
-                                        currentTimer,
-                                        this.splits.getSplits(ref))));
-                    }
+                    leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
+                            player.getNameForScoreboard(),
+                            player.getUuid(),
+                            this.splits.getTimer(ref),
+                            this.splits.getSplits(ref)));
 
                     this.splits.reset(ref);
+                    this.splits.recordSplit(ref);
                     break;
                 }
 
@@ -148,6 +172,35 @@ public class QualifyingStageManager {
         }
 
         return TickResult.IDLE;
+    }
+
+    /**
+     * Transition the player to a spectator. They can roam freely and explore the
+     * track.
+     *
+     * @param player The player's ref
+     */
+    public void toSpectator(PlayerRef player) {
+        this.participants.remove(player);
+
+        this.checkpoints.reset(player);
+        this.splits.reset(player);
+        this.splits.stop(player);
+    }
+
+    /**
+     * Transition a player to a participant. They can set and submit runs in this
+     * mode.
+     *
+     * @param player The player's ref
+     */
+    public void toParticipant(PlayerRef player) {
+        // TODO teams
+        this.participants.put(player, new QualifyingPlayer(0));
+
+        this.checkpoints.reset(player);
+        this.splits.reset(player);
+        this.splits.stop(player);
     }
 
     /**

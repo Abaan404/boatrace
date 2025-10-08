@@ -28,26 +28,38 @@ public final class WidgetTextUtil {
      * @param currentSplit The player's current split.
      * @param pbSplit      The player's best split to compare against.
      */
-    public static Text actionBarTimerSplit(long currentTimer, long currentSplit, long pbSplit) {
+    public static Text actionBarTimerSplit(int position, long currentTimer, long currentSplit, long pbSplit) {
         long delta = currentSplit - pbSplit;
+
+        MutableText text = Text.empty();
+
+        if (position > -1) {
+            text.append(Text.literal(String.format("P%d ", position + 1))
+                    .formatted(Formatting.AQUA));
+        }
+
+        text.append(Text.literal(WidgetTextUtil.formatTime(currentTimer, true)));
 
         // faster
         if (pbSplit > currentSplit) {
-            return Text.literal(WidgetTextUtil.formatTime(currentTimer, true)).formatted(Formatting.BOLD)
+            return text
                     .append(Text.literal(" ▲ ").formatted(Formatting.BLUE))
-                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.BLUE));
+                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.BLUE))
+                    .formatted(Formatting.BOLD);
         }
         // slower
         else if (pbSplit < currentSplit) {
-            return Text.literal(WidgetTextUtil.formatTime(currentTimer, true)).formatted(Formatting.BOLD)
+            return text
                     .append(Text.literal(" ▼ ").formatted(Formatting.RED))
-                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.RED));
+                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.RED))
+                    .formatted(Formatting.BOLD);
         }
         // equal
         else {
-            return Text.literal(WidgetTextUtil.formatTime(currentTimer, true)).formatted(Formatting.BOLD)
+            return text
                     .append(Text.literal(" ◇ ").formatted(Formatting.GRAY))
-                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.GRAY));
+                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.GRAY))
+                    .formatted(Formatting.BOLD);
         }
     }
 
@@ -59,11 +71,12 @@ public final class WidgetTextUtil {
      */
     public static Text scoreboardTitleText(String mode) {
         return Text.literal("    ")
-                .append(Text.literal("Boat").formatted(Formatting.RED, Formatting.BOLD))
+                .append(Text.literal("Boat").formatted(Formatting.RED))
                 .append(Text.literal("Race").formatted(Formatting.WHITE, Formatting.ITALIC))
                 .append(Text.literal(" ◇ ").formatted(Formatting.GRAY))
-                .append(Text.literal(mode).formatted(Formatting.DARK_GRAY, Formatting.BOLD))
-                .append(Text.literal("    "));
+                .append(Text.literal(mode).formatted(Formatting.DARK_GRAY))
+                .append(Text.literal("    "))
+                .formatted(Formatting.BOLD);
     }
 
     /**
@@ -77,9 +90,16 @@ public final class WidgetTextUtil {
 
         list.add(Text.empty());
         list.add(Text.literal(meta.name()).formatted(Formatting.BOLD));
-        list.add(Text.literal(" - By " + meta.authors().stream()
-                .collect(Collectors.joining(", ")))
-                .formatted(Formatting.GRAY, Formatting.ITALIC));
+
+        if (meta.authors().isEmpty()) {
+            list.add(Text.literal(" - By Unknown Author(s)")
+                    .formatted(Formatting.GRAY, Formatting.ITALIC));
+        } else {
+            list.add(Text.literal(" - By " + meta.authors().stream()
+                    .collect(Collectors.joining(", ")))
+                    .formatted(Formatting.GRAY, Formatting.ITALIC));
+        }
+
         list.add(Text.empty());
 
         return list;

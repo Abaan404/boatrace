@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Optional;
 
 import com.abaan404.boatrace.BoatRace;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.nbt.NbtString;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.StringIdentifiable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import xyz.nucleoid.map_templates.BlockBounds;
@@ -30,11 +32,10 @@ public class TrackMap {
     private TrackMap(MapTemplate template) {
         this.template = template;
 
-        RespawnRegion finish = template.getMetadata()
-                .getRegions("finish")
-                .map(RespawnRegion::of)
-                .findFirst()
-                .orElse(RespawnRegion.of());
+        this.meta = template.getMetadata()
+                .getData()
+                .decode(Meta.CODEC)
+                .orElse(Meta.of());
 
         List<RespawnRegion> checkpoints = template.getMetadata()
                 .getRegions("checkpoint")
@@ -42,6 +43,11 @@ public class TrackMap {
                 .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index").orElseThrow()))
                 .map(RespawnRegion::of)
                 .toList();
+
+        // make sure there is atleast one checkpoint in this track
+        if (checkpoints.size() == 0) {
+            checkpoints.add(RespawnRegion.of());
+        }
 
         List<RespawnRegion> gridBoxes = template.getMetadata()
                 .getRegions("grid_box")
@@ -70,27 +76,11 @@ public class TrackMap {
                 .toList();
 
         this.regions = new Regions(
-                finish,
                 checkpoints,
                 gridBoxes,
                 pitEntry,
                 pitExit,
                 pitBoxes);
-
-        String name = template.getMetadata()
-                .getData()
-                .getString("name", "Unknown");
-
-        List<String> authors = template.getMetadata()
-                .getData()
-                .getList("authors")
-                .map(nbtList -> nbtList.stream()
-                        .filter(e -> e instanceof NbtString)
-                        .map(e -> ((NbtString) e).asString().orElse("Unknown"))
-                        .toList())
-                .orElse(ObjectArrayList.of());
-
-        this.meta = new Meta(name, authors);
     }
 
     /**
@@ -154,7 +144,7 @@ public class TrackMap {
      *
      * @return The regions.
      */
-    public Meta getMetaData() {
+    public Meta getMeta() {
         return this.meta;
     }
 
@@ -190,11 +180,11 @@ public class TrackMap {
     }
 
     public record RespawnRegion(BlockBounds bounds, float respawnYaw, float respawnPitch) {
-        static RespawnRegion of() {
+        public static RespawnRegion of() {
             return new RespawnRegion(BlockBounds.ofBlock(BlockPos.ORIGIN), 0.0f, 0.0f);
         }
 
-        static RespawnRegion of(TemplateRegion templateRegion) {
+        private static RespawnRegion of(TemplateRegion templateRegion) {
             return new RespawnRegion(
                     templateRegion.getBounds(),
                     templateRegion.getData().getFloat("respawnYaw", 0.0f),
@@ -203,12 +193,53 @@ public class TrackMap {
     }
 
     public record Regions(
-            RespawnRegion finish, List<RespawnRegion> checkpoints,
+            List<RespawnRegion> checkpoints,
             List<RespawnRegion> gridBoxes,
             BlockBounds pitEntry, BlockBounds pitExit, List<RespawnRegion> pitBoxes) {
     }
 
     public record Meta(
-            String name, List<String> authors) {
+            String name, List<String> authors,
+            Layout layout) {
+
+        public static final MapCodec<Meta> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Codec.STRING.optionalFieldOf("name", "Unknown Track").forGetter(Meta::name),
+                Codec.STRING.listOf().optionalFieldOf("authors", List.of()).forGetter(Meta::authors),
+                Layout.CODEC.optionalFieldOf("layout", Layout.CIRCULAR).forGetter(Meta::layout))
+                .apply(instance, Meta::new));
+
+        public static Meta of() {
+            return new Meta("Unknown Track", List.of(), Layout.CIRCULAR);
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((name == null) ? 0 : name.hashCode());
+            result = prime * result + ((authors == null) ? 0 : authors.hashCode());
+
+            // use enum's names for serializing hashCodes
+            result = prime * result + ((layout == null) ? 0 : layout.toString().hashCode());
+            return result;
+        }
+    }
+
+    public enum Layout implements StringIdentifiable {
+        CIRCULAR("circular"),
+        LINEAR("linear");
+
+        private final String name;
+
+        public static final Codec<Layout> CODEC = StringIdentifiable.createCodec(Layout::values);
+
+        Layout(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String asString() {
+            return this.name;
+        }
     }
 }

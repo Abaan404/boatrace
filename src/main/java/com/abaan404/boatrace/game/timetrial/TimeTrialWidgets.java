@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 
-import com.abaan404.boatrace.BoatRace;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
@@ -73,16 +72,12 @@ public final class TimeTrialWidgets {
             List<Float> pbSplits = pb.splits();
 
             long timer = (long) stageManager.splits.getTimer(ref);
+            int position = leaderboard.getTrackLeaderboardPosition(this.track, ref.id());
 
             // player has no pb or hasnt started a run yet
             if (pbSplits.isEmpty() || currentSplits.isEmpty()) {
-                player.networkHandler
-                        .sendPacket(new OverlayMessageS2CPacket(WidgetTextUtil.actionBarTimerSplit(timer, 0, 0)));
-                return;
-            }
-
-            // something has gone wrong, exit
-            if (pb.splits().size() != this.track.getRegions().checkpoints().size()) {
+                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
+                        WidgetTextUtil.actionBarTimerSplit(position, timer, 0, 0)));
                 return;
             }
 
@@ -95,14 +90,13 @@ public final class TimeTrialWidgets {
                 currentSplit = currentSplits.get(checkpointIndex).longValue();
                 pbSplit = pbSplits.get(checkpointIndex).longValue();
             } catch (IndexOutOfBoundsException e) {
-                // this should never happen.
-                BoatRace.LOGGER.warn("dev is bald.");
+                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
+                        WidgetTextUtil.actionBarTimerSplit(position, timer, 0, 0)));
                 return;
             }
 
-            Text actionBarText = WidgetTextUtil.actionBarTimerSplit(timer, currentSplit, pbSplit);
-
-            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
+            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
+                    WidgetTextUtil.actionBarTimerSplit(position, timer, currentSplit, pbSplit)));
         }
     }
 
@@ -128,7 +122,7 @@ public final class TimeTrialWidgets {
             SidebarWidget sidebar = this.sidebars.get(ref);
 
             sidebar.set(content -> {
-                WidgetTextUtil.scoreboardTrackText(this.track.getMetaData()).forEach(content::add);
+                WidgetTextUtil.scoreboardTrackText(this.track.getMeta()).forEach(content::add);
 
                 List<PersonalBest> pbs = leaderboard.getTrackLeaderboard(this.track);
                 SortedMap<Integer, PersonalBest> toDisplay = new Int2ObjectRBTreeMap<>();

@@ -32,11 +32,11 @@ public record BoatRaceConfig(Map map, Optional<Qualifying> qualifying,
 
         public static final Codec<Qualifying> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.FLOAT.fieldOf("duration").forGetter(Qualifying::duration),
-                StartFrom.CODEC.optionalFieldOf("start_from", StartFrom.FINISH).forGetter(Qualifying::startFrom))
+                StartFrom.CODEC.optionalFieldOf("start_from", StartFrom.PIT_BOX).forGetter(Qualifying::startFrom))
                 .apply(instance, Qualifying::new));
 
         public enum StartFrom implements StringIdentifiable {
-            PIT_BOX("pit_box"), FINISH("finish");
+            PIT_BOX("pit_box"), GRID_BOX("grid_box");
 
             private final String name;
 

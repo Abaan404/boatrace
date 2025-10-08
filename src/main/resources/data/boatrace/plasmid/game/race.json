@@ -4,7 +4,7 @@
         "track": "boatrace:tracks/test_2"
     },
     "qualifying": {
-        "duration": 3000
+        "duration": 300
     },
     "race": {
         "max_duration": 300,

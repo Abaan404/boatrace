@@ -1,9 +1,12 @@
 package com.abaan404.boatrace.game.timetrial;
 
+import java.util.function.Consumer;
+
 import com.abaan404.boatrace.events.BoatRacePlayerEvent;
 import com.abaan404.boatrace.game.BoatRaceConfig;
 import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.maps.TrackMap;
+import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
@@ -19,7 +22,9 @@ import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
+import xyz.nucleoid.plasmid.api.game.player.JoinOfferResult;
 import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
+import xyz.nucleoid.plasmid.api.util.PlayerRef;
 import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.item.ItemUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
@@ -49,6 +54,8 @@ public class TimeTrial {
         game.setRule(GameRuleType.HUNGER, EventResult.DENY);
         game.setRule(GameRuleType.FALL_DAMAGE, EventResult.DENY);
         game.setRule(GameRuleType.MODIFY_INVENTORY, EventResult.DENY);
+        game.setRule(GameRuleType.SWAP_OFFHAND, EventResult.DENY);
+        game.setRule(GameRuleType.THROW_ITEMS, EventResult.DENY);
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
@@ -59,17 +66,35 @@ public class TimeTrial {
 
         game.listen(BoatRacePlayerEvent.DISMOUNT, timeTrial::onDismount);
 
+        game.listen(GamePlayerEvents.OFFER, timeTrial::offerPlayer);
+        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
         game.listen(GamePlayerEvents.ADD, timeTrial::addPlayer);
         game.listen(GamePlayerEvents.REMOVE, timeTrial::removePlayer);
-        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
-        game.listen(GamePlayerEvents.OFFER, JoinOffer::acceptParticipants);
 
         game.listen(GameActivityEvents.TICK, timeTrial::tick);
     }
 
+    private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
+        Consumer<PlayerRef> mode = this.stageManager::toSpectator;
+        switch (offer.intent()) {
+            case PLAY:
+                mode = this.stageManager::toParticipant;
+                break;
+            case SPECTATE:
+                mode = this.stageManager::toSpectator;
+                break;
+        }
+
+        for (GameProfile profile : offer.players()) {
+            mode.accept(PlayerRef.of(profile));
+        }
+
+        return offer.accept();
+    }
+
     private EventResult addPlayer(ServerPlayerEntity player) {
-        this.stageManager.toParticipant(player);
         this.stageManager.spawnPlayer(player);
+        this.stageManager.updatePlayerInventory(player);
         return EventResult.DENY;
     }
 
@@ -81,12 +106,15 @@ public class TimeTrial {
     private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
         player.setHealth(20.0f);
         this.stageManager.respawnPlayer(player);
+        this.stageManager.updatePlayerInventory(player);
         return EventResult.DENY;
     }
 
     private EventResult onDismount(ServerPlayerEntity player, Entity vehicle) {
         vehicle.discard();
-        this.stageManager.toSpectator(player);
+        this.stageManager.toSpectator(PlayerRef.of(player));
+        this.stageManager.respawnPlayer(player);
+        this.stageManager.updatePlayerInventory(player);
 
         return EventResult.DENY;
     }
@@ -94,16 +122,18 @@ public class TimeTrial {
     private ActionResult onItemUse(ServerPlayerEntity player, Hand hand) {
         Item item = player.getStackInHand(hand).getItem();
 
-        // resets everything
+        // turn them into a participant and spawn them as if they just started
         if (item.equals(BoatRaceItems.RESET)) {
-            this.stageManager.toParticipant(player);
+            this.stageManager.toParticipant(PlayerRef.of(player));
             this.stageManager.spawnPlayer(player);
+            this.stageManager.updatePlayerInventory(player);
             return ActionResult.CONSUME;
         }
 
-        // dont reset anything, just respawn at the last checkpoint
+        // only respawn the player at their last checkpoint
         else if (item.equals(BoatRaceItems.TIME_TRIAL_RESPAWN)) {
             this.stageManager.respawnPlayer(player);
+            this.stageManager.updatePlayerInventory(player);
             return ActionResult.CONSUME;
         }
 

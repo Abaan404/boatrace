@@ -14,6 +14,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 
 /**
@@ -57,7 +58,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
                 .getOrDefault(String.valueOf(track.hashCode()), ObjectArrayList.of()).stream()
                 .filter(pair -> pair.id().equals(playerUuid))
                 .findFirst()
-                .orElse(PersonalBest.EMPTY);
+                .orElse(PersonalBest.of());
     }
 
     /**
@@ -77,18 +78,29 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     }
 
     /**
-     * Sets the personal best for this player on this track.
+     * submits the personal best for this track if the run is valid.
      *
      * @param track        The track.
-     * @param personalBest Personal best to create or overwrite.
+     * @param personalBest Personal best to submit.
      * @return A new leaderboard with the new personal best.
      */
-    public Leaderboard setPersonalBest(TrackMap track, PersonalBest personalBest) {
-        // invalid number of splits, reject
-        if (personalBest.splits().size() != track.getRegions().checkpoints().size()) {
+    public Leaderboard trySubmit(ServerWorld world, TrackMap track, PersonalBest personalBest) {
+        // invalid pb, reject
+        if (!this.validatePersonalBest(track, personalBest)) {
             return this;
         }
 
+        return this.submit(world, track, personalBest);
+    }
+
+    /**
+     * submits the personal best for this track.
+     *
+     * @param track        The track.
+     * @param personalBest Personal best to submit.
+     * @return A new leaderboard with the new personal best.
+     */
+    public Leaderboard submit(ServerWorld world, TrackMap track, PersonalBest personalBest) {
         List<PersonalBest> newTrackLeaderboard = new ObjectArrayList<>(this.getTrackLeaderboard(track));
 
         newTrackLeaderboard.removeIf(pb -> pb.id().equals(personalBest.id()));
@@ -99,6 +111,61 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
         Map<String, List<PersonalBest>> newLeaderboard = new Object2ObjectOpenHashMap<>(this.leaderboard);
         newLeaderboard.put(String.valueOf(track.hashCode()), newTrackLeaderboard);
 
-        return new Leaderboard(newLeaderboard);
+        return world.setAttached(Leaderboard.ATTACHMENT, new Leaderboard(newLeaderboard));
+    }
+
+    /**
+     * Validates the run and checks if its a better run.
+     *
+     * @param track           The track the run belongs to.
+     * @param newPersonalBest The new personal best to validate.
+     * @return If the run was valid and is ready to be submitted.
+     */
+    private boolean validatePersonalBest(TrackMap track, PersonalBest newPersonalBest) {
+        PersonalBest currentPersonalBest = this.getPersonalBest(track, newPersonalBest.id());
+        if (newPersonalBest.timer() > currentPersonalBest.timer() && !Float.isNaN(newPersonalBest.timer())) {
+            // not a better pb
+            return false;
+        }
+
+        switch (track.getMeta().layout()) {
+            case CIRCULAR:
+                if (newPersonalBest.splits().size() != track.getRegions().checkpoints().size()) {
+                    BoatRace.LOGGER.warn("Invalid number of splits in the personal best ({}) for track \"{}\"",
+                            newPersonalBest.toString(), track.getMeta().name());
+                    return false;
+                }
+
+                break;
+            case LINEAR:
+                if (newPersonalBest.splits().size() + 1 != track.getRegions().checkpoints().size()) {
+                    BoatRace.LOGGER.warn("Invalid number of splits in the personal best ({}) for track \"{}\"",
+                            newPersonalBest.toString(), track.getMeta().name());
+                    return false;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        float prevFloat = 0.0f;
+        for (float split : newPersonalBest.splits()) {
+            if (split < prevFloat) {
+                BoatRace.LOGGER.warn("Splits dont ascend in the personal best ({}) for track \"{}\"",
+                        newPersonalBest.toString(), track.getMeta().name());
+                return false;
+            }
+
+            if (split > newPersonalBest.timer()) {
+                BoatRace.LOGGER.warn("A split was greater than the timer in the personal best ({}) for track \"{}\"",
+                        newPersonalBest.toString(), track.getMeta().name());
+                return false;
+            }
+
+            prevFloat = split;
+        }
+
+        return true;
     }
 }

@@ -28,6 +28,10 @@ public class SplitsManager {
      */
     public void run(PlayerRef player) {
         this.running.add(player);
+
+        // reset everything but the lap count.
+        this.timer.put(player, 0.0f);
+        this.splits.remove(player);
     }
 
     /**
@@ -37,22 +41,23 @@ public class SplitsManager {
      */
     public void stop(PlayerRef player) {
         this.running.remove(player);
+
+        // reset everything but the lap count.
+        this.timer.put(player, 0.0f);
+        this.splits.remove(player);
     }
 
     /**
-     * Update the timer according to the world's tick rate.
+     * Update every player's timer according to the world's tick rate.
      *
-     * @param player The player to update.
-     * @param world  The world to fetch mspt from.
+     * @param world The world to fetch mspt from.
      */
-    public void tick(PlayerRef player, ServerWorld world) {
-        if (!this.running.contains(player)) {
-            return;
+    public void tick(ServerWorld world) {
+        for (PlayerRef player : this.running) {
+            float timer = this.timer.getOrDefault(player, 0.0f);
+            timer += world.getTickManager().getMillisPerTick();
+            this.timer.put(player, timer);
         }
-
-        float split = this.timer.getOrDefault(player, 0.0f);
-        split += world.getTickManager().getMillisPerTick();
-        this.timer.put(player, split);
     }
 
     /**

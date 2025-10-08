@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 
-import com.abaan404.boatrace.BoatRace;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
@@ -15,7 +14,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
@@ -72,16 +70,12 @@ public class QualifyingWidgets {
             List<Float> pbSplits = pb.splits();
 
             long timer = (long) stageManager.splits.getTimer(ref);
+            int position = leaderboard.getTrackLeaderboardPosition(this.track, ref.id());
 
             // player has no pb or hasnt started a run yet
             if (pbSplits.isEmpty() || currentSplits.isEmpty()) {
-                player.networkHandler
-                        .sendPacket(new OverlayMessageS2CPacket(WidgetTextUtil.actionBarTimerSplit(timer, 0, 0)));
-                return;
-            }
-
-            // something has gone wrong, exit
-            if (pb.splits().size() != this.track.getRegions().checkpoints().size()) {
+                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
+                        WidgetTextUtil.actionBarTimerSplit(position, timer, 0, 0)));
                 return;
             }
 
@@ -94,17 +88,13 @@ public class QualifyingWidgets {
                 currentSplit = currentSplits.get(checkpointIndex).longValue();
                 pbSplit = pbSplits.get(checkpointIndex).longValue();
             } catch (IndexOutOfBoundsException e) {
-                // this should never happen.
-                BoatRace.LOGGER.warn("dev is bald.");
+                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
+                        WidgetTextUtil.actionBarTimerSplit(position, timer, 0, 0)));
                 return;
             }
 
-            int position = leaderboard.getTrackLeaderboardPosition(this.track, ref.id());
-            MutableText actionBarText = Text.empty()
-                    .append(Text.literal(String.format("P%d ", position)).formatted(Formatting.BOLD))
-                    .append(WidgetTextUtil.actionBarTimerSplit(timer, currentSplit, pbSplit));
-
-            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
+            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
+                    WidgetTextUtil.actionBarTimerSplit(position, timer, currentSplit, pbSplit)));
         }
     }
 
@@ -128,7 +118,7 @@ public class QualifyingWidgets {
             SidebarWidget sidebar = this.sidebars.get(ref);
 
             sidebar.set(content -> {
-                WidgetTextUtil.scoreboardTrackText(this.track.getMetaData()).forEach(content::add);
+                WidgetTextUtil.scoreboardTrackText(this.track.getMeta()).forEach(content::add);
 
                 Text timeLeft = Text.literal(WidgetTextUtil.formatTime(stageManager.getTimeLeft(), true))
                         .formatted(Formatting.BOLD, Formatting.DARK_AQUA);

@@ -13,8 +13,9 @@ import net.minecraft.util.Uuids;
  * Stores the player's time and splits and their info.
  */
 public record PersonalBest(String offlineName, UUID id, float timer, List<Float> splits) {
-    public static final PersonalBest EMPTY = new PersonalBest("Herobrine", UUID.randomUUID(), Float.NaN,
-            FloatArrayList.of());
+    public static PersonalBest of() {
+        return new PersonalBest("Herobrine", UUID.randomUUID(), Float.NaN, FloatArrayList.of());
+    }
 
     public static final Codec<PersonalBest> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("offlineName").forGetter(PersonalBest::offlineName),
