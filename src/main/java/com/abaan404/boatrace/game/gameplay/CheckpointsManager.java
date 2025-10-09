@@ -3,12 +3,12 @@ package com.abaan404.boatrace.game.gameplay;
 import java.util.Map;
 import java.util.Set;
 
+import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.maps.TrackMap;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.server.network.ServerPlayerEntity;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 /**
  * Keeps track of checkpoints and verifies if the player crossed the correct
@@ -17,9 +17,9 @@ import xyz.nucleoid.plasmid.api.util.PlayerRef;
 public class CheckpointsManager {
     private final TrackMap track;
 
-    private Map<PlayerRef, Integer> checkpoints = new Object2IntOpenHashMap<>();
-    private Map<PlayerRef, Integer> laps = new Object2IntOpenHashMap<>();
-    private Set<PlayerRef> began = new ObjectOpenHashSet<>();
+    private Map<BoatRacePlayer, Integer> checkpoints = new Object2IntOpenHashMap<>();
+    private Map<BoatRacePlayer, Integer> laps = new Object2IntOpenHashMap<>();
+    private Set<BoatRacePlayer> began = new ObjectOpenHashSet<>();
 
     public CheckpointsManager(TrackMap track) {
         this.track = track;
@@ -33,7 +33,7 @@ public class CheckpointsManager {
      * @return The resulting tick event.
      */
     public TickResult tick(ServerPlayerEntity player) {
-        PlayerRef ref = PlayerRef.of(player);
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         TrackMap.Regions regions = track.getRegions();
         TrackMap.Meta meta = track.getMeta();
@@ -43,32 +43,32 @@ public class CheckpointsManager {
             return TickResult.IDLE;
         }
 
-        int prevCheckpointIdx = this.getCheckpointIndex(ref);
+        int prevCheckpointIdx = this.getCheckpointIndex(bPlayer);
         int nextCheckpointIdx = (prevCheckpointIdx + 1) % regions.checkpoints().size();
 
         TrackMap.RespawnRegion start = regions.checkpoints().getFirst();
 
         // player has reached the starting line
-        if (!this.began.contains(ref) && start.bounds().contains(player.getBlockPos())) {
-            this.began.add(ref);
-            this.checkpoints.put(ref, nextCheckpointIdx);
+        if (!this.began.contains(bPlayer) && start.bounds().contains(player.getBlockPos())) {
+            this.began.add(bPlayer);
+            this.checkpoints.put(bPlayer, nextCheckpointIdx);
             return TickResult.BEGIN;
         }
 
         // run hasnt began yet, do nothing
-        if (!this.began.contains(ref)) {
+        if (!this.began.contains(bPlayer)) {
             return TickResult.IDLE;
         }
 
         // reached the next checkpoint
         if (regions.checkpoints().get(nextCheckpointIdx).bounds().contains(player.getBlockPos())) {
-            this.checkpoints.put(ref, nextCheckpointIdx);
+            this.checkpoints.put(bPlayer, nextCheckpointIdx);
 
             switch (meta.layout()) {
                 case CIRCULAR: {
                     // checkpoint was looped back to the start
                     if (start.bounds().contains(player.getBlockPos())) {
-                        this.laps.put(ref, this.laps.getOrDefault(ref, 0) + 1);
+                        this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
                         return TickResult.LOOP;
                     }
 
@@ -80,8 +80,8 @@ public class CheckpointsManager {
 
                     // checkpoint reached the end
                     if (finish.bounds().contains(player.getBlockPos())) {
-                        this.checkpoints.remove(ref);
-                        this.began.remove(ref);
+                        this.checkpoints.remove(bPlayer);
+                        this.began.remove(bPlayer);
                         return TickResult.FINISH;
                     }
 
@@ -100,7 +100,7 @@ public class CheckpointsManager {
      *
      * @param player The player to reset.
      */
-    public void reset(PlayerRef player) {
+    public void reset(BoatRacePlayer player) {
         this.checkpoints.remove(player);
         this.laps.remove(player);
         this.began.remove(player);
@@ -112,7 +112,7 @@ public class CheckpointsManager {
      * @param player The player to check.
      * @return Their laps.
      */
-    public int getLaps(PlayerRef player) {
+    public int getLaps(BoatRacePlayer player) {
         return this.laps.getOrDefault(player, 0);
     }
 
@@ -122,7 +122,7 @@ public class CheckpointsManager {
      * @param player The player to get from.
      * @return The bounds of their relevant checkpoint.
      */
-    public TrackMap.RespawnRegion getCheckpoint(PlayerRef player) {
+    public TrackMap.RespawnRegion getCheckpoint(BoatRacePlayer player) {
         TrackMap.Regions regions = track.getRegions();
 
         // no checkpoints, return default
@@ -139,7 +139,7 @@ public class CheckpointsManager {
         return regions.checkpoints().get(checkpointIdx);
     }
 
-    public int getCheckpointIndex(PlayerRef player) {
+    public int getCheckpointIndex(BoatRacePlayer player) {
         return this.checkpoints.getOrDefault(player, -1);
     }
 

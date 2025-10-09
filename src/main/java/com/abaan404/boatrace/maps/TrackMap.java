@@ -56,17 +56,17 @@ public class TrackMap {
                 .map(RespawnRegion::of)
                 .toList();
 
-        BlockBounds pitEntry = template.getMetadata()
+        RespawnRegion pitEntry = template.getMetadata()
                 .getRegions("pit_entry")
-                .map(TemplateRegion::getBounds)
+                .map(RespawnRegion::of)
                 .findFirst()
-                .orElse(BlockBounds.ofBlock(BlockPos.ORIGIN));
+                .orElse(RespawnRegion.of());
 
-        BlockBounds pitExit = template.getMetadata()
+        RespawnRegion pitExit = template.getMetadata()
                 .getRegions("pit_exit")
-                .map(TemplateRegion::getBounds)
+                .map(RespawnRegion::of)
                 .findFirst()
-                .orElse(BlockBounds.ofBlock(BlockPos.ORIGIN));
+                .orElse(RespawnRegion.of());
 
         List<RespawnRegion> pitBoxes = template.getMetadata()
                 .getRegions("pit_box")
@@ -195,7 +195,7 @@ public class TrackMap {
     public record Regions(
             List<RespawnRegion> checkpoints,
             List<RespawnRegion> gridBoxes,
-            BlockBounds pitEntry, BlockBounds pitExit, List<RespawnRegion> pitBoxes) {
+            RespawnRegion pitEntry, RespawnRegion pitExit, List<RespawnRegion> pitBoxes) {
     }
 
     public record Meta(

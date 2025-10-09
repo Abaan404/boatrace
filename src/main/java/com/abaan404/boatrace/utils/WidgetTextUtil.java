@@ -147,11 +147,9 @@ public final class WidgetTextUtil {
     public static Text scoreboardLeaderboardText(PersonalBest pb, int position, boolean highlight) {
         MutableText text = Text.empty();
 
-        String name = pb.offlineName();
-
         MutableText positionText = Text.literal(String.format("(%s) ", position));
         MutableText timeText = Text.literal(String.format("%s ", formatTime((long) pb.timer(), true)));
-        MutableText nameText = Text.literal(String.format("%s", name));
+        MutableText nameText = Text.literal(String.format("%s", pb.player().offlineName()));
 
         if (position == 1) {
             text.append(positionText.formatted(Formatting.YELLOW));

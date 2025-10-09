@@ -2,7 +2,8 @@ package com.abaan404.boatrace.game.qualifying;
 
 import java.util.function.Consumer;
 
-import com.abaan404.boatrace.game.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.maps.TrackMap;
 import com.mojang.authlib.GameProfile;
@@ -22,7 +23,6 @@ import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
 import xyz.nucleoid.plasmid.api.game.player.JoinOfferResult;
 import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
 import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.item.ItemUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
@@ -38,7 +38,7 @@ public class Qualifying {
 
     private Qualifying(GameSpace gameSpace, ServerWorld world, TrackMap track, GlobalWidgets widgets,
             BoatRaceConfig config) {
-        this.stageManager = new QualifyingStageManager(gameSpace, config.qualifying().orElseThrow(), world, track);
+        this.stageManager = new QualifyingStageManager(gameSpace, config, world, track);
         this.widgets = new QualifyingWidgets(gameSpace, world, widgets, track);
     }
 
@@ -73,7 +73,7 @@ public class Qualifying {
     }
 
     private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
-        Consumer<PlayerRef> mode = this.stageManager::toSpectator;
+        Consumer<BoatRacePlayer> mode = this.stageManager::toSpectator;
         switch (offer.intent()) {
             case PLAY:
                 mode = this.stageManager::toParticipant;
@@ -84,7 +84,7 @@ public class Qualifying {
         }
 
         for (GameProfile profile : offer.players()) {
-            mode.accept(PlayerRef.of(profile));
+            mode.accept(BoatRacePlayer.of(profile));
         }
 
         return offer.accept();
@@ -113,7 +113,7 @@ public class Qualifying {
 
         // turn them into a participant and spawn them as if they just started
         if (item.equals(BoatRaceItems.RESET)) {
-            this.stageManager.toParticipant(PlayerRef.of(player));
+            this.stageManager.toParticipant(BoatRacePlayer.of(player));
             this.stageManager.spawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
             return ActionResult.CONSUME;

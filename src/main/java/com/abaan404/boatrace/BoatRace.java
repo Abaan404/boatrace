@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.abaan404.boatrace.game.BoatRaceConfig;
 import com.abaan404.boatrace.game.lobby.Lobby;
 import com.abaan404.boatrace.game.qualifying.Qualifying;
 import com.abaan404.boatrace.game.race.Race;
@@ -69,7 +68,7 @@ public class BoatRace implements ModInitializer {
         // random order race
         if (config.race().isPresent()) {
             return context.openWithWorld(worldConfig, (game, world) -> {
-                Race.open(game, config, world, map);
+                Race.open(game, config, world, map, List.of());
             });
         }
 

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 
+import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
@@ -20,7 +21,6 @@ import net.minecraft.util.Formatting;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.api.game.common.widget.SidebarWidget;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 public class QualifyingWidgets {
     private final GameSpace gameSpace;
@@ -31,7 +31,7 @@ public class QualifyingWidgets {
     private static final int SIDEBAR_RANKING_COMPARED = 1;
     private static final int SIDEBAR_RANKING_TOP = 5;
 
-    private final Map<PlayerRef, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
+    private final Map<BoatRacePlayer, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
 
     public QualifyingWidgets(GameSpace gameSpace, ServerWorld world, GlobalWidgets widgets, TrackMap track) {
         this.gameSpace = gameSpace;
@@ -70,15 +70,15 @@ public class QualifyingWidgets {
                 continue;
             }
 
-            PlayerRef ref = PlayerRef.of(player);
-            PersonalBest pb = leaderboard.getPersonalBest(this.track, ref.id());
+            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+            PersonalBest pb = leaderboard.getPersonalBest(this.track, bPlayer);
 
-            List<Long> currentSplits = stageManager.splits.getSplits(ref);
+            List<Long> currentSplits = stageManager.splits.getSplits(bPlayer);
             List<Long> pbSplits = pb.splits();
 
-            long timer = stageManager.splits.getTimer(ref);
-            int position = leaderboard.getTrackLeaderboardPosition(this.track, ref.id());
-            int checkpoint = stageManager.checkpoints.getCheckpointIndex(ref);
+            long timer = stageManager.splits.getTimer(bPlayer);
+            int position = leaderboard.getTrackLeaderboardPosition(this.track, bPlayer);
+            int checkpoint = stageManager.checkpoints.getCheckpointIndex(bPlayer);
 
             MutableText actionBarText = Text.empty();
 
@@ -108,17 +108,17 @@ public class QualifyingWidgets {
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-            PlayerRef ref = PlayerRef.of(player);
+            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
-            if (!this.sidebars.containsKey(ref)) {
+            if (!this.sidebars.containsKey(bPlayer)) {
                 SidebarWidget newSidebar = this.widgets.addSidebar(
                         WidgetTextUtil.scoreboardTitleText("Qualifying"),
-                        p -> PlayerRef.of(p).equals(ref));
+                        p -> BoatRacePlayer.of(p).equals(bPlayer));
                 newSidebar.addPlayer(player);
-                this.sidebars.put(ref, newSidebar);
+                this.sidebars.put(bPlayer, newSidebar);
             }
 
-            SidebarWidget sidebar = this.sidebars.get(ref);
+            SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
                 WidgetTextUtil.scoreboardTrackText(this.track.getMeta()).forEach(content::add);
@@ -137,7 +137,7 @@ public class QualifyingWidgets {
                 for (int i = 0; i < pbs.size(); i++) {
                     PersonalBest pb = pbs.get(i);
 
-                    if (pb.id().equals(ref.id())) {
+                    if (pb.player().equals(bPlayer)) {
                         playerIndex = i;
                     }
 
@@ -167,7 +167,7 @@ public class QualifyingWidgets {
                         content.add(WidgetTextUtil.scoreboardLeaderboardText(
                                 entry.getValue(),
                                 entry.getKey(),
-                                entry.getValue().id().equals(ref.id())));
+                                entry.getValue().player().equals(bPlayer)));
 
                         lastDisplayedTop = position;
                         lastDisplayedPlayer = position;
@@ -185,7 +185,7 @@ public class QualifyingWidgets {
                         content.add(WidgetTextUtil.scoreboardLeaderboardText(
                                 entry.getValue(),
                                 entry.getKey(),
-                                entry.getValue().id().equals(ref.id())));
+                                entry.getValue().player().equals(bPlayer)));
                         lastDisplayedPlayer = entry.getKey();
                     }
                 }

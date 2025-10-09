@@ -2,10 +2,10 @@ package com.abaan404.boatrace.leaderboard;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.IntStream;
 
 import com.abaan404.boatrace.BoatRace;
+import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.maps.TrackMap;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -49,14 +49,14 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     /**
      * Gets the personal best for this player on this track.
      *
-     * @param track      The track.
-     * @param playerUuid The player's uuid.
+     * @param track  The track.
+     * @param player The player.
      * @return Their personal best.
      */
-    public PersonalBest getPersonalBest(TrackMap track, UUID playerUuid) {
+    public PersonalBest getPersonalBest(TrackMap track, BoatRacePlayer player) {
         return this.leaderboard
                 .getOrDefault(String.valueOf(track.hashCode()), ObjectArrayList.of()).stream()
-                .filter(pair -> pair.id().equals(playerUuid))
+                .filter(pair -> pair.equals(player))
                 .findFirst()
                 .orElse(PersonalBest.of());
     }
@@ -64,15 +64,15 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     /**
      * Gets the position for this player on the track leaderboard.
      *
-     * @param track      The track.
-     * @param playerUuid The player's uuid.
+     * @param track  The track.
+     * @param player The player.
      * @return Their position on the track. -1 if not found.
      */
-    public int getTrackLeaderboardPosition(TrackMap track, UUID playerUuid) {
+    public int getTrackLeaderboardPosition(TrackMap track, BoatRacePlayer player) {
         List<PersonalBest> trackLeaderboard = this.getTrackLeaderboard(track);
 
         return IntStream.range(0, trackLeaderboard.size())
-                .filter(i -> trackLeaderboard.get(i).id().equals(playerUuid))
+                .filter(i -> trackLeaderboard.get(i).equals(player))
                 .findFirst()
                 .orElse(-1);
     }
@@ -103,7 +103,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     public Leaderboard submit(ServerWorld world, TrackMap track, PersonalBest personalBest) {
         List<PersonalBest> newTrackLeaderboard = new ObjectArrayList<>(this.getTrackLeaderboard(track));
 
-        newTrackLeaderboard.removeIf(pb -> pb.id().equals(personalBest.id()));
+        newTrackLeaderboard.removeIf(pb -> pb.equals(personalBest));
         newTrackLeaderboard.add(personalBest);
 
         newTrackLeaderboard.sort((a, b) -> Long.compare(a.timer(), b.timer()));
@@ -122,7 +122,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @return If the run was valid and is ready to be submitted.
      */
     private boolean validatePersonalBest(TrackMap track, PersonalBest newPersonalBest) {
-        PersonalBest currentPersonalBest = this.getPersonalBest(track, newPersonalBest.id());
+        PersonalBest currentPersonalBest = this.getPersonalBest(track, newPersonalBest.player());
         if (newPersonalBest.timer() > currentPersonalBest.timer()) {
             // not a better pb
             return false;

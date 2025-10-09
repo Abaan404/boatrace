@@ -5,28 +5,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.abaan404.boatrace.BoatRacePlayer;
+
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.server.world.ServerWorld;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 /**
  * Records splits and times an active run.
  */
 public class SplitsManager {
-    private Set<PlayerRef> running = new ObjectOpenHashSet<>();
+    private Set<BoatRacePlayer> running = new ObjectOpenHashSet<>();
 
-    private Map<PlayerRef, Long> timer = new Object2LongOpenHashMap<>();
-    private Map<PlayerRef, List<Long>> splits = new Object2ObjectOpenHashMap<>();
+    private Map<BoatRacePlayer, Long> timer = new Object2LongOpenHashMap<>();
+    private Map<BoatRacePlayer, List<Long>> splits = new Object2ObjectOpenHashMap<>();
 
     /**
      * Continuously run the timer for this player.
      *
      * @param player The player.
      */
-    public void run(PlayerRef player) {
+    public void run(BoatRacePlayer player) {
         this.running.add(player);
 
         // reset everything but the lap count.
@@ -39,7 +40,7 @@ public class SplitsManager {
      *
      * @param player The player.
      */
-    public void stop(PlayerRef player) {
+    public void stop(BoatRacePlayer player) {
         this.running.remove(player);
 
         // reset everything but the lap count.
@@ -53,7 +54,7 @@ public class SplitsManager {
      * @param world The world to fetch mspt from.
      */
     public void tick(ServerWorld world) {
-        for (PlayerRef player : this.running) {
+        for (BoatRacePlayer player : this.running) {
             long timer = this.timer.getOrDefault(player, 0l);
             timer += world.getTickManager().getMillisPerTick();
             this.timer.put(player, timer);
@@ -66,7 +67,7 @@ public class SplitsManager {
      * @param player The player to record.
      * @return The recorded split time.
      */
-    public long recordSplit(PlayerRef player) {
+    public long recordSplit(BoatRacePlayer player) {
         long lap = this.timer.getOrDefault(player, 0l);
 
         if (!this.splits.containsKey(player)) {
@@ -90,7 +91,7 @@ public class SplitsManager {
      * @param player The player to reset for.
      * @return The last timer before a reset.
      */
-    public long reset(PlayerRef player) {
+    public long reset(BoatRacePlayer player) {
         long timer = this.timer.getOrDefault(player, 0l);
         this.timer.remove(player);
         this.splits.remove(player);
@@ -104,7 +105,7 @@ public class SplitsManager {
      * @param player The player the get splits for.
      * @return The player's splits.
      */
-    public List<Long> getSplits(PlayerRef player) {
+    public List<Long> getSplits(BoatRacePlayer player) {
         return Collections.unmodifiableList(this.splits.getOrDefault(player, LongArrayList.of()));
     }
 
@@ -114,7 +115,7 @@ public class SplitsManager {
      * @param player The player the get timer for.
      * @return The player's time.
      */
-    public long getTimer(PlayerRef player) {
+    public long getTimer(BoatRacePlayer player) {
         return this.timer.getOrDefault(player, 0l);
     }
 }

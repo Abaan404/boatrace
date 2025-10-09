@@ -2,6 +2,7 @@ package com.abaan404.boatrace.game.timetrial;
 
 import java.util.Set;
 
+import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
@@ -17,7 +18,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 /**
  * Handles time trial state.
@@ -31,7 +31,7 @@ public class TimeTrialStageManager {
     public final SplitsManager splits;
 
     private final BoatRaceSpawnLogic spawnLogic;
-    private final Set<PlayerRef> participants;
+    private final Set<BoatRacePlayer> participants;
 
     public TimeTrialStageManager(GameSpace gameSpace, ServerWorld world, TrackMap track) {
         this.gameSpace = gameSpace;
@@ -51,7 +51,7 @@ public class TimeTrialStageManager {
      * @param player The player.
      */
     public void spawnPlayer(ServerPlayerEntity player) {
-        PlayerRef ref = PlayerRef.of(player);
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         TrackMap.Regions regions = this.track.getRegions();
         TrackMap.Meta meta = this.track.getMeta();
 
@@ -60,7 +60,7 @@ public class TimeTrialStageManager {
         TrackMap.RespawnRegion respawn = regions.checkpoints().getFirst();
 
         // spawn spectators at spawn without boats
-        if (!this.participants.contains(ref)) {
+        if (!this.participants.contains(bPlayer)) {
             this.spawnLogic.spawnPlayer(player, respawn);
             return;
         }
@@ -90,12 +90,12 @@ public class TimeTrialStageManager {
      * @param player The player.
      */
     public void respawnPlayer(ServerPlayerEntity player) {
-        PlayerRef ref = PlayerRef.of(player);
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
 
-        if (this.checkpoints.getCheckpointIndex(ref) != -1) {
-            this.spawnLogic.spawnPlayer(player, this.checkpoints.getCheckpoint(ref));
+        if (this.checkpoints.getCheckpointIndex(bPlayer) != -1) {
+            this.spawnLogic.spawnPlayer(player, this.checkpoints.getCheckpoint(bPlayer));
             this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
 
         } else {
@@ -112,7 +112,7 @@ public class TimeTrialStageManager {
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
 
-        if (this.participants.contains(PlayerRef.of(player))) {
+        if (this.participants.contains(BoatRacePlayer.of(player))) {
             inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
             inventory.setStack(7, BoatRaceItems.TIME_TRIAL_RESPAWN.getDefaultStack());
         } else {
@@ -126,12 +126,12 @@ public class TimeTrialStageManager {
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
-        PlayerRef ref = PlayerRef.of(player);
-        this.participants.remove(ref);
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+        this.participants.remove(bPlayer);
 
-        this.checkpoints.reset(ref);
-        this.splits.reset(ref);
-        this.splits.stop(ref);
+        this.checkpoints.reset(bPlayer);
+        this.splits.reset(bPlayer);
+        this.splits.stop(bPlayer);
 
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
@@ -146,47 +146,45 @@ public class TimeTrialStageManager {
 
         this.splits.tick(this.world);
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers().participants()) {
-            PlayerRef ref = PlayerRef.of(player);
+        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
-            if (!this.participants.contains(ref)) {
+            if (!this.participants.contains(bPlayer)) {
                 continue;
             }
 
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
-                    this.splits.run(ref);
-                    this.splits.recordSplit(ref);
+                    this.splits.run(bPlayer);
+                    this.splits.recordSplit(bPlayer);
                     break;
                 }
 
                 case LOOP: {
                     leaderboard = leaderboard.trySubmit(overworld, this.track, new PersonalBest(
-                            player.getNameForScoreboard(),
-                            player.getUuid(),
-                            this.splits.getTimer(ref),
-                            this.splits.getSplits(ref)));
+                            BoatRacePlayer.of(player),
+                            this.splits.getTimer(bPlayer),
+                            this.splits.getSplits(bPlayer)));
 
                     // start a new run
-                    this.splits.reset(ref);
-                    this.splits.recordSplit(ref);
+                    this.splits.reset(bPlayer);
+                    this.splits.recordSplit(bPlayer);
                     break;
                 }
 
                 case FINISH: {
                     leaderboard = leaderboard.trySubmit(overworld, this.track, new PersonalBest(
-                            player.getNameForScoreboard(),
-                            player.getUuid(),
-                            this.splits.getTimer(ref),
-                            this.splits.getSplits(ref)));
+                            BoatRacePlayer.of(player),
+                            this.splits.getTimer(bPlayer),
+                            this.splits.getSplits(bPlayer)));
 
                     // stop the timer
-                    this.splits.stop(ref);
+                    this.splits.stop(bPlayer);
                     break;
                 }
 
                 case CHECKPOINT: {
-                    this.splits.recordSplit(ref);
+                    this.splits.recordSplit(bPlayer);
                     break;
                 }
 
@@ -201,9 +199,9 @@ public class TimeTrialStageManager {
      * Transition the player to a spectator. They can roam freely and explore the
      * track.
      *
-     * @param player The player's ref
+     * @param player The player's bPlayer
      */
-    public void toSpectator(PlayerRef player) {
+    public void toSpectator(BoatRacePlayer player) {
         this.participants.remove(player);
 
         this.checkpoints.reset(player);
@@ -215,9 +213,9 @@ public class TimeTrialStageManager {
      * Transition a player to a participant. They can set and submit runs in this
      * mode.
      *
-     * @param player The player's ref
+     * @param player The player's bPlayer
      */
-    public void toParticipant(PlayerRef player) {
+    public void toParticipant(BoatRacePlayer player) {
         this.participants.add(player);
 
         this.checkpoints.reset(player);
@@ -232,6 +230,6 @@ public class TimeTrialStageManager {
      * @return If they are on track ready to set a time.
      */
     public boolean isParticipant(ServerPlayerEntity player) {
-        return this.participants.contains(PlayerRef.of(player));
+        return this.participants.contains(BoatRacePlayer.of(player));
     }
 }

@@ -2,7 +2,7 @@ package com.abaan404.boatrace.game.lobby;
 
 import java.util.List;
 
-import com.abaan404.boatrace.game.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.game.timetrial.TimeTrial;
 import com.abaan404.boatrace.maps.LobbyMap;
 import com.abaan404.boatrace.maps.TrackMap;
