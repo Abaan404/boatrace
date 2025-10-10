@@ -80,6 +80,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     /**
      * submits the personal best for this track if the run is valid.
      *
+     * @param world        The world the leaderboard should be stored.
      * @param track        The track.
      * @param personalBest Personal best to submit.
      * @return A new leaderboard with the new personal best.

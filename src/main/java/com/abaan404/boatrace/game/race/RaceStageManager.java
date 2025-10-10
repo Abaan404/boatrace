@@ -1,27 +1,23 @@
-package com.abaan404.boatrace.game.qualifying;
+package com.abaan404.boatrace.game.race;
 
 import java.util.List;
-import java.util.Set;
+import java.util.SequencedSet;
 
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
-import com.abaan404.boatrace.game.race.Race;
-import com.abaan404.boatrace.items.BoatRaceItems;
-import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.entity.player.PlayerInventory;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 
-public class QualifyingStageManager {
+public class RaceStageManager {
     private final GameSpace gameSpace;
     private final ServerWorld world;
     private final BoatRaceConfig config;
@@ -31,13 +27,13 @@ public class QualifyingStageManager {
     public final SplitsManager splits;
 
     private final BoatRaceSpawnLogic spawnLogic;
-    private final Set<BoatRacePlayer> participants;
+    private final SequencedSet<BoatRacePlayer> participants;
 
-    private final BoatRaceConfig.Qualifying qualifyingConfig;
+    private final BoatRaceConfig.Race raceConfig;
     private long duration;
 
-    public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig config, ServerWorld world,
-            TrackMap track) {
+    public RaceStageManager(GameSpace gameSpace, BoatRaceConfig config, ServerWorld world,
+            TrackMap track, List<PersonalBest> qualifyingResults) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
@@ -47,10 +43,14 @@ public class QualifyingStageManager {
         this.splits = new SplitsManager();
 
         this.spawnLogic = new BoatRaceSpawnLogic(world);
-        this.participants = new ObjectOpenHashSet<>();
+        this.participants = new ObjectLinkedOpenHashSet<>();
 
-        this.qualifyingConfig = config.qualifying().orElseThrow();
+        this.raceConfig = config.race().orElseThrow();
         this.duration = 0;
+
+        for (PersonalBest pb : qualifyingResults) {
+            this.toParticipant(pb.player());
+        }
     }
 
     /**
@@ -63,7 +63,7 @@ public class QualifyingStageManager {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         TrackMap.Regions regions = this.track.getRegions();
 
-        // spawn spectators at spawn without boats
+        // spawn spectators or non qualified at spawn without boats
         if (!this.participants.contains(bPlayer)) {
             this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
             this.spawnLogic.spawnPlayer(player, regions.checkpoints().getFirst());
@@ -71,22 +71,24 @@ public class QualifyingStageManager {
         }
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
-        TrackMap.RespawnRegion respawn = regions.checkpoints().getFirst();
 
-        switch (this.config.qualifying().get().startFrom()) {
-            case GRID_BOX: {
-                if (!regions.gridBoxes().isEmpty()) {
-                    respawn = regions.gridBoxes().getLast();
-                }
+        TrackMap.RespawnRegion respawn;
+
+        // this.sparticipants is sequenced by starting grid positions
+        int gridBox = 0;
+        for (BoatRacePlayer participant : this.participants) {
+            if (participant.equals(bPlayer)) {
                 break;
             }
 
-            case PIT_BOX: {
-                if (!regions.pitBoxes().isEmpty()) {
-                    respawn = regions.pitBoxes().getLast();
-                }
-                break;
-            }
+            gridBox++;
+        }
+
+        // not enough grid boxes, spawn at pit entry
+        if (gridBox > regions.gridBoxes().size() - 1) {
+            respawn = regions.pitEntry();
+        } else {
+            respawn = regions.gridBoxes().get(gridBox);
         }
 
         this.spawnLogic.spawnPlayer(player, respawn);
@@ -99,10 +101,7 @@ public class QualifyingStageManager {
      * @param player The player
      */
     public void updatePlayerInventory(ServerPlayerEntity player) {
-        PlayerInventory inventory = player.getInventory();
-        inventory.clear();
-
-        inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+        // TODO swap widget interval type (relative, absolute)
     }
 
     /**
@@ -111,30 +110,32 @@ public class QualifyingStageManager {
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
-        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-        this.participants.remove(bPlayer);
-
-        this.checkpoints.reset(bPlayer);
-        this.splits.reset(bPlayer);
-        this.splits.stop(bPlayer);
-
-        PlayerInventory inventory = player.getInventory();
-        inventory.clear();
+        // do nothing
     }
 
     /**
-     * Tick the player, update leaderboards and splits and also check the duration
-     * of this game.
+     * Tick the game.
      */
     public void tickPlayers() {
+        RacePosition position = this.world.getAttachedOrCreate(RacePosition.ATTACHMENT);
+
+        // update scores every 2 seconds
+        long time = this.world.getTime();
+        if (time % 2 * (this.world.getTickManager().getTickRate()) == 0) {
+            position = position.update(this.world, this.checkpoints, this.participants.stream()
+                    .toList());
+        }
+
         this.duration += this.world.getTickManager().getMillisPerTick();
 
-        if (this.duration > this.qualifyingConfig.duration()) {
-            this.startRace();
+        if (this.duration > this.raceConfig.maxDuration()) {
             return;
         }
 
-        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+        if (position.positions().isEmpty()
+                || this.checkpoints.getLaps(position.positions().getFirst()) > this.raceConfig.maxLaps()) {
+            return;
+        }
 
         this.splits.tick(this.world);
 
@@ -153,11 +154,6 @@ public class QualifyingStageManager {
                 }
 
                 case LOOP: {
-                    leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
-                            BoatRacePlayer.of(player),
-                            this.splits.getTimer(bPlayer),
-                            this.splits.getSplits(bPlayer)));
-
                     // start a new run
                     this.splits.reset(bPlayer);
                     this.splits.recordSplit(bPlayer);
@@ -165,11 +161,6 @@ public class QualifyingStageManager {
                 }
 
                 case FINISH: {
-                    leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
-                            BoatRacePlayer.of(player),
-                            this.splits.getTimer(bPlayer),
-                            this.splits.getSplits(bPlayer)));
-
                     // stop the timer
                     this.splits.stop(bPlayer);
                     break;
@@ -194,8 +185,6 @@ public class QualifyingStageManager {
      * @param player The player's bPlayer
      */
     public void toSpectator(BoatRacePlayer player) {
-        this.participants.remove(player);
-
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
@@ -208,12 +197,28 @@ public class QualifyingStageManager {
      * @param player The player's bPlayer
      */
     public void toParticipant(BoatRacePlayer player) {
-        // TODO teams
-        this.participants.add(player);
+        if (!this.participants.contains(player)) {
+            // this game began with a qualifying session, spawn as spectator.
+            if (this.config.qualifying().isPresent()) {
+                this.toSpectator(player);
+                return;
+            }
+
+            // this game was started without qualifying, add positions
+            // TODO grid layout (normal, reversed, random)
+            else {
+                this.participants.add(player);
+            }
+        }
 
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
+
+        // update positions
+        RacePosition positions = this.world.getAttachedOrCreate(RacePosition.ATTACHMENT);
+        positions.update(this.world, this.checkpoints, this.participants.stream()
+                .toList());
     }
 
     /**
@@ -232,15 +237,6 @@ public class QualifyingStageManager {
      * @return The time left.
      */
     public long getTimeLeft() {
-        return Math.min(0, this.qualifyingConfig.duration() - this.duration);
-    }
-
-    private void startRace() {
-        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
-        List<PersonalBest> pbs = leaderboard.getTrackLeaderboard(this.track);
-
-        this.gameSpace.setActivity(game -> {
-            Race.open(game, config, world, track, pbs);
-        });
+        return Math.min(0, this.raceConfig.maxDuration() - this.duration);
     }
 }

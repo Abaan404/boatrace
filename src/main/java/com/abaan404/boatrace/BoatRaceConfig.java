@@ -27,11 +27,11 @@ public record BoatRaceConfig(Map map, Optional<Qualifying> qualifying,
     }
 
     public record Qualifying(
-            float duration,
+            long duration,
             StartFrom startFrom) {
 
         public static final Codec<Qualifying> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.FLOAT.fieldOf("duration").forGetter(Qualifying::duration),
+                Codec.LONG.fieldOf("duration").forGetter(Qualifying::duration),
                 StartFrom.CODEC.optionalFieldOf("start_from", StartFrom.PIT_BOX).forGetter(Qualifying::startFrom))
                 .apply(instance, Qualifying::new));
 
@@ -54,13 +54,13 @@ public record BoatRaceConfig(Map map, Optional<Qualifying> qualifying,
     }
 
     public record Race(
-            int maxDuration, int laps,
+            int maxDuration, int maxLaps,
             int requiredPits,
             boolean collision) {
 
         public static final Codec<Race> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.INT.fieldOf("max_duration").forGetter(Race::maxDuration),
-                Codec.INT.fieldOf("laps").forGetter(Race::laps),
+                Codec.INT.fieldOf("max_laps").forGetter(Race::maxLaps),
                 Codec.INT.fieldOf("required_pits").forGetter(Race::requiredPits),
                 Codec.BOOL.fieldOf("collision").forGetter(Race::collision))
                 .apply(instance, Race::new));
