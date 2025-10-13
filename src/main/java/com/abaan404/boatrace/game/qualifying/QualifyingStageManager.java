@@ -34,6 +34,7 @@ public class QualifyingStageManager {
     private final Set<BoatRacePlayer> participants;
 
     private final BoatRaceConfig.Qualifying qualifyingConfig;
+
     private long duration;
 
     public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig config, ServerWorld world,
@@ -231,13 +232,22 @@ public class QualifyingStageManager {
      *
      * @return The time left.
      */
-    public long getTimeLeft() {
-        return Math.min(0, this.qualifyingConfig.duration() - this.duration);
+    public long getDurationTimer() {
+        return Math.max(0, this.qualifyingConfig.duration() - this.duration);
+    }
+
+    /**
+     * Get game config for qualifying.
+     *
+     * @return The loaded qualifying config.
+     */
+    public BoatRaceConfig.Qualifying getQualifyingConfig() {
+        return qualifyingConfig;
     }
 
     private void startRace() {
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
-        List<PersonalBest> pbs = leaderboard.getTrackLeaderboard(this.track);
+        List<PersonalBest> pbs = leaderboard.getLeaderboard(this.track);
 
         this.gameSpace.setActivity(game -> {
             Race.open(game, config, world, track, pbs);

@@ -42,7 +42,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @param track The track.
      * @return A map of personal bests.
      */
-    public List<PersonalBest> getTrackLeaderboard(TrackMap track) {
+    public List<PersonalBest> getLeaderboard(TrackMap track) {
         return this.leaderboard.getOrDefault(String.valueOf(track.hashCode()), ObjectArrayList.of());
     }
 
@@ -56,7 +56,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     public PersonalBest getPersonalBest(TrackMap track, BoatRacePlayer player) {
         return this.leaderboard
                 .getOrDefault(String.valueOf(track.hashCode()), ObjectArrayList.of()).stream()
-                .filter(pair -> pair.equals(player))
+                .filter(pb -> pb.player().equals(player))
                 .findFirst()
                 .orElse(PersonalBest.of());
     }
@@ -68,11 +68,11 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @param player The player.
      * @return Their position on the track. -1 if not found.
      */
-    public int getTrackLeaderboardPosition(TrackMap track, BoatRacePlayer player) {
-        List<PersonalBest> trackLeaderboard = this.getTrackLeaderboard(track);
+    public int getLeaderboardPosition(TrackMap track, BoatRacePlayer player) {
+        List<PersonalBest> trackLeaderboard = this.getLeaderboard(track);
 
         return IntStream.range(0, trackLeaderboard.size())
-                .filter(i -> trackLeaderboard.get(i).equals(player))
+                .filter(i -> trackLeaderboard.get(i).player().equals(player))
                 .findFirst()
                 .orElse(-1);
     }
@@ -102,9 +102,9 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @return A new leaderboard with the new personal best.
      */
     public Leaderboard submit(ServerWorld world, TrackMap track, PersonalBest personalBest) {
-        List<PersonalBest> newTrackLeaderboard = new ObjectArrayList<>(this.getTrackLeaderboard(track));
+        List<PersonalBest> newTrackLeaderboard = new ObjectArrayList<>(this.getLeaderboard(track));
 
-        newTrackLeaderboard.removeIf(pb -> pb.equals(personalBest));
+        newTrackLeaderboard.removeIf(pb -> pb.player().equals(personalBest.player()));
         newTrackLeaderboard.add(personalBest);
 
         newTrackLeaderboard.sort((a, b) -> Long.compare(a.timer(), b.timer()));

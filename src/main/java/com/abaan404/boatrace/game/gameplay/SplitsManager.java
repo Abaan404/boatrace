@@ -88,15 +88,28 @@ public class SplitsManager {
     /**
      * Resets the internal timer and splits.
      *
+     * @param player         The player to reset for.
+     * @param preserveSplits Should the splits be preserved.
+     * @return The last timer before a reset.
+     */
+    public long reset(BoatRacePlayer player, boolean preserveSplits) {
+        long timer = this.timer.getOrDefault(player, 0l);
+        this.timer.remove(player);
+        if (!preserveSplits) {
+            this.splits.remove(player);
+        }
+
+        return timer;
+    }
+
+    /**
+     * Resets the internal timer and splits.
+     *
      * @param player The player to reset for.
      * @return The last timer before a reset.
      */
     public long reset(BoatRacePlayer player) {
-        long timer = this.timer.getOrDefault(player, 0l);
-        this.timer.remove(player);
-        this.splits.remove(player);
-
-        return timer;
+        return this.reset(player, false);
     }
 
     /**

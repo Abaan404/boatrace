@@ -2,7 +2,6 @@ package com.abaan404.boatrace.game.qualifying;
 
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
@@ -10,7 +9,6 @@ import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
 import com.abaan404.boatrace.utils.WidgetTextUtil;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -28,8 +26,8 @@ public class QualifyingWidgets {
     private final GlobalWidgets widgets;
     private final TrackMap track;
 
-    private static final int SIDEBAR_RANKING_COMPARED = 1;
-    private static final int SIDEBAR_RANKING_TOP = 5;
+    private static final int SIDEBAR_RANKING_COMPARED = 2;
+    private static final int SIDEBAR_RANKING_TOP = 10;
 
     private final Map<BoatRacePlayer, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
 
@@ -74,25 +72,22 @@ public class QualifyingWidgets {
             PersonalBest pb = leaderboard.getPersonalBest(this.track, bPlayer);
 
             List<Long> currentSplits = stageManager.splits.getSplits(bPlayer);
-            List<Long> pbSplits = pb.splits();
 
             long timer = stageManager.splits.getTimer(bPlayer);
-            int position = leaderboard.getTrackLeaderboardPosition(this.track, bPlayer);
+            int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
             int checkpoint = stageManager.checkpoints.getCheckpointIndex(bPlayer);
 
             MutableText actionBarText = Text.empty();
 
             // player has a position
-            if (!pbSplits.isEmpty()) {
+            if (position > 0) {
                 actionBarText.append(WidgetTextUtil.actionBarPosition(position)).append(" ");
             }
 
-            try {
-                long currentSplit = currentSplits.get(checkpoint).longValue();
-                long pbSplit = pbSplits.get(checkpoint).longValue();
-                actionBarText.append(WidgetTextUtil.actionBarTimerDelta(timer, currentSplit, pbSplit)).append(" ");
-
-            } catch (IndexOutOfBoundsException e) {
+            if (checkpoint > 0 && pb.exists()) {
+                long delta = pb.getCheckpointDelta(currentSplits, checkpoint);
+                actionBarText.append(WidgetTextUtil.actionBarTimerDelta(timer, delta)).append(" ");
+            } else {
                 actionBarText.append(WidgetTextUtil.actionBarTimer(timer)).append(" ");
             }
 
@@ -121,77 +116,48 @@ public class QualifyingWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
-                WidgetTextUtil.scoreboardTrackText(this.track.getMeta()).forEach(content::add);
+                WidgetTextUtil.scoreboardMeta(this.track.getMeta()).forEach(content::add);
 
-                Text timeLeft = Text.literal(WidgetTextUtil.formatTime(stageManager.getTimeLeft(), true))
-                        .formatted(Formatting.BOLD, Formatting.DARK_AQUA);
+                content.add(WidgetTextUtil.scoreboardDuration(
+                        stageManager.getDurationTimer(),
+                        stageManager.getQualifyingConfig().duration()));
+                content.add(Text.empty());
 
-                content.add(timeLeft);
+                List<PersonalBest> pbs = leaderboard.getLeaderboard(this.track);
 
-                List<PersonalBest> pbs = leaderboard.getTrackLeaderboard(this.track);
-                SortedMap<Integer, PersonalBest> toDisplay = new Int2ObjectRBTreeMap<>();
-
-                int playerIndex = -1;
-
-                // find player and add top 3
-                for (int i = 0; i < pbs.size(); i++) {
-                    PersonalBest pb = pbs.get(i);
-
-                    if (pb.player().equals(bPlayer)) {
-                        playerIndex = i;
-                    }
-
-                    // add top players
-                    if (i < SIDEBAR_RANKING_TOP) {
-                        toDisplay.put(i + 1, pb);
-                    }
+                if (pbs.isEmpty()) {
+                    content.add(Text.literal(" No times set.")
+                            .formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
+                    return;
                 }
 
-                // player has a time
-                if (playerIndex != -1) {
-                    // add rankings above and below the player
-                    int min = Math.max(0, playerIndex - SIDEBAR_RANKING_COMPARED);
-                    int max = Math.min(pbs.size() - 1, playerIndex + SIDEBAR_RANKING_COMPARED);
+                int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
 
-                    for (int i = min; i <= max; i++) {
-                        toDisplay.putIfAbsent(i + 1, pbs.get(i));
-                    }
-                }
+                // add top players
+                WidgetTextUtil.scoreboardPersonalBestsAround(pbs, 0, SIDEBAR_RANKING_TOP)
+                        .entrySet().stream()
+                        .map(entry -> WidgetTextUtil
+                                .scoreboardLeaderboardText(entry.getValue(), entry.getKey(), bPlayer))
+                        .forEach(content::add);
 
-                // show top ranks
-                int lastDisplayedTop = 0;
-                int lastDisplayedPlayer = 0;
-                for (Map.Entry<Integer, PersonalBest> entry : toDisplay.entrySet()) {
-                    if (entry.getKey().intValue() <= SIDEBAR_RANKING_TOP) {
-                        int position = entry.getKey();
-                        content.add(WidgetTextUtil.scoreboardLeaderboardText(
-                                entry.getValue(),
-                                entry.getKey(),
-                                entry.getValue().player().equals(bPlayer)));
-
-                        lastDisplayedTop = position;
-                        lastDisplayedPlayer = position;
-                    }
-                }
-
-                // add padding if needed
-                if (pbs.size() > SIDEBAR_RANKING_TOP && !toDisplay.containsKey(SIDEBAR_RANKING_TOP + 1)) {
+                // add padding if theres positions between overlaps
+                if (position > 0 && position - SIDEBAR_RANKING_COMPARED > SIDEBAR_RANKING_TOP + 1) {
                     content.add(WidgetTextUtil.PAD_SCOREBOARD_POSITION);
                 }
 
-                // show ranks around player
-                for (Map.Entry<Integer, PersonalBest> entry : toDisplay.entrySet()) {
-                    if (entry.getKey().intValue() > SIDEBAR_RANKING_TOP) {
-                        content.add(WidgetTextUtil.scoreboardLeaderboardText(
-                                entry.getValue(),
-                                entry.getKey(),
-                                entry.getValue().player().equals(bPlayer)));
-                        lastDisplayedPlayer = entry.getKey();
-                    }
+                // show positions around the player
+                if (position > 0 && position + SIDEBAR_RANKING_COMPARED > SIDEBAR_RANKING_TOP) {
+                    WidgetTextUtil.scoreboardPersonalBestsAround(pbs, position, SIDEBAR_RANKING_COMPARED)
+                            .entrySet().stream()
+                            .filter(entry -> entry.getKey() > SIDEBAR_RANKING_TOP + 1) // remove overlaps
+                            .map(entry -> WidgetTextUtil
+                                    .scoreboardLeaderboardText(entry.getValue(), entry.getKey(), bPlayer))
+                            .forEach(content::add);
                 }
 
-                // add padding at the end
-                if (pbs.size() > lastDisplayedPlayer && lastDisplayedPlayer != lastDisplayedTop) {
+                // add padding at the end if needed
+                int lastDisplayed = Math.max(position + SIDEBAR_RANKING_COMPARED, SIDEBAR_RANKING_TOP);
+                if (pbs.size() - 1 > lastDisplayed) {
                     content.add(WidgetTextUtil.PAD_SCOREBOARD_POSITION);
                 }
             });

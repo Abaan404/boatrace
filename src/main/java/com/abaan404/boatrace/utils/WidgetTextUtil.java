@@ -1,11 +1,16 @@
 package com.abaan404.boatrace.utils;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.SequencedMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -53,34 +58,37 @@ public final class WidgetTextUtil {
      * @return The timer text.
      */
     public static Text actionBarTimer(long timer) {
-        return Text.literal(WidgetTextUtil.formatTime(timer, true))
+        return Text.literal(TimeUtils.formatTime(timer))
                 .formatted(Formatting.BOLD);
     }
 
     /**
      * Create a text to show the current timer along with splits.
      *
-     * @param timer        The timer in ms.
-     * @param currentSplit The current split in ms.
-     * @param pbSplit      The best split in ms to be compared against.
+     * @param timer The timer in ms.
+     * @param delta The delta for this split.
      * @return The timer and splits text seperated by a symbol.
      */
-    public static Text actionBarTimerDelta(long timer, long currentSplit, long pbSplit) {
-        long delta = currentSplit - pbSplit;
+    public static Text actionBarTimerDelta(long timer, long delta) {
+        String deltaString = TimeUtils.formatTime(
+                delta,
+                EnumSet.of(TimeUtils.Selector.SECONDS, TimeUtils.Selector.MILLISECONDS),
+                EnumSet.allOf(TimeUtils.Selector.class));
 
-        if (pbSplit > currentSplit) {
+        // faster
+        if (delta < 0) {
             return Text.empty()
                     .append(WidgetTextUtil.actionBarTimer(timer))
                     .append(Text.literal(" ▲ ").formatted(Formatting.BLUE))
-                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.BLUE))
+                    .append(Text.literal(deltaString).formatted(Formatting.BLUE))
                     .formatted(Formatting.BOLD);
         }
         // slower
-        else if (pbSplit < currentSplit) {
+        else if (delta > 0) {
             return Text.empty()
                     .append(WidgetTextUtil.actionBarTimer(timer))
                     .append(Text.literal(" ▼ ").formatted(Formatting.RED))
-                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.RED))
+                    .append(Text.literal(deltaString).formatted(Formatting.RED))
                     .formatted(Formatting.BOLD);
         }
         // equal
@@ -88,7 +96,7 @@ public final class WidgetTextUtil {
             return Text.empty()
                     .append(WidgetTextUtil.actionBarTimer(timer))
                     .append(Text.literal(" ◇ ").formatted(Formatting.GRAY))
-                    .append(Text.literal(WidgetTextUtil.formatTime(delta)).formatted(Formatting.GRAY))
+                    .append(Text.literal(deltaString).formatted(Formatting.GRAY))
                     .formatted(Formatting.BOLD);
         }
     }
@@ -115,17 +123,17 @@ public final class WidgetTextUtil {
      * @param meta The track meta.
      * @return A list of text for each line.
      */
-    public static List<Text> scoreboardTrackText(TrackMap.Meta meta) {
+    public static List<Text> scoreboardMeta(TrackMap.Meta meta) {
         List<Text> list = new ObjectArrayList<>();
 
         list.add(Text.empty());
-        list.add(Text.literal(meta.name()).formatted(Formatting.BOLD));
+        list.add(Text.literal(" ").append(meta.name()).formatted(Formatting.BOLD));
 
         if (meta.authors().isEmpty()) {
-            list.add(Text.literal(" - By Unknown Author(s)")
+            list.add(Text.literal("    - By Unknown Author(s)")
                     .formatted(Formatting.GRAY, Formatting.ITALIC));
         } else {
-            list.add(Text.literal(" - By " + meta.authors().stream()
+            list.add(Text.literal("    - By " + meta.authors().stream()
                     .collect(Collectors.joining(", ")))
                     .formatted(Formatting.GRAY, Formatting.ITALIC));
         }
@@ -135,36 +143,61 @@ public final class WidgetTextUtil {
         return list;
     }
 
+    public static Text scoreboardDuration(long duration, long maxDuration) {
+        return Text.empty()
+                .append(Text.literal(" Duration: ").formatted(Formatting.RED))
+                .append(Text.literal(TimeUtils.formatTime(
+                        duration,
+                        EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.HOURS)),
+                        EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.MILLISECONDS)))))
+                .append(Text.literal(" / ").formatted(Formatting.ITALIC))
+                .append(Text.literal(TimeUtils.formatTime(
+                        maxDuration,
+                        EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.HOURS)),
+                        EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.MILLISECONDS)))));
+
+    }
+
     /**
      * Format a player's personal best to a line text thats ready to be shown on the
      * leaderboard.
      *
      * @param pb        The player's personal best.
      * @param position  The player's position in the leaderboard.
-     * @param highlight Should this text be highlighted (bolded).
+     * @param curPlayer Highlight the leaderboard if the player is the pb player.
      * @return A text ready to display player's pb.
      */
-    public static Text scoreboardLeaderboardText(PersonalBest pb, int position, boolean highlight) {
+    public static Text scoreboardLeaderboardText(PersonalBest pb, int position, BoatRacePlayer curPlayer) {
         MutableText text = Text.empty();
 
-        MutableText positionText = Text.literal(String.format("(%s) ", position));
-        MutableText timeText = Text.literal(String.format("%s ", formatTime((long) pb.timer(), true)));
+        MutableText P = Text.literal(" P");
+        MutableText positionText = Text.literal(String.format("%s ", position));
+        MutableText timeText = Text.literal(String.format("%s ", TimeUtils.formatTime(pb.timer())));
         MutableText nameText = Text.literal(String.format("%s", pb.player().offlineName()));
 
         if (position == 1) {
-            text.append(positionText.formatted(Formatting.YELLOW));
-            text.append(timeText.formatted(Formatting.GOLD));
-            text.append(nameText.formatted(Formatting.GOLD, Formatting.BOLD));
+            text.append(P.formatted(Formatting.RED, Formatting.BOLD));
+            text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
+            text.append(timeText.formatted(Formatting.YELLOW));
+            text.append(nameText.formatted(Formatting.YELLOW, Formatting.BOLD));
         } else {
             if (position == 2) {
-                text.append(positionText.formatted(Formatting.WHITE));
+                text.append(P.formatted(Formatting.GRAY, Formatting.BOLD));
+                text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
+            } else if (position == 3) {
+                text.append(P.formatted(Formatting.GOLD, Formatting.BOLD));
+                text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
+            } else if (pb.player().equals(curPlayer)) {
+                text.append(P.formatted(Formatting.BOLD));
+                text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
             } else {
-                text.append(positionText.formatted(Formatting.GRAY));
+                text.append(P.formatted(Formatting.DARK_GRAY, Formatting.BOLD));
+                text.append(positionText.formatted(Formatting.DARK_GRAY, Formatting.BOLD, Formatting.ITALIC));
             }
 
             text.append(timeText.formatted(Formatting.WHITE));
 
-            if (highlight) {
+            if (pb.player().equals(curPlayer)) {
                 text.append(nameText.formatted(Formatting.BOLD));
             } else {
                 text.append(nameText.formatted(Formatting.GRAY));
@@ -175,36 +208,35 @@ public final class WidgetTextUtil {
     }
 
     /**
-     * Format the time into a string.
+     * Return a map of personal bests surrounding a list with its positions
      *
-     * @param time        The time in ms.
-     * @param showMinutes If should show empty minutes (00:).
-     * @return The formatted time.
+     * @param pbs   Personal bests to choose from
+     * @param at    The index to start from.
+     * @param range The range before and after the start index to fetch.
      */
-    public static String formatTime(long time, boolean showMinutes) {
-        long seconds = Math.abs(time) / 1000;
-
-        long hoursStr = seconds / 3600;
-        long minutesStr = (seconds % 3600) / 60;
-        long secondsStr = seconds % 60;
-        long millisStr = Math.abs(time) % 1000;
-
-        if (hoursStr > 0) {
-            return String.format("%d:%02d:%02d:%03d", hoursStr, minutesStr, secondsStr, millisStr);
-        } else if (minutesStr > 0 || showMinutes) {
-            return String.format("%02d:%02d:%03d", minutesStr, secondsStr, millisStr);
-        } else {
-            return String.format("%02d:%03d", secondsStr, millisStr);
+    public static SequencedMap<Integer, PersonalBest> scoreboardPersonalBestsAround(List<PersonalBest> pbs, int at,
+            int range) {
+        if (pbs == null || pbs.isEmpty()) {
+            return new Int2ObjectLinkedOpenHashMap<>();
         }
-    }
 
-    /**
-     * Format the time into a string.
-     *
-     * @param time The time in ms
-     * @return The formatted time.
-     */
-    public static String formatTime(long time) {
-        return formatTime(time, false);
+        if (at < 0) {
+            at = 0;
+        }
+
+        if (at >= pbs.size()) {
+            at = pbs.size() - 1;
+        }
+
+        int from = Math.max(0, at - range);
+        int to = Math.min(pbs.size(), at + range + 1);
+
+        return IntStream.range(from, to)
+                .boxed()
+                .collect(Collectors.toMap(
+                        i -> i + 1,
+                        i -> pbs.get(i),
+                        (a, b) -> a,
+                        Int2ObjectLinkedOpenHashMap::new));
     }
 }

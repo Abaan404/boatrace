@@ -15,6 +15,7 @@ import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.maps.LobbyMap;
 import com.abaan404.boatrace.maps.TrackMap;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -68,7 +69,7 @@ public class BoatRace implements ModInitializer {
         // random order race
         if (config.race().isPresent()) {
             return context.openWithWorld(worldConfig, (game, world) -> {
-                Race.open(game, config, world, map, List.of());
+                Race.open(game, config, world, map, ObjectArrayList.of());
             });
         }
 

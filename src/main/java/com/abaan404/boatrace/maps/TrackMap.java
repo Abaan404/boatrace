@@ -10,6 +10,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
@@ -204,12 +205,12 @@ public class TrackMap {
 
         public static final MapCodec<Meta> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.optionalFieldOf("name", "Unknown Track").forGetter(Meta::name),
-                Codec.STRING.listOf().optionalFieldOf("authors", List.of()).forGetter(Meta::authors),
+                Codec.STRING.listOf().optionalFieldOf("authors", ObjectArrayList.of()).forGetter(Meta::authors),
                 Layout.CODEC.optionalFieldOf("layout", Layout.CIRCULAR).forGetter(Meta::layout))
                 .apply(instance, Meta::new));
 
         public static Meta of() {
-            return new Meta("Unknown Track", List.of(), Layout.CIRCULAR);
+            return new Meta("Unknown Track", ObjectArrayList.of(), Layout.CIRCULAR);
         }
 
         @Override
