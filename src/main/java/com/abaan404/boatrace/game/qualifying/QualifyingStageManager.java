@@ -154,9 +154,9 @@ public class QualifyingStageManager {
                 }
 
                 case LOOP: {
+                    this.splits.recordSplit(bPlayer);
                     leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
                             BoatRacePlayer.of(player),
-                            this.splits.getTimer(bPlayer),
                             this.splits.getSplits(bPlayer)));
 
                     // start a new run
@@ -166,9 +166,9 @@ public class QualifyingStageManager {
                 }
 
                 case FINISH: {
+                    this.splits.recordSplit(bPlayer);
                     leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
                             BoatRacePlayer.of(player),
-                            this.splits.getTimer(bPlayer),
                             this.splits.getSplits(bPlayer)));
 
                     // stop the timer
@@ -247,10 +247,10 @@ public class QualifyingStageManager {
 
     private void startRace() {
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
-        List<PersonalBest> pbs = leaderboard.getLeaderboard(this.track);
+        List<PersonalBest> records = leaderboard.getLeaderboard(this.track);
 
         this.gameSpace.setActivity(game -> {
-            Race.open(game, config, world, track, pbs);
+            Race.open(game, config, world, track, records);
         });
     }
 }

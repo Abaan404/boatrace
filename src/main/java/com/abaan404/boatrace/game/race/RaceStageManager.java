@@ -7,6 +7,7 @@ import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
+import com.abaan404.boatrace.game.gameplay.LapManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
@@ -25,6 +26,7 @@ public class RaceStageManager {
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
+    public final LapManager laps;
 
     private final BoatRaceSpawnLogic spawnLogic;
     private final SequencedSet<BoatRacePlayer> participants;
@@ -41,6 +43,7 @@ public class RaceStageManager {
 
         this.checkpoints = new CheckpointsManager(track);
         this.splits = new SplitsManager();
+        this.laps = new LapManager(track);
 
         this.spawnLogic = new BoatRaceSpawnLogic(world);
         this.participants = new ObjectLinkedOpenHashSet<>();
@@ -117,23 +120,13 @@ public class RaceStageManager {
      * Tick the game.
      */
     public void tickPlayers() {
-        RacePosition position = this.world.getAttachedOrCreate(RacePosition.ATTACHMENT);
-
-        // update scores every 2 seconds
-        long time = this.world.getTime();
-        if (time % 2 * (this.world.getTickManager().getTickRate()) == 0) {
-            position = position.update(this.world, this.checkpoints, this.participants.stream()
-                    .toList());
-        }
-
         this.duration += this.world.getTickManager().getMillisPerTick();
 
         if (this.duration > this.raceConfig.maxDuration()) {
             return;
         }
 
-        if (position.positions().isEmpty()
-                || this.checkpoints.getLaps(position.positions().getFirst()) > this.raceConfig.maxLaps()) {
+        if (this.laps.getLeadingLaps() > this.raceConfig.maxLaps()) {
             return;
         }
 
@@ -150,24 +143,25 @@ public class RaceStageManager {
                 case BEGIN: {
                     this.splits.run(bPlayer);
                     this.splits.recordSplit(bPlayer);
+                    this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
                     break;
                 }
 
                 case LOOP: {
-                    // start a new run
-                    this.splits.reset(bPlayer);
                     this.splits.recordSplit(bPlayer);
+                    this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
                     break;
                 }
 
                 case FINISH: {
                     // stop the timer
-                    this.splits.stop(bPlayer);
+                    // this.splits.stop(bPlayer);
                     break;
                 }
 
                 case CHECKPOINT: {
                     this.splits.recordSplit(bPlayer);
+                    this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
                     break;
                 }
 
@@ -214,11 +208,6 @@ public class RaceStageManager {
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
-
-        // update positions
-        RacePosition positions = this.world.getAttachedOrCreate(RacePosition.ATTACHMENT);
-        positions.update(this.world, this.checkpoints, this.participants.stream()
-                .toList());
     }
 
     /**
@@ -236,7 +225,16 @@ public class RaceStageManager {
      *
      * @return The time left.
      */
-    public long getTimeLeft() {
-        return Math.min(0, this.raceConfig.maxDuration() - this.duration);
+    public long getDurationTimer() {
+        return Math.max(0, this.raceConfig.maxDuration() - this.duration);
+    }
+
+    /**
+     * Get game config for qualifying.
+     *
+     * @return The loaded qualifying config.
+     */
+    public BoatRaceConfig.Race getRaceConfig() {
+        return this.raceConfig;
     }
 }

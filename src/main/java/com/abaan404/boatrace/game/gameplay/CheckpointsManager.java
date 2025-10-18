@@ -18,7 +18,6 @@ public class CheckpointsManager {
     private final TrackMap track;
 
     private Map<BoatRacePlayer, Integer> checkpoints = new Object2IntOpenHashMap<>();
-    private Map<BoatRacePlayer, Integer> laps = new Object2IntOpenHashMap<>();
     private Set<BoatRacePlayer> began = new ObjectOpenHashSet<>();
 
     public CheckpointsManager(TrackMap track) {
@@ -68,7 +67,6 @@ public class CheckpointsManager {
                 case CIRCULAR: {
                     // checkpoint was looped back to the start
                     if (start.bounds().contains(player.getBlockPos())) {
-                        this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
                         return TickResult.LOOP;
                     }
 
@@ -102,18 +100,7 @@ public class CheckpointsManager {
      */
     public void reset(BoatRacePlayer player) {
         this.checkpoints.remove(player);
-        this.laps.remove(player);
         this.began.remove(player);
-    }
-
-    /**
-     * Get the laps completed for the player.
-     *
-     * @param player The player to check.
-     * @return Their laps.
-     */
-    public int getLaps(BoatRacePlayer player) {
-        return this.laps.getOrDefault(player, 0);
     }
 
     /**

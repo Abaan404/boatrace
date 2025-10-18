@@ -2,19 +2,18 @@ package com.abaan404.boatrace.utils;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.SequencedMap;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.abaan404.boatrace.BoatRacePlayer;
-import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Pair;
 
 /**
  * Common texts for widgets shared by each gamemode.
@@ -143,6 +142,13 @@ public final class WidgetTextUtil {
         return list;
     }
 
+    /**
+     * Format duration as text.
+     *
+     * @param duration The elapsed time.
+     * @param maxDuration The remaining time.
+     * @return The duration text.
+     */
     public static Text scoreboardDuration(long duration, long maxDuration) {
         return Text.empty()
                 .append(Text.literal(" Duration: ").formatted(Formatting.RED))
@@ -159,48 +165,35 @@ public final class WidgetTextUtil {
     }
 
     /**
-     * Format a player's personal best to a line text thats ready to be shown on the
-     * leaderboard.
+     * Format position as text.
      *
-     * @param pb        The player's personal best.
-     * @param position  The player's position in the leaderboard.
-     * @param curPlayer Highlight the leaderboard if the player is the pb player.
-     * @return A text ready to display player's pb.
+     * @param player The player the position belongs to.
+     * @param curPlayer The player that should be highlighted.
+     * @param position The track position.
+     * @return The position text.
      */
-    public static Text scoreboardLeaderboardText(PersonalBest pb, int position, BoatRacePlayer curPlayer) {
+    public static Text scoreboardPosition(BoatRacePlayer player, BoatRacePlayer curPlayer, int position) {
         MutableText text = Text.empty();
 
-        MutableText P = Text.literal(" P");
-        MutableText positionText = Text.literal(String.format("%s ", position));
-        MutableText timeText = Text.literal(String.format("%s ", TimeUtils.formatTime(pb.timer())));
-        MutableText nameText = Text.literal(String.format("%s", pb.player().offlineName()));
+        MutableText P = Text.literal("P");
+        MutableText positionText = Text.literal(String.valueOf(position + 1));
 
-        if (position == 1) {
+        if (position == 0) {
             text.append(P.formatted(Formatting.RED, Formatting.BOLD));
             text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
-            text.append(timeText.formatted(Formatting.YELLOW));
-            text.append(nameText.formatted(Formatting.YELLOW, Formatting.BOLD));
         } else {
-            if (position == 2) {
+            if (position == 1) {
                 text.append(P.formatted(Formatting.GRAY, Formatting.BOLD));
                 text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
-            } else if (position == 3) {
+            } else if (position == 2) {
                 text.append(P.formatted(Formatting.GOLD, Formatting.BOLD));
                 text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
-            } else if (pb.player().equals(curPlayer)) {
+            } else if (player.equals(curPlayer)) {
                 text.append(P.formatted(Formatting.BOLD));
                 text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
             } else {
                 text.append(P.formatted(Formatting.DARK_GRAY, Formatting.BOLD));
                 text.append(positionText.formatted(Formatting.DARK_GRAY, Formatting.BOLD, Formatting.ITALIC));
-            }
-
-            text.append(timeText.formatted(Formatting.WHITE));
-
-            if (pb.player().equals(curPlayer)) {
-                text.append(nameText.formatted(Formatting.BOLD));
-            } else {
-                text.append(nameText.formatted(Formatting.GRAY));
             }
         }
 
@@ -208,35 +201,143 @@ public final class WidgetTextUtil {
     }
 
     /**
-     * Return a map of personal bests surrounding a list with its positions
+     * Format time as an absolute time.
      *
-     * @param pbs   Personal bests to choose from
-     * @param at    The index to start from.
-     * @param range The range before and after the start index to fetch.
+     * @param timer The time to use.
+     * @param position The track position.
      */
-    public static SequencedMap<Integer, PersonalBest> scoreboardPersonalBestsAround(List<PersonalBest> pbs, int at,
-            int range) {
-        if (pbs == null || pbs.isEmpty()) {
-            return new Int2ObjectLinkedOpenHashMap<>();
+    public static Text scoreboardAbsolute(Long timer, int position) {
+        MutableText timeText = Text.literal(TimeUtils.formatTime(timer));
+
+        if (position == 0) {
+            return timeText.formatted(Formatting.YELLOW);
+        } else {
+            return timeText.formatted(Formatting.WHITE);
+        }
+    }
+
+    /**
+     * Format time as a relative time.
+     *
+     * @param delta The time to use.
+     * @param position The track position.
+     */
+    public static Text scoreboardRelative(Long delta, int position) {
+        MutableText timeText = Text.literal(TimeUtils.formatTime(
+                delta,
+                EnumSet.of(TimeUtils.Selector.SECONDS, TimeUtils.Selector.MILLISECONDS),
+                EnumSet.allOf(TimeUtils.Selector.class)));
+
+        if (delta > 0) {
+            return Text.literal("+").append(timeText).formatted(Formatting.RED);
+        } else if (delta < 0) {
+            return Text.literal("-").append(timeText).formatted(Formatting.BLUE);
+        } else {
+            return Text.empty();
+        }
+    }
+
+    /**
+     * Format player name as text.
+     *
+     * @param player The player the position belongs to.
+     * @param curPlayer The player to be highlighted.
+     * @param position The track position.
+     */
+    public static Text scoreboardName(BoatRacePlayer player, BoatRacePlayer curPlayer, int position) {
+        MutableText nameText = Text.literal(player.offlineName());
+
+        if (position == 0) {
+            return nameText.formatted(Formatting.YELLOW, Formatting.BOLD);
+        } else {
+            if (player.equals(curPlayer)) {
+                return nameText.formatted(Formatting.BOLD);
+            } else {
+                return nameText.formatted(Formatting.GRAY);
+            }
+        }
+    }
+
+    /**
+     * Return a list of objects surrounding an index paired with its original index
+     * positions. Null elements indicate when there were more items that didnt get
+     * included in the final list.
+     *
+     * @param list     The list to use.
+     * @param index    The index to use for comparisons.
+     * @param top      The top indices to include.
+     * @param compared The indices ahead and behind to use.
+     * @return The computed list with null for padding.
+     */
+    public static <T> List<@Nullable Pair<Integer, T>> scoreboardAroundAndTop(List<T> list,
+            int index, int top, int compared) {
+        List<Pair<Integer, T>> around = new ObjectArrayList<>();
+
+        // add padding if theres indices before the top for some reason
+        if (top <= 0 && !list.isEmpty()) {
+            around.add(null);
+        }
+
+        // add top values
+        for (Pair<Integer, T> pair : WidgetTextUtil.scoreboardAround(list, 0, top - 1)) {
+            around.add(pair);
+        }
+
+        // add padding if theres indices between overlaps
+        if (index > 0 && index - compared > top) {
+            around.add(null);
+        }
+
+        // show indices around the player
+        if (index > 0 && index + compared > top - 1) {
+            for (Pair<Integer, T> pair : WidgetTextUtil.scoreboardAround(list, index, compared)) {
+                // skip overlaps from top
+                if (pair.getLeft() > top - 1) {
+                    around.add(pair);
+                }
+            }
+        }
+
+        // add padding at the end if needed
+        int lastDisplayed = Math.max(index + compared, top - 1);
+        if (list.size() - 1 > lastDisplayed) {
+            around.add(null);
+        }
+
+        return around;
+    }
+
+    /**
+     * Return a list of objects surrounding an index paired with its original index
+     * positions.
+     *
+     * @param list  The list to choose from
+     * @param at    The index to search from.
+     * @param range The range before and after the index to fetch.
+     * @return The computed list.
+     */
+    public static <T> List<Pair<Integer, T>> scoreboardAround(List<T> list, int at, int range) {
+        List<Pair<Integer, T>> around = new ObjectArrayList<>();
+
+        if (list == null || list.isEmpty()) {
+            return around;
         }
 
         if (at < 0) {
             at = 0;
         }
 
-        if (at >= pbs.size()) {
-            at = pbs.size() - 1;
+        if (at >= list.size()) {
+            at = list.size() - 1;
         }
 
         int from = Math.max(0, at - range);
-        int to = Math.min(pbs.size(), at + range + 1);
+        int to = Math.min(list.size(), at + range + 1);
 
-        return IntStream.range(from, to)
-                .boxed()
-                .collect(Collectors.toMap(
-                        i -> i + 1,
-                        i -> pbs.get(i),
-                        (a, b) -> a,
-                        Int2ObjectLinkedOpenHashMap::new));
+        for (int i = from; i < to; i++) {
+            around.add(new Pair<>(i, list.get(i)));
+        }
+
+        return around;
     }
 }

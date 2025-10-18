@@ -161,9 +161,9 @@ public class TimeTrialStageManager {
                 }
 
                 case LOOP: {
+                    this.splits.recordSplit(bPlayer);
                     leaderboard = leaderboard.trySubmit(overworld, this.track, new PersonalBest(
                             BoatRacePlayer.of(player),
-                            this.splits.getTimer(bPlayer),
                             this.splits.getSplits(bPlayer)));
 
                     // start a new run
@@ -173,9 +173,9 @@ public class TimeTrialStageManager {
                 }
 
                 case FINISH: {
+                    this.splits.recordSplit(bPlayer);
                     leaderboard = leaderboard.trySubmit(overworld, this.track, new PersonalBest(
                             BoatRacePlayer.of(player),
-                            this.splits.getTimer(bPlayer),
                             this.splits.getSplits(bPlayer)));
 
                     // stop the timer

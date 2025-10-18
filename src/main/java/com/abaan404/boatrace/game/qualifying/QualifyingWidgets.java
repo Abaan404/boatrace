@@ -16,6 +16,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Pair;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.api.game.common.widget.SidebarWidget;
@@ -123,9 +124,9 @@ public class QualifyingWidgets {
                         stageManager.getQualifyingConfig().duration()));
                 content.add(Text.empty());
 
-                List<PersonalBest> pbs = leaderboard.getLeaderboard(this.track);
+                List<PersonalBest> records = leaderboard.getLeaderboard(this.track);
 
-                if (pbs.isEmpty()) {
+                if (records.isEmpty()) {
                     content.add(Text.literal(" No times set.")
                             .formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
                     return;
@@ -133,32 +134,25 @@ public class QualifyingWidgets {
 
                 int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
 
-                // add top players
-                WidgetTextUtil.scoreboardPersonalBestsAround(pbs, 0, SIDEBAR_RANKING_TOP)
-                        .entrySet().stream()
-                        .map(entry -> WidgetTextUtil
-                                .scoreboardLeaderboardText(entry.getValue(), entry.getKey(), bPlayer))
-                        .forEach(content::add);
+                for (Pair<Integer, PersonalBest> pair : WidgetTextUtil.scoreboardAroundAndTop(
+                        records,
+                        position,
+                        SIDEBAR_RANKING_TOP,
+                        SIDEBAR_RANKING_COMPARED)) {
+                    if (pair == null) {
+                        content.add(WidgetTextUtil.PAD_SCOREBOARD_POSITION);
+                        continue;
+                    }
 
-                // add padding if theres positions between overlaps
-                if (position > 0 && position - SIDEBAR_RANKING_COMPARED > SIDEBAR_RANKING_TOP + 1) {
-                    content.add(WidgetTextUtil.PAD_SCOREBOARD_POSITION);
-                }
+                    MutableText text = Text.empty();
+                    PersonalBest pb = pair.getRight();
 
-                // show positions around the player
-                if (position > 0 && position + SIDEBAR_RANKING_COMPARED > SIDEBAR_RANKING_TOP) {
-                    WidgetTextUtil.scoreboardPersonalBestsAround(pbs, position, SIDEBAR_RANKING_COMPARED)
-                            .entrySet().stream()
-                            .filter(entry -> entry.getKey() > SIDEBAR_RANKING_TOP + 1) // remove overlaps
-                            .map(entry -> WidgetTextUtil
-                                    .scoreboardLeaderboardText(entry.getValue(), entry.getKey(), bPlayer))
-                            .forEach(content::add);
-                }
+                    text.append(" ");
+                    text.append(WidgetTextUtil.scoreboardPosition(pb.player(), bPlayer, pair.getLeft())).append(" ");
+                    text.append(WidgetTextUtil.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
+                    text.append(WidgetTextUtil.scoreboardName(pb.player(), bPlayer, pair.getLeft()));
 
-                // add padding at the end if needed
-                int lastDisplayed = Math.max(position + SIDEBAR_RANKING_COMPARED, SIDEBAR_RANKING_TOP);
-                if (pbs.size() - 1 > lastDisplayed) {
-                    content.add(WidgetTextUtil.PAD_SCOREBOARD_POSITION);
+                    content.add(text);
                 }
             });
         }

@@ -30,7 +30,6 @@ public class SplitsManager {
     public void run(BoatRacePlayer player) {
         this.running.add(player);
 
-        // reset everything but the lap count.
         this.timer.put(player, 0l);
         this.splits.remove(player);
     }
@@ -43,7 +42,6 @@ public class SplitsManager {
     public void stop(BoatRacePlayer player) {
         this.running.remove(player);
 
-        // reset everything but the lap count.
         this.timer.put(player, 0l);
         this.splits.remove(player);
     }
@@ -68,38 +66,21 @@ public class SplitsManager {
      * @return The recorded split time.
      */
     public long recordSplit(BoatRacePlayer player) {
-        long lap = this.timer.getOrDefault(player, 0l);
+        long split = this.timer.getOrDefault(player, 0l);
 
         if (!this.splits.containsKey(player)) {
             List<Long> splits = new LongArrayList();
-            splits.add(lap);
+            splits.add(split);
 
             this.splits.put(player, splits);
 
-            return lap;
+            return split;
         }
 
         List<Long> splits = this.splits.get(player);
-        splits.add(lap);
+        splits.add(split);
 
-        return lap;
-    }
-
-    /**
-     * Resets the internal timer and splits.
-     *
-     * @param player         The player to reset for.
-     * @param preserveSplits Should the splits be preserved.
-     * @return The last timer before a reset.
-     */
-    public long reset(BoatRacePlayer player, boolean preserveSplits) {
-        long timer = this.timer.getOrDefault(player, 0l);
-        this.timer.remove(player);
-        if (!preserveSplits) {
-            this.splits.remove(player);
-        }
-
-        return timer;
+        return split;
     }
 
     /**
@@ -109,7 +90,11 @@ public class SplitsManager {
      * @return The last timer before a reset.
      */
     public long reset(BoatRacePlayer player) {
-        return this.reset(player, false);
+        long timer = this.timer.getOrDefault(player, 0l);
+        this.timer.remove(player);
+        this.splits.remove(player);
+
+        return timer;
     }
 
     /**

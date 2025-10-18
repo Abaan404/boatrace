@@ -36,16 +36,16 @@ public class Race {
     private final RaceWidgets widgets;
 
     private Race(GameSpace gameSpace, ServerWorld world, TrackMap track, GlobalWidgets widgets,
-            BoatRaceConfig config, List<PersonalBest> leaderboard) {
-        this.stageManager = new RaceStageManager(gameSpace, config, world, track, leaderboard);
-        this.widgets = new RaceWidgets(gameSpace, world, widgets, track);
+            BoatRaceConfig config, List<PersonalBest> qualifyingRecords) {
+        this.stageManager = new RaceStageManager(gameSpace, config, world, track, qualifyingRecords);
+        this.widgets = new RaceWidgets(gameSpace, widgets, track);
     }
 
     public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, TrackMap track,
-            List<PersonalBest> leaderboard) {
+            List<PersonalBest> records) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 
-        Race race = new Race(game.getGameSpace(), world, track, widgets, config, leaderboard);
+        Race race = new Race(game.getGameSpace(), world, track, widgets, config, records);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
 

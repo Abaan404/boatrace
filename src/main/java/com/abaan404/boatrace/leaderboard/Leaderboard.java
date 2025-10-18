@@ -86,8 +86,14 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @return A new leaderboard with the new personal best.
      */
     public Leaderboard trySubmit(ServerWorld world, TrackMap track, PersonalBest personalBest) {
+        PersonalBest currentPersonalBest = this.getPersonalBest(track, personalBest.player());
+        if (personalBest.timer() > currentPersonalBest.timer()) {
+            // not a better pb
+            return this;
+        }
+
         // invalid pb, reject
-        if (!this.validatePersonalBest(track, personalBest)) {
+        if (!Leaderboard.validate(track, personalBest)) {
             return this;
         }
 
@@ -118,30 +124,27 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     /**
      * Validates the run and checks if its a better run.
      *
-     * @param track           The track the run belongs to.
-     * @param newPersonalBest The new personal best to validate.
+     * @param track        The track the run belongs to.
+     * @param personalBest The personal best to validate.
      * @return If the run was valid and is ready to be submitted.
      */
-    private boolean validatePersonalBest(TrackMap track, PersonalBest newPersonalBest) {
-        PersonalBest currentPersonalBest = this.getPersonalBest(track, newPersonalBest.player());
-        if (newPersonalBest.timer() > currentPersonalBest.timer()) {
-            // not a better pb
-            return false;
-        }
+    public static boolean validate(TrackMap track, PersonalBest personalBest) {
+        // NOTE: detect track limits using regions?
 
         switch (track.getMeta().layout()) {
             case CIRCULAR:
-                if (newPersonalBest.splits().size() != track.getRegions().checkpoints().size()) {
+                // first checkpoint and last checkpoints are counted splits.
+                if (personalBest.splits().size() != track.getRegions().checkpoints().size() + 1) {
                     BoatRace.LOGGER.warn("Invalid number of splits in the personal best ({}) for track \"{}\"",
-                            newPersonalBest.toString(), track.getMeta().name());
+                            personalBest.toString(), track.getMeta().name());
                     return false;
                 }
 
                 break;
             case LINEAR:
-                if (newPersonalBest.splits().size() + 1 != track.getRegions().checkpoints().size()) {
+                if (personalBest.splits().size() != track.getRegions().checkpoints().size()) {
                     BoatRace.LOGGER.warn("Invalid number of splits in the personal best ({}) for track \"{}\"",
-                            newPersonalBest.toString(), track.getMeta().name());
+                            personalBest.toString(), track.getMeta().name());
                     return false;
                 }
 
@@ -151,16 +154,10 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
         }
 
         long prevSplit = 0l;
-        for (long split : newPersonalBest.splits()) {
+        for (long split : personalBest.splits()) {
             if (split < prevSplit) {
                 BoatRace.LOGGER.warn("Splits dont ascend in the personal best ({}) for track \"{}\"",
-                        newPersonalBest.toString(), track.getMeta().name());
-                return false;
-            }
-
-            if (split > newPersonalBest.timer()) {
-                BoatRace.LOGGER.warn("A split was greater than the timer in the personal best ({}) for track \"{}\"",
-                        newPersonalBest.toString(), track.getMeta().name());
+                        personalBest.toString(), track.getMeta().name());
                 return false;
             }
 
