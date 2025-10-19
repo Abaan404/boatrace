@@ -81,7 +81,7 @@ public class QualifyingWidgets {
             MutableText actionBarText = Text.empty();
 
             // player has a position
-            if (position > 0) {
+            if (position >= 0) {
                 actionBarText.append(WidgetTextUtil.actionBarPosition(position)).append(" ");
             }
 

@@ -113,7 +113,6 @@ public class TimeTrial {
     private EventResult onDismount(ServerPlayerEntity player, Entity vehicle) {
         vehicle.discard();
         this.stageManager.toSpectator(BoatRacePlayer.of(player));
-        this.stageManager.respawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
 
         return EventResult.DENY;
