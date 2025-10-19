@@ -50,6 +50,12 @@ public class TrackMap {
             checkpoints.add(RespawnRegion.of());
         }
 
+        RespawnRegion spawn = template.getMetadata()
+                .getRegions("spawn")
+                .map(RespawnRegion::of)
+                .findFirst()
+                .orElse(RespawnRegion.of());
+
         List<RespawnRegion> gridBoxes = template.getMetadata()
                 .getRegions("grid_box")
                 .filter(gb -> gb.getData().getInt("index").isPresent())
@@ -78,6 +84,7 @@ public class TrackMap {
 
         this.regions = new Regions(
                 checkpoints,
+                spawn,
                 gridBoxes,
                 pitEntry,
                 pitExit,
@@ -195,7 +202,7 @@ public class TrackMap {
 
     public record Regions(
             List<RespawnRegion> checkpoints,
-            List<RespawnRegion> gridBoxes,
+            RespawnRegion spawn, List<RespawnRegion> gridBoxes,
             RespawnRegion pitEntry, RespawnRegion pitExit, List<RespawnRegion> pitBoxes) {
     }
 

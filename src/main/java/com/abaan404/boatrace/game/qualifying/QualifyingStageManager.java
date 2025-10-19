@@ -88,6 +88,12 @@ public class QualifyingStageManager {
                 }
                 break;
             }
+
+            case SPAWN: {
+                if (!regions.spawn().equals(TrackMap.RespawnRegion.of())) {
+                    respawn = regions.spawn();
+                }
+            }
         }
 
         this.spawnLogic.spawnPlayer(player, respawn);

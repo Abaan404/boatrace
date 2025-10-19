@@ -65,7 +65,9 @@ public class TimeTrialStageManager {
             return;
         }
 
-        if (!regions.gridBoxes().isEmpty()) {
+        if (!regions.spawn().equals(TrackMap.RespawnRegion.of())) {
+            respawn = regions.spawn();
+        } else if (!regions.gridBoxes().isEmpty()) {
             respawn = regions.gridBoxes().getFirst();
         } else if (!regions.checkpoints().isEmpty()) {
             switch (meta.layout()) {
