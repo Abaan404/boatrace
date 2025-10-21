@@ -66,6 +66,35 @@ public class LapManager {
     }
 
     /**
+     * calculate the time saved at a checkpoint to the car ahead.
+     *
+     * @param player The player's whomst checkpoint is to be compared.
+     * @return The delta time saved at that checkpoint.
+     */
+    public long getSavedDeltaToAhead(BoatRacePlayer player) {
+        int position = this.getPosition(player);
+
+        // no one ahead, delta 0
+        if (position <= 0) {
+            return 0l;
+        }
+
+        // get ahead
+        int aheadPosition = position - 1;
+        BoatRacePlayer aheadPlayer = this.positions.get(aheadPosition);
+
+        List<Long> curSplits = this.splits.getOrDefault(player, LongArrayList.of(0l));
+        List<Long> aheadSplits = this.splits.getOrDefault(aheadPlayer, LongArrayList.of(0l));
+        int cur = curSplits.size() - 1;
+
+        // get delta from prev to current splits
+        long curDelta = curSplits.get(cur) - curSplits.get(Math.max(0, cur - 1));
+        long aheadDelta = aheadSplits.get(cur) - aheadSplits.get(Math.max(0, cur - 1));
+
+        return curDelta - aheadDelta;
+    }
+
+    /**
      * Get the delta for this player against every other player according to their
      * position. +ve is ahead while -ve is behind.
      *
@@ -106,7 +135,7 @@ public class LapManager {
      *
      * @return The leader's laps.
      */
-    public long getLeadingLaps() {
+    public int getLeadingLaps() {
         if (this.positions.isEmpty()) {
             return 0;
         }
@@ -120,7 +149,7 @@ public class LapManager {
      * @param player The player.
      * @return Their completed laps.
      */
-    public long getLaps(BoatRacePlayer player) {
+    public int getLaps(BoatRacePlayer player) {
         int curCheckpoints = this.splits.getOrDefault(player, LongArrayList.of()).size() - 2;
         int trackCheckpoints = this.track.getRegions().checkpoints().size();
 

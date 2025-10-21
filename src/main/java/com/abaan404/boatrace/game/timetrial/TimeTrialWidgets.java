@@ -90,7 +90,8 @@ public final class TimeTrialWidgets {
 
             if (checkpoint > 0 && pb.exists()) {
                 long delta = pb.getCheckpointDelta(currentSplits, checkpoint);
-                actionBarText.append(WidgetTextUtil.actionBarTimerDelta(timer, delta)).append(" ");
+                actionBarText.append(WidgetTextUtil.actionBarTimer(timer)).append(" ");
+                actionBarText.append(WidgetTextUtil.actionBarDelta(delta)).append(" ");
             } else {
                 actionBarText.append(WidgetTextUtil.actionBarTimer(timer)).append(" ");
             }
@@ -146,11 +147,12 @@ public final class TimeTrialWidgets {
 
                     MutableText text = Text.empty();
                     PersonalBest pb = pair.getRight();
+                    boolean highlighted = bPlayer.equals(pb.player());
 
                     text.append(" ");
-                    text.append(WidgetTextUtil.scoreboardPosition(pb.player(), bPlayer, pair.getLeft())).append(" ");
+                    text.append(WidgetTextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
                     text.append(WidgetTextUtil.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
-                    text.append(WidgetTextUtil.scoreboardName(pb.player(), bPlayer, pair.getLeft()));
+                    text.append(WidgetTextUtil.scoreboardName(pb.player(), highlighted, pair.getLeft()));
 
                     content.add(text);
                 }

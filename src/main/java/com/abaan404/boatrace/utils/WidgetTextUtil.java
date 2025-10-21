@@ -31,11 +31,7 @@ public final class WidgetTextUtil {
      * @return A text if the position was valid otherwise an empty text.
      */
     public static Text actionBarPosition(int position) {
-        if (position > -1) {
-            return Text.literal(String.format("P%d", position + 1)).formatted(Formatting.AQUA, Formatting.BOLD);
-        } else {
-            return Text.empty();
-        }
+        return WidgetTextUtil.scoreboardPosition(false, position);
     }
 
     /**
@@ -62,13 +58,13 @@ public final class WidgetTextUtil {
     }
 
     /**
-     * Create a text to show the current timer along with splits.
+     * Create a text to show the current delta.
      *
      * @param timer The timer in ms.
      * @param delta The delta for this split.
      * @return The timer and splits text seperated by a symbol.
      */
-    public static Text actionBarTimerDelta(long timer, long delta) {
+    public static Text actionBarDelta(long delta) {
         String deltaString = TimeUtils.formatTime(
                 delta,
                 EnumSet.of(TimeUtils.Selector.SECONDS, TimeUtils.Selector.MILLISECONDS),
@@ -77,24 +73,21 @@ public final class WidgetTextUtil {
         // faster
         if (delta < 0) {
             return Text.empty()
-                    .append(WidgetTextUtil.actionBarTimer(timer))
-                    .append(Text.literal(" ▲ ").formatted(Formatting.BLUE))
+                    .append(Text.literal("▲ ").formatted(Formatting.BLUE))
                     .append(Text.literal(deltaString).formatted(Formatting.BLUE))
                     .formatted(Formatting.BOLD);
         }
         // slower
         else if (delta > 0) {
             return Text.empty()
-                    .append(WidgetTextUtil.actionBarTimer(timer))
-                    .append(Text.literal(" ▼ ").formatted(Formatting.RED))
+                    .append(Text.literal("▼ ").formatted(Formatting.RED))
                     .append(Text.literal(deltaString).formatted(Formatting.RED))
                     .formatted(Formatting.BOLD);
         }
         // equal
         else {
             return Text.empty()
-                    .append(WidgetTextUtil.actionBarTimer(timer))
-                    .append(Text.literal(" ◇ ").formatted(Formatting.GRAY))
+                    .append(Text.literal("◇ ").formatted(Formatting.GRAY))
                     .append(Text.literal(deltaString).formatted(Formatting.GRAY))
                     .formatted(Formatting.BOLD);
         }
@@ -143,9 +136,24 @@ public final class WidgetTextUtil {
     }
 
     /**
+     * Format laps as text.
+     *
+     * @param laps    The current laps.
+     * @param maxLaps The total laps
+     * @return The duration text.
+     */
+    public static Text scoreboardLaps(int laps, int maxLaps) {
+        return Text.empty()
+                .append(Text.literal(" Laps: ").formatted(Formatting.RED))
+                .append(Text.literal(String.valueOf(laps)))
+                .append(Text.literal(" / ").formatted(Formatting.ITALIC))
+                .append(Text.literal(String.valueOf(maxLaps)));
+    }
+
+    /**
      * Format duration as text.
      *
-     * @param duration The elapsed time.
+     * @param duration    The elapsed time.
      * @param maxDuration The remaining time.
      * @return The duration text.
      */
@@ -161,18 +169,16 @@ public final class WidgetTextUtil {
                         maxDuration,
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.HOURS)),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.MILLISECONDS)))));
-
     }
 
     /**
      * Format position as text.
      *
-     * @param player The player the position belongs to.
-     * @param curPlayer The player that should be highlighted.
-     * @param position The track position.
+     * @param highlighted Should this be highlighted.
+     * @param position    The track position.
      * @return The position text.
      */
-    public static Text scoreboardPosition(BoatRacePlayer player, BoatRacePlayer curPlayer, int position) {
+    public static Text scoreboardPosition(boolean highlighted, int position) {
         MutableText text = Text.empty();
 
         MutableText P = Text.literal("P");
@@ -188,7 +194,7 @@ public final class WidgetTextUtil {
             } else if (position == 2) {
                 text.append(P.formatted(Formatting.GOLD, Formatting.BOLD));
                 text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
-            } else if (player.equals(curPlayer)) {
+            } else if (highlighted) {
                 text.append(P.formatted(Formatting.BOLD));
                 text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
             } else {
@@ -203,7 +209,7 @@ public final class WidgetTextUtil {
     /**
      * Format time as an absolute time.
      *
-     * @param timer The time to use.
+     * @param timer    The time to use.
      * @param position The track position.
      */
     public static Text scoreboardAbsolute(Long timer, int position) {
@@ -219,7 +225,7 @@ public final class WidgetTextUtil {
     /**
      * Format time as a relative time.
      *
-     * @param delta The time to use.
+     * @param delta    The time to use.
      * @param position The track position.
      */
     public static Text scoreboardRelative(Long delta, int position) {
@@ -240,17 +246,17 @@ public final class WidgetTextUtil {
     /**
      * Format player name as text.
      *
-     * @param player The player the position belongs to.
-     * @param curPlayer The player to be highlighted.
-     * @param position The track position.
+     * @param player      The player the position belongs to.
+     * @param highlighted Should this be highlighted.
+     * @param position    The track position.
      */
-    public static Text scoreboardName(BoatRacePlayer player, BoatRacePlayer curPlayer, int position) {
+    public static Text scoreboardName(BoatRacePlayer player, boolean highlighted, int position) {
         MutableText nameText = Text.literal(player.offlineName());
 
         if (position == 0) {
             return nameText.formatted(Formatting.YELLOW, Formatting.BOLD);
         } else {
-            if (player.equals(curPlayer)) {
+            if (highlighted) {
                 return nameText.formatted(Formatting.BOLD);
             } else {
                 return nameText.formatted(Formatting.GRAY);
