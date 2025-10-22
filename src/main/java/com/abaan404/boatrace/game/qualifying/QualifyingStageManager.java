@@ -13,6 +13,7 @@ import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
+import com.abaan404.boatrace.utils.TextUtil;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
@@ -152,6 +153,7 @@ public class QualifyingStageManager {
                 continue;
             }
 
+            Leaderboard newLeaderboard = leaderboard;
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
                     this.splits.run(bPlayer);
@@ -161,7 +163,7 @@ public class QualifyingStageManager {
 
                 case LOOP: {
                     this.splits.recordSplit(bPlayer);
-                    leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
+                    newLeaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
                             BoatRacePlayer.of(player),
                             this.splits.getSplits(bPlayer)));
 
@@ -173,7 +175,7 @@ public class QualifyingStageManager {
 
                 case FINISH: {
                     this.splits.recordSplit(bPlayer);
-                    leaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
+                    newLeaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
                             BoatRacePlayer.of(player),
                             this.splits.getSplits(bPlayer)));
 
@@ -190,6 +192,15 @@ public class QualifyingStageManager {
                 case IDLE: {
                     break;
                 }
+            }
+
+            // leaderboard was updated, new pb
+            if (newLeaderboard != leaderboard) {
+                PersonalBest pb = newLeaderboard.getPersonalBest(this.track, bPlayer);
+                int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
+
+                player.sendMessage(TextUtil.chatNewPersonalBest(pb.timer(), position));
+                leaderboard = newLeaderboard;
             }
         }
     }

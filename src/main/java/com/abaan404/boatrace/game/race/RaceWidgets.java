@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.maps.TrackMap;
-import com.abaan404.boatrace.utils.WidgetTextUtil;
+import com.abaan404.boatrace.utils.TextUtil;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
@@ -45,6 +45,9 @@ public class RaceWidgets {
         this.tickSidebar(stageManager);
     }
 
+    public void broadcast(BoatRacePlayer player) {
+    }
+
     /**
      * Display splits and timers on the client's action bar.
      *
@@ -71,15 +74,15 @@ public class RaceWidgets {
 
             MutableText actionBarText = Text.empty();
 
-            actionBarText.append(WidgetTextUtil.actionBarPosition(position)).append(" ");
-            actionBarText.append(WidgetTextUtil.actionBarTimer(timer)).append(" ");
+            actionBarText.append(TextUtil.actionBarPosition(position)).append(" ");
+            actionBarText.append(TextUtil.actionBarTimer(timer)).append(" ");
 
             if (position > 0) {
                 long delta = stageManager.laps.getSavedDeltaToAhead(bPlayer);
-                actionBarText.append(WidgetTextUtil.actionBarDelta(delta)).append(" ");
+                actionBarText.append(TextUtil.actionBarDelta(delta)).append(" ");
             }
 
-            actionBarText.append(WidgetTextUtil.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
+            actionBarText.append(TextUtil.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
 
             player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
         }
@@ -94,7 +97,7 @@ public class RaceWidgets {
 
             if (!this.sidebars.containsKey(bPlayer)) {
                 SidebarWidget newSidebar = this.widgets.addSidebar(
-                        WidgetTextUtil.scoreboardTitleText("Race"),
+                        TextUtil.scoreboardTitleText("Race"),
                         p -> BoatRacePlayer.of(p).equals(bPlayer));
                 newSidebar.addPlayer(player);
                 this.sidebars.put(bPlayer, newSidebar);
@@ -103,13 +106,13 @@ public class RaceWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
-                WidgetTextUtil.scoreboardMeta(this.track.getMeta()).forEach(content::add);
+                TextUtil.scoreboardMeta(this.track.getMeta()).forEach(content::add);
 
-                content.add(WidgetTextUtil.scoreboardLaps(
+                content.add(TextUtil.scoreboardLaps(
                         stageManager.laps.getLeadingLaps(),
                         stageManager.getRaceConfig().maxLaps()));
 
-                content.add(WidgetTextUtil.scoreboardDuration(
+                content.add(TextUtil.scoreboardDuration(
                         stageManager.getDurationTimer(),
                         stageManager.getRaceConfig().maxDuration()));
                 content.add(Text.empty());
@@ -125,13 +128,13 @@ public class RaceWidgets {
                 int position = stageManager.laps.getPosition(bPlayer);
                 Map<BoatRacePlayer, Long> splits = stageManager.laps.getDeltas(bPlayer);
 
-                for (Pair<Integer, BoatRacePlayer> pair : WidgetTextUtil.scoreboardAroundAndTop(
+                for (Pair<Integer, BoatRacePlayer> pair : TextUtil.scoreboardAroundAndTop(
                         players,
                         position,
                         SIDEBAR_RANKING_TOP,
                         SIDEBAR_RANKING_COMPARED)) {
                     if (pair == null) {
-                        content.add(WidgetTextUtil.PAD_SCOREBOARD_POSITION);
+                        content.add(TextUtil.PAD_SCOREBOARD_POSITION);
                         continue;
                     }
 
@@ -140,13 +143,13 @@ public class RaceWidgets {
                     boolean highlighted = bPlayer.equals(player2);
 
                     text.append(" ");
-                    text.append(WidgetTextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
+                    text.append(TextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
 
                     if (!bPlayer.equals(pair.getRight())) {
-                        text.append(WidgetTextUtil.scoreboardRelative(splits.get(player2), pair.getLeft())).append(" ");
+                        text.append(TextUtil.scoreboardRelative(splits.get(player2), pair.getLeft())).append(" ");
                     }
 
-                    text.append(WidgetTextUtil.scoreboardName(player2, highlighted, pair.getLeft()));
+                    text.append(TextUtil.scoreboardName(player2, highlighted, pair.getLeft()));
 
                     content.add(text);
                 }

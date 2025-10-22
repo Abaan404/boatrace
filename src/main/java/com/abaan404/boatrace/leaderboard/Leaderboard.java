@@ -115,10 +115,12 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
 
         newTrackLeaderboard.sort((a, b) -> Long.compare(a.timer(), b.timer()));
 
-        Map<String, List<PersonalBest>> newLeaderboard = new Object2ObjectOpenHashMap<>(this.leaderboard);
-        newLeaderboard.put(String.valueOf(track.hashCode()), newTrackLeaderboard);
+        Map<String, List<PersonalBest>> newLeaderboardMap = new Object2ObjectOpenHashMap<>(this.leaderboard);
+        newLeaderboardMap.put(String.valueOf(track.hashCode()), newTrackLeaderboard);
 
-        return world.setAttached(Leaderboard.ATTACHMENT, new Leaderboard(newLeaderboard));
+        Leaderboard newLeaderboard = new Leaderboard(newLeaderboardMap);
+        world.setAttached(Leaderboard.ATTACHMENT, newLeaderboard);
+        return newLeaderboard;
     }
 
     /**

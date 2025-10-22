@@ -7,7 +7,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.maps.TrackMap;
-import com.abaan404.boatrace.utils.WidgetTextUtil;
+import com.abaan404.boatrace.utils.TextUtil;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
@@ -82,18 +82,18 @@ public class QualifyingWidgets {
 
             // player has a position
             if (position >= 0) {
-                actionBarText.append(WidgetTextUtil.actionBarPosition(position)).append(" ");
+                actionBarText.append(TextUtil.actionBarPosition(position)).append(" ");
             }
 
             if (checkpoint > 0 && pb.exists()) {
                 long delta = pb.getCheckpointDelta(currentSplits, checkpoint);
-                actionBarText.append(WidgetTextUtil.actionBarTimer(timer)).append(" ");
-                actionBarText.append(WidgetTextUtil.actionBarDelta(delta)).append(" ");
+                actionBarText.append(TextUtil.actionBarTimer(timer)).append(" ");
+                actionBarText.append(TextUtil.actionBarDelta(delta)).append(" ");
             } else {
-                actionBarText.append(WidgetTextUtil.actionBarTimer(timer)).append(" ");
+                actionBarText.append(TextUtil.actionBarTimer(timer)).append(" ");
             }
 
-            actionBarText.append(WidgetTextUtil.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
+            actionBarText.append(TextUtil.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
             player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
         }
     }
@@ -109,7 +109,7 @@ public class QualifyingWidgets {
 
             if (!this.sidebars.containsKey(bPlayer)) {
                 SidebarWidget newSidebar = this.widgets.addSidebar(
-                        WidgetTextUtil.scoreboardTitleText("Qualifying"),
+                        TextUtil.scoreboardTitleText("Qualifying"),
                         p -> BoatRacePlayer.of(p).equals(bPlayer));
                 newSidebar.addPlayer(player);
                 this.sidebars.put(bPlayer, newSidebar);
@@ -118,9 +118,9 @@ public class QualifyingWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
-                WidgetTextUtil.scoreboardMeta(this.track.getMeta()).forEach(content::add);
+                TextUtil.scoreboardMeta(this.track.getMeta()).forEach(content::add);
 
-                content.add(WidgetTextUtil.scoreboardDuration(
+                content.add(TextUtil.scoreboardDuration(
                         stageManager.getDurationTimer(),
                         stageManager.getQualifyingConfig().duration()));
                 content.add(Text.empty());
@@ -135,13 +135,13 @@ public class QualifyingWidgets {
 
                 int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
 
-                for (Pair<Integer, PersonalBest> pair : WidgetTextUtil.scoreboardAroundAndTop(
+                for (Pair<Integer, PersonalBest> pair : TextUtil.scoreboardAroundAndTop(
                         records,
                         position,
                         SIDEBAR_RANKING_TOP,
                         SIDEBAR_RANKING_COMPARED)) {
                     if (pair == null) {
-                        content.add(WidgetTextUtil.PAD_SCOREBOARD_POSITION);
+                        content.add(TextUtil.PAD_SCOREBOARD_POSITION);
                         continue;
                     }
 
@@ -150,9 +150,9 @@ public class QualifyingWidgets {
                     boolean highlighted = bPlayer.equals(pb.player());
 
                     text.append(" ");
-                    text.append(WidgetTextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
-                    text.append(WidgetTextUtil.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
-                    text.append(WidgetTextUtil.scoreboardName(pb.player(), highlighted, pair.getLeft()));
+                    text.append(TextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
+                    text.append(TextUtil.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
+                    text.append(TextUtil.scoreboardName(pb.player(), highlighted, pair.getLeft()));
 
                     content.add(text);
                 }

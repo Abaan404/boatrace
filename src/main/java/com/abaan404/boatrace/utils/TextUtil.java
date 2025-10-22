@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.maps.TrackMap;
 
+import eu.pb4.polymer.core.mixin.client.compat.wthit_HarvestProviderMixin;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -18,8 +19,8 @@ import net.minecraft.util.Pair;
 /**
  * Common texts for widgets shared by each gamemode.
  */
-public final class WidgetTextUtil {
-    private WidgetTextUtil() {
+public final class TextUtil {
+    private TextUtil() {
     }
 
     public static final Text PAD_SCOREBOARD_POSITION = Text.literal("   ○ ○ ○").formatted(Formatting.DARK_GRAY);
@@ -31,7 +32,7 @@ public final class WidgetTextUtil {
      * @return A text if the position was valid otherwise an empty text.
      */
     public static Text actionBarPosition(int position) {
-        return WidgetTextUtil.scoreboardPosition(false, position);
+        return TextUtil.scoreboardPosition(false, position);
     }
 
     /**
@@ -212,7 +213,7 @@ public final class WidgetTextUtil {
      * @param timer    The time to use.
      * @param position The track position.
      */
-    public static Text scoreboardAbsolute(Long timer, int position) {
+    public static Text scoreboardAbsolute(long timer, int position) {
         MutableText timeText = Text.literal(TimeUtils.formatTime(timer));
 
         if (position == 0) {
@@ -228,7 +229,7 @@ public final class WidgetTextUtil {
      * @param delta    The time to use.
      * @param position The track position.
      */
-    public static Text scoreboardRelative(Long delta, int position) {
+    public static Text scoreboardRelative(long delta, int position) {
         MutableText timeText = Text.literal(TimeUtils.formatTime(
                 delta,
                 EnumSet.of(TimeUtils.Selector.SECONDS, TimeUtils.Selector.MILLISECONDS),
@@ -285,7 +286,7 @@ public final class WidgetTextUtil {
         }
 
         // add top values
-        for (Pair<Integer, T> pair : WidgetTextUtil.scoreboardAround(list, 0, top - 1)) {
+        for (Pair<Integer, T> pair : TextUtil.scoreboardAround(list, 0, top - 1)) {
             around.add(pair);
         }
 
@@ -296,7 +297,7 @@ public final class WidgetTextUtil {
 
         // show indices around the player
         if (index > 0 && index + compared > top - 1) {
-            for (Pair<Integer, T> pair : WidgetTextUtil.scoreboardAround(list, index, compared)) {
+            for (Pair<Integer, T> pair : TextUtil.scoreboardAround(list, index, compared)) {
                 // skip overlaps from top
                 if (pair.getLeft() > top - 1) {
                     around.add(pair);
@@ -345,5 +346,21 @@ public final class WidgetTextUtil {
         }
 
         return around;
+    }
+
+    /**
+     * A text to display a new best time.
+     *
+     * @param timer The player's timer.
+     * @param position The player's position.
+     * @return A text
+     */
+    public static Text chatNewPersonalBest(long timer, int position) {
+        return Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.GOLD, Formatting.BOLD))
+                .append(Text.literal("New Best Time!   ").formatted(Formatting.WHITE))
+                .append(TextUtil.scoreboardPosition(true, position))
+                .append(Text.literal(" ◇ ").formatted(Formatting.BOLD))
+                .append(Text.literal(TimeUtils.formatTime(timer)).formatted(Formatting.BOLD));
     }
 }
