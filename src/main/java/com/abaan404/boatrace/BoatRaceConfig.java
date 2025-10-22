@@ -2,7 +2,6 @@ package com.abaan404.boatrace;
 
 import java.util.Optional;
 
-import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -10,21 +9,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 
-public record BoatRaceConfig(Map map, Optional<Qualifying> qualifying,
+public record BoatRaceConfig(Identifier track, Optional<Qualifying> qualifying,
         Optional<Race> race) {
 
     public static final MapCodec<BoatRaceConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Map.CODEC.fieldOf("map").forGetter(BoatRaceConfig::map),
+            Identifier.CODEC.fieldOf("track").forGetter(BoatRaceConfig::track),
             Qualifying.CODEC.optionalFieldOf("qualifying").forGetter(BoatRaceConfig::qualifying),
             Race.CODEC.optionalFieldOf("race").forGetter(BoatRaceConfig::race))
             .apply(instance, BoatRaceConfig::new));
-
-    public record Map(Either<Identifier, Identifier> lobbyOrTrack) {
-        public static final Codec<Map> CODEC = Codec.either(
-                Identifier.CODEC.fieldOf("lobby").codec(),
-                Identifier.CODEC.fieldOf("track").codec())
-                .xmap(Map::new, Map::lobbyOrTrack);
-    }
 
     public record Qualifying(
             long duration,
@@ -61,8 +53,8 @@ public record BoatRaceConfig(Map map, Optional<Qualifying> qualifying,
         public static final Codec<Race> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.INT.fieldOf("max_duration").forGetter(Race::maxDuration),
                 Codec.INT.fieldOf("max_laps").forGetter(Race::maxLaps),
-                Codec.INT.fieldOf("required_pits").forGetter(Race::requiredPits),
-                Codec.BOOL.fieldOf("collision").forGetter(Race::collision))
+                Codec.INT.optionalFieldOf("required_pits", 0).forGetter(Race::requiredPits),
+                Codec.BOOL.optionalFieldOf("collision", false).forGetter(Race::collision))
                 .apply(instance, Race::new));
     }
 }

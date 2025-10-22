@@ -5,8 +5,8 @@ import java.util.function.Consumer;
 
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
-import com.abaan404.boatrace.maps.TrackMap;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.damage.DamageSource;
@@ -35,13 +35,13 @@ public class Race {
     private final RaceStageManager stageManager;
     private final RaceWidgets widgets;
 
-    private Race(GameSpace gameSpace, ServerWorld world, TrackMap track, GlobalWidgets widgets,
+    private Race(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
             BoatRaceConfig config, List<PersonalBest> qualifyingRecords) {
         this.stageManager = new RaceStageManager(gameSpace, config, world, track, qualifyingRecords);
         this.widgets = new RaceWidgets(gameSpace, widgets, track);
     }
 
-    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, TrackMap track,
+    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track,
             List<PersonalBest> records) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 

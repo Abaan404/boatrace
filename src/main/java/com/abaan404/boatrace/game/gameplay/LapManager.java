@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.abaan404.boatrace.BoatRacePlayer;
-import com.abaan404.boatrace.maps.TrackMap;
+import com.abaan404.boatrace.BoatRaceTrack;
 
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
@@ -16,12 +16,12 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  * Keeps track of positions and delta times on track.
  */
 public class LapManager {
-    private final TrackMap track;
+    private final BoatRaceTrack track;
 
     private List<BoatRacePlayer> positions = new ObjectArrayList<>();
     private Map<BoatRacePlayer, List<Long>> splits = new Object2ObjectOpenHashMap<>();
 
-    public LapManager(TrackMap track) {
+    public LapManager(BoatRaceTrack track) {
         this.track = track;
     }
 

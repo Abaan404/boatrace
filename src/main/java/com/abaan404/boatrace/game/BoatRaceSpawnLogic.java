@@ -3,7 +3,7 @@ package com.abaan404.boatrace.game;
 import java.util.Optional;
 import java.util.Set;
 
-import com.abaan404.boatrace.maps.TrackMap;
+import com.abaan404.boatrace.BoatRaceTrack;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -62,7 +62,7 @@ public class BoatRaceSpawnLogic {
      * @param player  The player.
      * @param respawn The region to spawn in.
      */
-    public void spawnPlayer(ServerPlayerEntity player, TrackMap.RespawnRegion respawn) {
+    public void spawnPlayer(ServerPlayerEntity player, BoatRaceTrack.RespawnRegion respawn) {
         BlockPos center = BlockPos.ofFloored(respawn.bounds().center());
         BlockPos spawn = center;
 

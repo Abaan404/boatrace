@@ -5,6 +5,7 @@ import java.util.Set;
 
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
@@ -12,7 +13,6 @@ import com.abaan404.boatrace.game.race.Race;
 import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
-import com.abaan404.boatrace.maps.TrackMap;
 import com.abaan404.boatrace.utils.TextUtil;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -26,7 +26,7 @@ public class QualifyingStageManager {
     private final GameSpace gameSpace;
     private final ServerWorld world;
     private final BoatRaceConfig config;
-    private final TrackMap track;
+    private final BoatRaceTrack track;
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
@@ -39,7 +39,7 @@ public class QualifyingStageManager {
     private long duration;
 
     public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig config, ServerWorld world,
-            TrackMap track) {
+            BoatRaceTrack track) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
@@ -63,7 +63,7 @@ public class QualifyingStageManager {
      */
     public void spawnPlayer(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-        TrackMap.Regions regions = this.track.getRegions();
+        BoatRaceTrack.Regions regions = this.track.getRegions();
 
         // spawn spectators at spawn without boats
         if (!this.participants.contains(bPlayer)) {
@@ -73,7 +73,7 @@ public class QualifyingStageManager {
         }
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
-        TrackMap.RespawnRegion respawn = regions.checkpoints().getFirst();
+        BoatRaceTrack.RespawnRegion respawn = regions.checkpoints().getFirst();
 
         switch (this.config.qualifying().get().startFrom()) {
             case GRID_BOX: {
@@ -91,7 +91,7 @@ public class QualifyingStageManager {
             }
 
             case SPAWN: {
-                if (!regions.spawn().equals(TrackMap.RespawnRegion.of())) {
+                if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.of())) {
                     respawn = regions.spawn();
                 }
             }

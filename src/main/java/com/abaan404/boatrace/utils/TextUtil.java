@@ -7,9 +7,8 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
 
 import com.abaan404.boatrace.BoatRacePlayer;
-import com.abaan404.boatrace.maps.TrackMap;
+import com.abaan404.boatrace.BoatRaceTrack;
 
-import eu.pb4.polymer.core.mixin.client.compat.wthit_HarvestProviderMixin;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -116,7 +115,7 @@ public final class TextUtil {
      * @param meta The track meta.
      * @return A list of text for each line.
      */
-    public static List<Text> scoreboardMeta(TrackMap.Meta meta) {
+    public static List<Text> scoreboardMeta(BoatRaceTrack.Meta meta) {
         List<Text> list = new ObjectArrayList<>();
 
         list.add(Text.empty());
@@ -351,7 +350,7 @@ public final class TextUtil {
     /**
      * A text to display a new best time.
      *
-     * @param timer The player's timer.
+     * @param timer    The player's timer.
      * @param position The player's position.
      * @return A text
      */

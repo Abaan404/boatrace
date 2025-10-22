@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.abaan404.boatrace.BoatRacePlayer;
-import com.abaan404.boatrace.maps.TrackMap;
+import com.abaan404.boatrace.BoatRaceTrack;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -15,12 +15,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * checkpoints in order for a track.
  */
 public class CheckpointsManager {
-    private final TrackMap track;
+    private final BoatRaceTrack track;
 
     private Map<BoatRacePlayer, Integer> checkpoints = new Object2IntOpenHashMap<>();
     private Set<BoatRacePlayer> began = new ObjectOpenHashSet<>();
 
-    public CheckpointsManager(TrackMap track) {
+    public CheckpointsManager(BoatRaceTrack track) {
         this.track = track;
     }
 
@@ -34,8 +34,8 @@ public class CheckpointsManager {
     public TickResult tick(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
-        TrackMap.Regions regions = track.getRegions();
-        TrackMap.Meta meta = track.getMeta();
+        BoatRaceTrack.Regions regions = track.getRegions();
+        BoatRaceTrack.Meta meta = track.getMeta();
 
         // no checkpoints, do nothing
         if (regions.checkpoints().size() == 0) {
@@ -45,7 +45,7 @@ public class CheckpointsManager {
         int prevCheckpointIdx = this.getCheckpointIndex(bPlayer);
         int nextCheckpointIdx = (prevCheckpointIdx + 1) % regions.checkpoints().size();
 
-        TrackMap.RespawnRegion start = regions.checkpoints().getFirst();
+        BoatRaceTrack.RespawnRegion start = regions.checkpoints().getFirst();
 
         // player has reached the starting line
         if (!this.began.contains(bPlayer) && start.bounds().contains(player.getBlockPos())) {
@@ -74,7 +74,7 @@ public class CheckpointsManager {
                 }
 
                 case LINEAR: {
-                    TrackMap.RespawnRegion finish = regions.checkpoints().getLast();
+                    BoatRaceTrack.RespawnRegion finish = regions.checkpoints().getLast();
 
                     // checkpoint reached the end
                     if (finish.bounds().contains(player.getBlockPos())) {
@@ -109,12 +109,12 @@ public class CheckpointsManager {
      * @param player The player to get from.
      * @return The bounds of their relevant checkpoint.
      */
-    public TrackMap.RespawnRegion getCheckpoint(BoatRacePlayer player) {
-        TrackMap.Regions regions = track.getRegions();
+    public BoatRaceTrack.RespawnRegion getCheckpoint(BoatRacePlayer player) {
+        BoatRaceTrack.Regions regions = track.getRegions();
 
         // no checkpoints, return default
         if (regions.checkpoints().size() == 0) {
-            return TrackMap.RespawnRegion.of();
+            return BoatRaceTrack.RespawnRegion.of();
         }
 
         // return the first checkpoint if the player has just spawned

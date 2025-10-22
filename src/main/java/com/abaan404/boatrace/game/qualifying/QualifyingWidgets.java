@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
-import com.abaan404.boatrace.maps.TrackMap;
 import com.abaan404.boatrace.utils.TextUtil;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -25,14 +25,14 @@ public class QualifyingWidgets {
     private final GameSpace gameSpace;
     private final ServerWorld world;
     private final GlobalWidgets widgets;
-    private final TrackMap track;
+    private final BoatRaceTrack track;
 
     private static final int SIDEBAR_RANKING_COMPARED = 2;
     private static final int SIDEBAR_RANKING_TOP = 10;
 
     private final Map<BoatRacePlayer, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
 
-    public QualifyingWidgets(GameSpace gameSpace, ServerWorld world, GlobalWidgets widgets, TrackMap track) {
+    public QualifyingWidgets(GameSpace gameSpace, ServerWorld world, GlobalWidgets widgets, BoatRaceTrack track) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.track = track;

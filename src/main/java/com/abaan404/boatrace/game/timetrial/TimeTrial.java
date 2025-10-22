@@ -4,9 +4,9 @@ import java.util.function.Consumer;
 
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.events.BoatRacePlayerEvent;
 import com.abaan404.boatrace.items.BoatRaceItems;
-import com.abaan404.boatrace.maps.TrackMap;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.Entity;
@@ -38,13 +38,13 @@ public class TimeTrial {
     private final TimeTrialStageManager stageManager;
     private final TimeTrialWidgets widgets;
 
-    private TimeTrial(GameSpace gameSpace, ServerWorld world, TrackMap track, GlobalWidgets widgets,
+    private TimeTrial(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
             BoatRaceConfig config) {
         this.stageManager = new TimeTrialStageManager(gameSpace, world, track);
         this.widgets = new TimeTrialWidgets(gameSpace, widgets, track);
     }
 
-    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, TrackMap track) {
+    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
         TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets, config);
 

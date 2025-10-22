@@ -1,11 +1,10 @@
-package com.abaan404.boatrace.maps;
+package com.abaan404.boatrace;
 
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import com.abaan404.boatrace.BoatRace;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -23,14 +22,14 @@ import xyz.nucleoid.map_templates.TemplateRegion;
 import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
 
 /**
- * A track.
+ * The track map to use loaded from a file.
  */
-public class TrackMap {
+public class BoatRaceTrack {
     private final Regions regions;
     private final Meta meta;
     private final MapTemplate template;
 
-    private TrackMap(MapTemplate template) {
+    private BoatRaceTrack(MapTemplate template) {
         this.template = template;
 
         this.meta = template.getMetadata()
@@ -98,7 +97,7 @@ public class TrackMap {
      * @param identifier The resource id of the track
      * @return A loaded track.
      */
-    public static Optional<TrackMap> load(MinecraftServer server, Identifier identifier) {
+    public static Optional<BoatRaceTrack> load(MinecraftServer server, Identifier identifier) {
         MapTemplate template;
 
         try {
@@ -108,7 +107,7 @@ public class TrackMap {
             return Optional.empty();
         }
 
-        TrackMap map = new TrackMap(template);
+        BoatRaceTrack map = new BoatRaceTrack(template);
 
         return Optional.of(map);
     }
@@ -119,11 +118,11 @@ public class TrackMap {
      * @param server The server to load from
      * @return A list of every track that successfully loaded.
      */
-    public static List<TrackMap> loadAll(MinecraftServer server) {
+    public static List<BoatRaceTrack> loadAll(MinecraftServer server) {
         return server.getResourceManager().findResources("map_template/tracks",
                 id -> id.getNamespace().equals(BoatRace.ID))
                 .keySet().stream()
-                .map(id -> TrackMap.load(server, id))
+                .map(id -> BoatRaceTrack.load(server, id))
                 .flatMap(Optional::stream)
                 .toList();
     }
@@ -173,7 +172,7 @@ public class TrackMap {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        TrackMap other = (TrackMap) obj;
+        BoatRaceTrack other = (BoatRaceTrack) obj;
         if (regions == null) {
             if (other.regions != null)
                 return false;

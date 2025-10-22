@@ -5,12 +5,12 @@ import java.util.SequencedSet;
 
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.LapManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
-import com.abaan404.boatrace.maps.TrackMap;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -22,7 +22,7 @@ public class RaceStageManager {
     private final GameSpace gameSpace;
     private final ServerWorld world;
     private final BoatRaceConfig config;
-    private final TrackMap track;
+    private final BoatRaceTrack track;
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
@@ -35,7 +35,7 @@ public class RaceStageManager {
     private long duration;
 
     public RaceStageManager(GameSpace gameSpace, BoatRaceConfig config, ServerWorld world,
-            TrackMap track, List<PersonalBest> qualifyingResults) {
+            BoatRaceTrack track, List<PersonalBest> qualifyingResults) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
@@ -64,7 +64,7 @@ public class RaceStageManager {
      */
     public void spawnPlayer(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-        TrackMap.Regions regions = this.track.getRegions();
+        BoatRaceTrack.Regions regions = this.track.getRegions();
 
         // spawn spectators or non qualified at spawn without boats
         if (!this.participants.contains(bPlayer)) {
@@ -75,7 +75,7 @@ public class RaceStageManager {
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
 
-        TrackMap.RespawnRegion respawn;
+        BoatRaceTrack.RespawnRegion respawn;
 
         // this.sparticipants is sequenced by starting grid positions
         int gridBox = 0;

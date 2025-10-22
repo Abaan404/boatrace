@@ -3,13 +3,13 @@ package com.abaan404.boatrace.game.timetrial;
 import java.util.Set;
 
 import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
 import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
-import com.abaan404.boatrace.maps.TrackMap;
 import com.abaan404.boatrace.utils.TextUtil;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -26,7 +26,7 @@ import xyz.nucleoid.plasmid.api.game.GameSpace;
 public class TimeTrialStageManager {
     private final GameSpace gameSpace;
     private final ServerWorld world;
-    private final TrackMap track;
+    private final BoatRaceTrack track;
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
@@ -34,7 +34,7 @@ public class TimeTrialStageManager {
     private final BoatRaceSpawnLogic spawnLogic;
     private final Set<BoatRacePlayer> participants;
 
-    public TimeTrialStageManager(GameSpace gameSpace, ServerWorld world, TrackMap track) {
+    public TimeTrialStageManager(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track) {
         this.gameSpace = gameSpace;
         this.track = track;
         this.world = world;
@@ -53,12 +53,12 @@ public class TimeTrialStageManager {
      */
     public void spawnPlayer(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-        TrackMap.Regions regions = this.track.getRegions();
-        TrackMap.Meta meta = this.track.getMeta();
+        BoatRaceTrack.Regions regions = this.track.getRegions();
+        BoatRaceTrack.Meta meta = this.track.getMeta();
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
 
-        TrackMap.RespawnRegion respawn = regions.checkpoints().getFirst();
+        BoatRaceTrack.RespawnRegion respawn = regions.checkpoints().getFirst();
 
         // spawn spectators at spawn without boats
         if (!this.participants.contains(bPlayer)) {
@@ -66,7 +66,7 @@ public class TimeTrialStageManager {
             return;
         }
 
-        if (!regions.spawn().equals(TrackMap.RespawnRegion.of())) {
+        if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.of())) {
             respawn = regions.spawn();
         } else if (!regions.gridBoxes().isEmpty()) {
             respawn = regions.gridBoxes().getFirst();

@@ -1,19 +1,13 @@
 package com.abaan404.boatrace;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.abaan404.boatrace.game.lobby.Lobby;
 import com.abaan404.boatrace.game.qualifying.Qualifying;
 import com.abaan404.boatrace.game.race.Race;
 import com.abaan404.boatrace.game.timetrial.TimeTrial;
 import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
-import com.abaan404.boatrace.maps.LobbyMap;
-import com.abaan404.boatrace.maps.TrackMap;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.api.ModInitializer;
@@ -37,25 +31,7 @@ public class BoatRace implements ModInitializer {
     public static GameOpenProcedure open(GameOpenContext<BoatRaceConfig> context) {
         BoatRaceConfig config = context.config();
 
-        Optional<Identifier> lobbyMap = config.map().lobbyOrTrack().left();
-        Optional<Identifier> trackMap = config.map().lobbyOrTrack().right();
-
-        // open the lobby map if present
-        if (lobbyMap.isPresent()) {
-            List<TrackMap> tracks = TrackMap
-                    .loadAll(context.server());
-
-            LobbyMap map = LobbyMap.load(context.server(), lobbyMap.get()).orElseThrow();
-            RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
-                    .setGenerator(map.asGenerator(context.server()));
-
-            return context.openWithWorld(worldConfig, (game, world) -> {
-                Lobby.open(game, config, world, map, tracks);
-            });
-        }
-
-        // otherwise move directly to the track
-        TrackMap map = TrackMap.load(context.server(), trackMap.get()).orElseThrow();
+        BoatRaceTrack map = BoatRaceTrack.load(context.server(), config.track()).orElseThrow();
         RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
                 .setGenerator(map.asGenerator(context.server()));
 

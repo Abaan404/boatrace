@@ -4,8 +4,8 @@ import java.util.function.Consumer;
 
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.items.BoatRaceItems;
-import com.abaan404.boatrace.maps.TrackMap;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.damage.DamageSource;
@@ -36,13 +36,13 @@ public class Qualifying {
     private final QualifyingStageManager stageManager;
     private final QualifyingWidgets widgets;
 
-    private Qualifying(GameSpace gameSpace, ServerWorld world, TrackMap track, GlobalWidgets widgets,
+    private Qualifying(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
             BoatRaceConfig config) {
         this.stageManager = new QualifyingStageManager(gameSpace, config, world, track);
         this.widgets = new QualifyingWidgets(gameSpace, world, widgets, track);
     }
 
-    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, TrackMap track) {
+    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 
         Qualifying qualifying = new Qualifying(game.getGameSpace(), world, track, widgets, config);
