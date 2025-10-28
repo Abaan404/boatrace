@@ -78,7 +78,9 @@ public class RaceWidgets {
             actionBarText.append(TextUtil.actionBarTimer(timer)).append(" ");
 
             if (position > 0) {
-                long delta = stageManager.laps.getSavedDeltaToAhead(bPlayer);
+                BoatRacePlayer playerAhead = stageManager.laps.getPositions().get(position - 1);
+                long delta = stageManager.laps.getDeltaCheckpoint(bPlayer, playerAhead);
+
                 actionBarText.append(TextUtil.actionBarDelta(delta)).append(" ");
             }
 

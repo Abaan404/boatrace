@@ -239,7 +239,7 @@ public final class TextUtil {
         } else if (delta < 0) {
             return Text.literal("-").append(timeText).formatted(Formatting.BLUE);
         } else {
-            return Text.empty();
+            return Text.literal("=").append(timeText).formatted(Formatting.GRAY);
         }
     }
 

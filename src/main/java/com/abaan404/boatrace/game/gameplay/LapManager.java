@@ -8,6 +8,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -18,6 +19,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 public class LapManager {
     private final BoatRaceTrack track;
 
+    private Map<BoatRacePlayer, Integer> playerToPositions = new Object2IntOpenHashMap<>();
     private List<BoatRacePlayer> positions = new ObjectArrayList<>();
     private Map<BoatRacePlayer, List<Long>> splits = new Object2ObjectOpenHashMap<>();
 
@@ -37,94 +39,73 @@ public class LapManager {
         this.positions = this.splits.keySet()
                 .stream()
                 .sorted((a, b) -> {
-                    List<Long> aLaps = this.splits.get(a);
-                    List<Long> bLaps = this.splits.get(b);
+                    List<Long> aSplits = this.splits.get(a);
+                    List<Long> bSplits = this.splits.get(b);
 
-                    if (aLaps.size() == bLaps.size() && !aLaps.isEmpty()) {
-                        return Long.compare(bLaps.getLast(), aLaps.getLast());
+                    if (aSplits.size() == bSplits.size() && !aSplits.isEmpty()) {
+                        return Long.compare(bSplits.getLast(), aSplits.getLast());
                     } else {
-                        return Integer.compare(bLaps.size(), aLaps.size());
+                        return Integer.compare(bSplits.size(), aSplits.size());
                     }
                 })
                 .toList();
-    }
 
-    /**
-     * Get the lap position for this player.
-     *
-     * @param player The player.
-     * @return Their position.
-     */
-    public int getPosition(BoatRacePlayer player) {
         for (int i = 0; i < this.positions.size(); i++) {
-            if (this.positions.get(i).equals(player)) {
-                return i;
-            }
+            this.playerToPositions.put(this.positions.get(i), i);
         }
-
-        return -1;
     }
 
     /**
-     * calculate the time saved at a checkpoint to the car ahead.
+     * Get the total delta against another player.
      *
-     * @param player The player's whomst checkpoint is to be compared.
-     * @return The delta time saved at that checkpoint.
+     * @param player1 The player to compare for.
+     * @param player2 The player compared against.
+     * @return The total delta at a common checkpoint.
      */
-    public long getSavedDeltaToAhead(BoatRacePlayer player) {
-        int position = this.getPosition(player);
+    public long getDelta(BoatRacePlayer player1, BoatRacePlayer player2) {
+        List<Long> splits1 = this.splits.getOrDefault(player1, LongArrayList.of(0l));
+        List<Long> splits2 = this.splits.getOrDefault(player2, LongArrayList.of(0l));
 
-        // no one ahead, delta 0
-        if (position <= 0) {
-            return 0l;
-        }
+        int splitIdx = Math.max(0, Math.min(splits1.size() - 1, splits2.size() - 1));
 
-        // get ahead
-        int aheadPosition = position - 1;
-        BoatRacePlayer aheadPlayer = this.positions.get(aheadPosition);
+        long split1 = splits1.get(splitIdx);
+        long split2 = splits2.get(splitIdx);
 
-        List<Long> curSplits = this.splits.getOrDefault(player, LongArrayList.of(0l));
-        List<Long> aheadSplits = this.splits.getOrDefault(aheadPlayer, LongArrayList.of(0l));
-        int cur = curSplits.size() - 1;
+        return split1 - split2;
+    }
 
-        // get delta from prev to current splits
-        long curDelta = curSplits.get(cur) - curSplits.get(Math.max(0, cur - 1));
-        long aheadDelta = aheadSplits.get(cur) - aheadSplits.get(Math.max(0, cur - 1));
+    /**
+     * Get the delta against another player at a checkpoint.
+     *
+     * @param player1 The player to compare for.
+     * @param player2 The player compared against.
+     * @return The delta at a common checkpoint.
+     */
+    public long getDeltaCheckpoint(BoatRacePlayer player1, BoatRacePlayer player2) {
+        List<Long> splits1 = this.splits.getOrDefault(player1, LongArrayList.of(0l));
+        List<Long> splits2 = this.splits.getOrDefault(player2, LongArrayList.of(0l));
 
-        return curDelta - aheadDelta;
+        int splitIdx = Math.max(0, Math.min(splits1.size() - 1, splits2.size() - 1));
+        int splitIdxPrev = Math.max(0, splitIdx - 1);
+
+        long split1 = splits1.get(splitIdx) - splits1.get(splitIdxPrev);
+        long split2 = splits2.get(splitIdx) - splits1.get(splitIdxPrev);
+
+        return split1 - split2;
     }
 
     /**
      * Get the delta for this player against every other player according to their
-     * position. +ve is ahead while -ve is behind.
+     * position.
      *
-     * @param player The player to be considered.
-     * @return A map of every participating player and their relative delta to the
-     *         considered player.
+     * @param player The player to compare for.
+     * @return A mapping of each players' delta to the compared player.
      */
     public Map<BoatRacePlayer, Long> getDeltas(BoatRacePlayer player) {
         Map<BoatRacePlayer, Long> deltas = new Object2LongOpenHashMap<>();
 
-        List<Long> curSplits = this.splits.getOrDefault(player, LongArrayList.of(0l));
-        int cur = curSplits.size() - 1;
-
-        for (BoatRacePlayer otherPlayer : this.positions) {
-            List<Long> othSplits = this.splits.getOrDefault(otherPlayer, LongArrayList.of(0l));
-            int oth = othSplits.size() - 1;
-
-            long delta;
-
-            // equal or ahead checkpoint
-            if (oth >= cur) {
-                delta = curSplits.get(cur) + othSplits.get(oth) - 2 * othSplits.get(cur);
-            }
-
-            // behind
-            else {
-                delta = -1 * (othSplits.get(oth) + curSplits.get(cur) - 2 * curSplits.get(oth));
-            }
-
-            deltas.put(otherPlayer, delta);
+        for (BoatRacePlayer playerOther : this.positions) {
+            deltas.put(playerOther, this.getDelta(player, playerOther));
         }
 
         return deltas;
@@ -162,6 +143,16 @@ public class LapManager {
             case CIRCULAR -> Math.floorDiv(curCheckpoints, trackCheckpoints);
             case LINEAR -> curCheckpoints >= trackCheckpoints ? 1 : 0;
         };
+    }
+
+    /**
+     * Get the lap position for this player.
+     *
+     * @param player The player.
+     * @return Their position.
+     */
+    public int getPosition(BoatRacePlayer player) {
+        return this.playerToPositions.getOrDefault(player, -1);
     }
 
     /**

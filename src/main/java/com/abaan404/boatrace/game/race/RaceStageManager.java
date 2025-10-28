@@ -96,6 +96,7 @@ public class RaceStageManager {
 
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
+        this.splits.run(bPlayer);
     }
 
     /**
@@ -141,7 +142,6 @@ public class RaceStageManager {
 
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
-                    this.splits.run(bPlayer);
                     this.splits.recordSplit(bPlayer);
                     this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
                     break;
