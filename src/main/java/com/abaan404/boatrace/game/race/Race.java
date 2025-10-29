@@ -6,10 +6,12 @@ import java.util.function.Consumer;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
+import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.item.Item;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
@@ -110,6 +112,21 @@ public class Race {
     }
 
     private ActionResult onItemUse(ServerPlayerEntity player, Hand hand) {
+        Item item = player.getStackInHand(hand).getItem();
+
+        // only respawn the player at their last checkpoint
+        if (item.equals(BoatRaceItems.RESPAWN)) {
+            this.stageManager.respawnPlayer(player);
+            this.stageManager.updatePlayerInventory(player);
+            return ActionResult.CONSUME;
+        }
+
+        // cycle leaderboard type
+        else if (item.equals(BoatRaceItems.CYCLE_LEADERBOARD)) {
+            this.widgets.cycleLeaderboard(player);
+            return ActionResult.CONSUME;
+        }
+
         return ActionResult.PASS;
     }
 

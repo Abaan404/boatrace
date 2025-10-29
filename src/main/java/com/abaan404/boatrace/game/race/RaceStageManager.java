@@ -10,9 +10,11 @@ import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.LapManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
+import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameMode;
@@ -96,7 +98,31 @@ public class RaceStageManager {
 
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
-        this.splits.run(bPlayer);
+
+        if (this.splits.getTimer(bPlayer) == 0l) {
+            this.splits.run(bPlayer);
+            this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
+        }
+
+    }
+
+    /**
+     * Respawn a player to their last checkpoint.
+     *
+     * @param player The player.
+     */
+    public void respawnPlayer(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
+
+        if (this.checkpoints.getCheckpointIndex(bPlayer) != -1) {
+            this.spawnLogic.spawnPlayer(player, this.checkpoints.getCheckpoint(bPlayer));
+            this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
+
+        } else {
+            this.spawnPlayer(player);
+        }
     }
 
     /**
@@ -105,7 +131,13 @@ public class RaceStageManager {
      * @param player The player
      */
     public void updatePlayerInventory(ServerPlayerEntity player) {
-        // TODO swap widget interval type (relative, absolute)
+        PlayerInventory inventory = player.getInventory();
+        inventory.clear();
+
+        if (this.participants.contains(BoatRacePlayer.of(player))) {
+            inventory.setStack(8, BoatRaceItems.CYCLE_LEADERBOARD.getDefaultStack());
+            inventory.setStack(7, BoatRaceItems.RESPAWN.getDefaultStack());
+        }
     }
 
     /**

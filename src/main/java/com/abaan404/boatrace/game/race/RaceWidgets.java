@@ -26,6 +26,7 @@ public class RaceWidgets {
     private static final int SIDEBAR_RANKING_COMPARED = 2;
     private static final int SIDEBAR_RANKING_TOP = 5;
 
+    private final Map<BoatRacePlayer, LeaderboardType> leaderboardType = new Object2ObjectOpenHashMap<>();
     private final Map<BoatRacePlayer, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
 
     public RaceWidgets(GameSpace gameSpace, GlobalWidgets widgets, BoatRaceTrack track) {
@@ -45,7 +46,14 @@ public class RaceWidgets {
         this.tickSidebar(stageManager);
     }
 
-    public void broadcast(BoatRacePlayer player) {
+    public void cycleLeaderboard(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+        LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
+        leaderboardType = leaderboardType.cycle();
+        this.leaderboardType.put(bPlayer, leaderboardType);
+
+        player.sendMessage(TextUtil.chat(Text.literal(leaderboardType.toString())));
     }
 
     /**
@@ -128,7 +136,7 @@ public class RaceWidgets {
                 }
 
                 int position = stageManager.laps.getPosition(bPlayer);
-                Map<BoatRacePlayer, Long> splits = stageManager.laps.getDeltas(bPlayer);
+                LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
 
                 for (Pair<Integer, BoatRacePlayer> pair : TextUtil.scoreboardAroundAndTop(
                         players,
@@ -142,20 +150,51 @@ public class RaceWidgets {
 
                     MutableText text = Text.empty();
                     BoatRacePlayer player2 = pair.getRight();
+                    int position2 = pair.getLeft();
                     boolean highlighted = bPlayer.equals(player2);
 
                     text.append(" ");
-                    text.append(TextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
+                    text.append(TextUtil.scoreboardPosition(highlighted, position2)).append(" ");
 
-                    if (!bPlayer.equals(pair.getRight())) {
-                        text.append(TextUtil.scoreboardRelative(splits.get(player2), pair.getLeft())).append(" ");
+                    switch (leaderboardType) {
+                        case LEADER: {
+                            if (player2.equals(players.getFirst())) {
+                                break;
+                            }
+
+                            long delta = stageManager.laps.getDelta(player2, players.getFirst());
+                            text.append(TextUtil.scoreboardRelative(delta)).append(" ");
+                            break;
+                        }
+                        case PLAYER: {
+                            if (player2.equals(bPlayer)) {
+                                break;
+                            }
+
+                            long delta = stageManager.laps.getDelta(bPlayer, player2);
+                            text.append(TextUtil.scoreboardRelative(delta)).append(" ");
+                            break;
+                        }
                     }
 
-                    text.append(TextUtil.scoreboardName(player2, highlighted, pair.getLeft()));
+                    text.append(TextUtil.scoreboardName(player2, highlighted, position2));
 
                     content.add(text);
                 }
             });
+        }
+    }
+
+    public enum LeaderboardType {
+        LEADER, PLAYER;
+
+        public LeaderboardType cycle() {
+            if (this == PLAYER) {
+                return LEADER;
+            }
+
+            // Otherwise, get the next enum by ordinal position
+            return LeaderboardType.values()[this.ordinal() + 1];
         }
     }
 }

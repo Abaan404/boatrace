@@ -226,9 +226,8 @@ public final class TextUtil {
      * Format time as a relative time.
      *
      * @param delta    The time to use.
-     * @param position The track position.
      */
-    public static Text scoreboardRelative(long delta, int position) {
+    public static Text scoreboardRelative(long delta) {
         MutableText timeText = Text.literal(TimeUtils.formatTime(
                 delta,
                 EnumSet.of(TimeUtils.Selector.SECONDS, TimeUtils.Selector.MILLISECONDS),
@@ -361,5 +360,17 @@ public final class TextUtil {
                 .append(TextUtil.scoreboardPosition(true, position))
                 .append(Text.literal(" ◇ ").formatted(Formatting.BOLD))
                 .append(Text.literal(TimeUtils.formatTime(timer)).formatted(Formatting.BOLD));
+    }
+
+    /**
+     * A text to show in chat.
+     *
+     * @param message The message.
+     * @return A text with the formatted message.
+     */
+    public static Text chat(MutableText message) {
+        return Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
+                .append(message.formatted(Formatting.ITALIC));
     }
 }

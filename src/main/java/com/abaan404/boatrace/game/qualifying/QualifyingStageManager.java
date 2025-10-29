@@ -110,7 +110,9 @@ public class QualifyingStageManager {
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
 
-        inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+        if (this.participants.contains(BoatRacePlayer.of(player))) {
+            inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+        }
     }
 
     /**

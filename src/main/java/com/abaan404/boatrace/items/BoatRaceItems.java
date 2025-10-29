@@ -31,14 +31,18 @@ public class BoatRaceItems {
     public static final SimplePolymerItem RESET = register("reset", SimplePolymerItem::new,
             new SimplePolymerItem.Settings());
 
-    public static final SimplePolymerItem TIME_TRIAL_RESPAWN = register("time_trial_respawn", SimplePolymerItem::new,
+    public static final SimplePolymerItem RESPAWN = register("respawn", SimplePolymerItem::new,
+            new SimplePolymerItem.Settings());
+
+    public static final SimplePolymerItem CYCLE_LEADERBOARD = register("cycle_leaderboard", SimplePolymerItem::new,
             new SimplePolymerItem.Settings());
 
     public static void initialize() {
         Registry.register(Registries.ITEM_GROUP, ITEM_GROUP_KEY, ITEM_GROUP);
         ItemGroupEvents.modifyEntriesEvent(ITEM_GROUP_KEY).register(itemGroup -> {
             itemGroup.add(RESET);
-            itemGroup.add(TIME_TRIAL_RESPAWN);
+            itemGroup.add(RESPAWN);
+            itemGroup.add(CYCLE_LEADERBOARD);
         });
     }
 

@@ -9,7 +9,6 @@ import com.abaan404.boatrace.BoatRaceTrack;
 
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
@@ -92,23 +91,6 @@ public class LapManager {
         long split2 = splits2.get(splitIdx) - splits1.get(splitIdxPrev);
 
         return split1 - split2;
-    }
-
-    /**
-     * Get the delta for this player against every other player according to their
-     * position.
-     *
-     * @param player The player to compare for.
-     * @return A mapping of each players' delta to the compared player.
-     */
-    public Map<BoatRacePlayer, Long> getDeltas(BoatRacePlayer player) {
-        Map<BoatRacePlayer, Long> deltas = new Object2LongOpenHashMap<>();
-
-        for (BoatRacePlayer playerOther : this.positions) {
-            deltas.put(playerOther, this.getDelta(player, playerOther));
-        }
-
-        return deltas;
     }
 
     /**

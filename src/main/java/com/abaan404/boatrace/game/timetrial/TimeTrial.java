@@ -130,7 +130,7 @@ public class TimeTrial {
         }
 
         // only respawn the player at their last checkpoint
-        else if (item.equals(BoatRaceItems.TIME_TRIAL_RESPAWN)) {
+        else if (item.equals(BoatRaceItems.RESPAWN)) {
             this.stageManager.respawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
             return ActionResult.CONSUME;

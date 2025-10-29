@@ -117,7 +117,7 @@ public class TimeTrialStageManager {
 
         if (this.participants.contains(BoatRacePlayer.of(player))) {
             inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
-            inventory.setStack(7, BoatRaceItems.TIME_TRIAL_RESPAWN.getDefaultStack());
+            inventory.setStack(7, BoatRaceItems.RESPAWN.getDefaultStack());
         } else {
             inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
         }
