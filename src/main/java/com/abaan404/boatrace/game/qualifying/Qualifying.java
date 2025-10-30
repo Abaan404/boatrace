@@ -37,15 +37,15 @@ public class Qualifying {
     private final QualifyingWidgets widgets;
 
     private Qualifying(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
-            BoatRaceConfig config) {
-        this.stageManager = new QualifyingStageManager(gameSpace, config, world, track);
+            BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace) {
+        this.stageManager = new QualifyingStageManager(gameSpace, config, configRace, world, track);
         this.widgets = new QualifyingWidgets(gameSpace, world, widgets, track);
     }
 
-    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track) {
+    public static void open(GameActivity game, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace, ServerWorld world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 
-        Qualifying qualifying = new Qualifying(game.getGameSpace(), world, track, widgets, config);
+        Qualifying qualifying = new Qualifying(game.getGameSpace(), world, track, widgets, config, configRace);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
 
@@ -90,15 +90,13 @@ public class Qualifying {
         return offer.accept();
     }
 
-    private EventResult addPlayer(ServerPlayerEntity player) {
+    private void addPlayer(ServerPlayerEntity player) {
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
-        return EventResult.DENY;
     }
 
-    private EventResult removePlayer(ServerPlayerEntity player) {
+    private void removePlayer(ServerPlayerEntity player) {
         this.stageManager.despawnPlayer(player);
-        return EventResult.DENY;
     }
 
     private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {

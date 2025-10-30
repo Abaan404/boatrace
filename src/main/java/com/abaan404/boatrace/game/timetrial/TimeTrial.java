@@ -2,7 +2,6 @@ package com.abaan404.boatrace.game.timetrial;
 
 import java.util.function.Consumer;
 
-import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.events.BoatRacePlayerEvent;
@@ -38,15 +37,14 @@ public class TimeTrial {
     private final TimeTrialStageManager stageManager;
     private final TimeTrialWidgets widgets;
 
-    private TimeTrial(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
-            BoatRaceConfig config) {
+    private TimeTrial(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets) {
         this.stageManager = new TimeTrialStageManager(gameSpace, world, track);
         this.widgets = new TimeTrialWidgets(gameSpace, widgets, track);
     }
 
-    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track) {
+    public static void open(GameActivity game, ServerWorld world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
-        TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets, config);
+        TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
 
@@ -92,15 +90,13 @@ public class TimeTrial {
         return offer.accept();
     }
 
-    private EventResult addPlayer(ServerPlayerEntity player) {
+    private void addPlayer(ServerPlayerEntity player) {
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
-        return EventResult.DENY;
     }
 
-    private EventResult removePlayer(ServerPlayerEntity player) {
+    private void removePlayer(ServerPlayerEntity player) {
         this.stageManager.despawnPlayer(player);
-        return EventResult.DENY;
     }
 
     private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {

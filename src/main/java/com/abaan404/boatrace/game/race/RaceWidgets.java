@@ -135,11 +135,11 @@ public class RaceWidgets {
 
                 content.add(TextUtil.scoreboardLaps(
                         stageManager.laps.getLeadingLaps(),
-                        stageManager.getRaceConfig().maxLaps()));
+                        stageManager.getConfig().maxLaps()));
 
                 content.add(TextUtil.scoreboardDuration(
                         stageManager.getDurationTimer(),
-                        stageManager.getRaceConfig().maxDuration()));
+                        stageManager.getConfig().maxDuration()));
                 content.add(Text.empty());
 
                 List<BoatRacePlayer> players = stageManager.laps.getPositions();

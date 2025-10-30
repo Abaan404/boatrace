@@ -1,6 +1,5 @@
 package com.abaan404.boatrace.game.race;
 
-import java.util.List;
 import java.util.SequencedSet;
 
 import com.abaan404.boatrace.BoatRaceConfig;
@@ -12,7 +11,6 @@ import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.CountdownManager;
 import com.abaan404.boatrace.game.gameplay.LapManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
-import com.abaan404.boatrace.leaderboard.PersonalBest;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
@@ -24,7 +22,7 @@ import xyz.nucleoid.plasmid.api.game.GameSpace;
 public class RaceStageManager {
     private final GameSpace gameSpace;
     private final ServerWorld world;
-    private final BoatRaceConfig config;
+    private final BoatRaceConfig.Race config;
     private final BoatRaceTrack track;
 
     public final CheckpointsManager checkpoints;
@@ -35,11 +33,10 @@ public class RaceStageManager {
     private final BoatRaceSpawnLogic spawnLogic;
     private final SequencedSet<BoatRacePlayer> participants;
 
-    private final BoatRaceConfig.Race raceConfig;
     private long duration;
 
-    public RaceStageManager(GameSpace gameSpace, BoatRaceConfig config, ServerWorld world,
-            BoatRaceTrack track, List<PersonalBest> qualifyingResults) {
+    public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world,
+            BoatRaceTrack track) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
@@ -53,12 +50,7 @@ public class RaceStageManager {
         this.spawnLogic = new BoatRaceSpawnLogic(world);
         this.participants = new ObjectLinkedOpenHashSet<>();
 
-        this.raceConfig = config.race().orElseThrow();
         this.duration = 0;
-
-        for (PersonalBest pb : qualifyingResults) {
-            this.toParticipant(pb.player());
-        }
     }
 
     /**
@@ -104,7 +96,6 @@ public class RaceStageManager {
 
         if (this.splits.getTimer(bPlayer) == 0l) {
             this.splits.run(bPlayer);
-            this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
         }
 
         if (this.countdown.getCountdown() > 0) {
@@ -160,36 +151,36 @@ public class RaceStageManager {
      */
     public void tickPlayers() {
         // check if countdown is ready
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+        switch (this.countdown.tick(this.world)) {
+            case FINISH: {
+                for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+                    BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
-            if (!this.participants.contains(bPlayer)) {
-                continue;
+                    if (!this.participants.contains(bPlayer)) {
+                        continue;
+                    }
+
+                    this.spawnLogic.unfreezeVehicle(player);
+                }
+                break;
             }
 
-            switch (this.countdown.tick(this.world)) {
-                case FINISH: {
-                    this.spawnLogic.unfreezeVehicle(player);
-                    break;
-                }
+            case COUNTDOWN: {
+                return;
+            }
 
-                case COUNTDOWN: {
-                    return;
-                }
-
-                case IDLE: {
-                    break;
-                }
+            case IDLE: {
+                break;
             }
         }
 
         this.duration += this.world.getTickManager().getMillisPerTick();
 
-        if (this.duration > this.raceConfig.maxDuration()) {
+        if (this.duration > this.config.maxDuration()) {
             return;
         }
 
-        if (this.laps.getLeadingLaps() > this.raceConfig.maxLaps()) {
+        if (this.laps.getLeadingLaps() > this.config.maxLaps()) {
             return;
         }
 
@@ -241,6 +232,8 @@ public class RaceStageManager {
      * @param player The player's bPlayer
      */
     public void toSpectator(BoatRacePlayer player) {
+        this.participants.remove(player);
+
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
@@ -253,23 +246,12 @@ public class RaceStageManager {
      * @param player The player's bPlayer
      */
     public void toParticipant(BoatRacePlayer player) {
-        if (!this.participants.contains(player)) {
-            // this game began with a qualifying session, spawn as spectator.
-            if (this.config.qualifying().isPresent()) {
-                this.toSpectator(player);
-                return;
-            }
-
-            // this game was started without qualifying, add positions
-            // TODO grid layout (normal, reversed, random)
-            else {
-                this.participants.add(player);
-            }
-        }
+        this.participants.add(player);
 
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
+        this.laps.submit(player, this.splits.getSplits(player));
     }
 
     /**
@@ -288,7 +270,7 @@ public class RaceStageManager {
      * @return The time left.
      */
     public long getDurationTimer() {
-        return Math.max(0, this.raceConfig.maxDuration() - this.duration);
+        return Math.max(0, this.config.maxDuration() - this.duration);
     }
 
     /**
@@ -296,7 +278,7 @@ public class RaceStageManager {
      *
      * @return The loaded race config.
      */
-    public BoatRaceConfig.Race getRaceConfig() {
-        return this.raceConfig;
+    public BoatRaceConfig.Race getConfig() {
+        return this.config;
     }
 }

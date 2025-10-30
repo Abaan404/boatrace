@@ -39,21 +39,21 @@ public class BoatRace implements ModInitializer {
         // qualifying must also come with a race config
         if (config.qualifying().isPresent() && config.race().isPresent()) {
             return context.openWithWorld(worldConfig, (game, world) -> {
-                Qualifying.open(game, config, world, map);
+                Qualifying.open(game, config.qualifying().orElseThrow(), config.race().orElseThrow(), world, map);
             });
         }
 
         // random order race
         if (config.race().isPresent()) {
             return context.openWithWorld(worldConfig, (game, world) -> {
-                Race.open(game, config, world, map, ObjectArrayList.of());
+                Race.open(game, config.race().orElseThrow(), world, map, ObjectArrayList.of());
             });
         }
 
         // time trial
         if (config.race().isEmpty() && config.race().isEmpty()) {
             return context.openWithWorld(worldConfig, (game, world) -> {
-                TimeTrial.open(game, config, world, map);
+                TimeTrial.open(game, world, map);
             });
         }
 

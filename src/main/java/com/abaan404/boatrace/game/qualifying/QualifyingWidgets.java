@@ -122,7 +122,7 @@ public class QualifyingWidgets {
 
                 content.add(TextUtil.scoreboardDuration(
                         stageManager.getDurationTimer(),
-                        stageManager.getQualifyingConfig().duration()));
+                        stageManager.getConfig().duration()));
                 content.add(Text.empty());
 
                 List<PersonalBest> records = leaderboard.getLeaderboard(this.track);

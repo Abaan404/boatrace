@@ -7,7 +7,6 @@ import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceItems;
-import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.damage.DamageSource;
@@ -38,16 +37,20 @@ public class Race {
     private final RaceWidgets widgets;
 
     private Race(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
-            BoatRaceConfig config, List<PersonalBest> qualifyingRecords) {
-        this.stageManager = new RaceStageManager(gameSpace, config, world, track, qualifyingRecords);
+            BoatRaceConfig.Race config, List<BoatRacePlayer> gridOrder) {
+        this.stageManager = new RaceStageManager(gameSpace, config, world, track);
         this.widgets = new RaceWidgets(gameSpace, widgets, track);
+
+        for (BoatRacePlayer player : gridOrder) {
+            this.stageManager.toParticipant(player);
+        }
     }
 
-    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track,
-            List<PersonalBest> records) {
+    public static void open(GameActivity game, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
+            List<BoatRacePlayer> gridOrder) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 
-        Race race = new Race(game.getGameSpace(), world, track, widgets, config, records);
+        Race race = new Race(game.getGameSpace(), world, track, widgets, config, gridOrder);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
 
@@ -93,15 +96,13 @@ public class Race {
         return offer.accept();
     }
 
-    private EventResult addPlayer(ServerPlayerEntity player) {
+    private void addPlayer(ServerPlayerEntity player) {
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
-        return EventResult.DENY;
     }
 
-    private EventResult removePlayer(ServerPlayerEntity player) {
+    private void removePlayer(ServerPlayerEntity player) {
         this.stageManager.despawnPlayer(player);
-        return EventResult.DENY;
     }
 
     private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {

@@ -25,7 +25,8 @@ import xyz.nucleoid.plasmid.api.game.GameSpace;
 public class QualifyingStageManager {
     private final GameSpace gameSpace;
     private final ServerWorld world;
-    private final BoatRaceConfig config;
+    private final BoatRaceConfig.Qualifying config;
+    private final BoatRaceConfig.Race configRace;
     private final BoatRaceTrack track;
 
     public final CheckpointsManager checkpoints;
@@ -34,15 +35,14 @@ public class QualifyingStageManager {
     private final BoatRaceSpawnLogic spawnLogic;
     private final Set<BoatRacePlayer> participants;
 
-    private final BoatRaceConfig.Qualifying qualifyingConfig;
-
     private long duration;
 
-    public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig config, ServerWorld world,
-            BoatRaceTrack track) {
+    public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
+            ServerWorld world, BoatRaceTrack track) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
+        this.configRace = configRace;
         this.track = track;
 
         this.checkpoints = new CheckpointsManager(track);
@@ -51,7 +51,6 @@ public class QualifyingStageManager {
         this.spawnLogic = new BoatRaceSpawnLogic(world);
         this.participants = new ObjectOpenHashSet<>();
 
-        this.qualifyingConfig = config.qualifying().orElseThrow();
         this.duration = 0;
     }
 
@@ -75,7 +74,7 @@ public class QualifyingStageManager {
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
         BoatRaceTrack.RespawnRegion respawn = regions.checkpoints().getFirst();
 
-        switch (this.config.qualifying().get().startFrom()) {
+        switch (this.config.startFrom()) {
             case GRID_BOX: {
                 if (!regions.gridBoxes().isEmpty()) {
                     respawn = regions.gridBoxes().getLast();
@@ -139,7 +138,7 @@ public class QualifyingStageManager {
     public void tickPlayers() {
         this.duration += this.world.getTickManager().getMillisPerTick();
 
-        if (this.duration > this.qualifyingConfig.duration()) {
+        if (this.duration > this.config.duration()) {
             this.startRace();
             return;
         }
@@ -236,7 +235,7 @@ public class QualifyingStageManager {
      * @return The time left.
      */
     public long getDurationTimer() {
-        return Math.max(0, this.qualifyingConfig.duration() - this.duration);
+        return Math.max(0, this.config.duration() - this.duration);
     }
 
     /**
@@ -244,17 +243,17 @@ public class QualifyingStageManager {
      *
      * @return The loaded qualifying config.
      */
-    public BoatRaceConfig.Qualifying getQualifyingConfig() {
-        return qualifyingConfig;
+    public BoatRaceConfig.Qualifying getConfig() {
+        return this.config;
     }
 
     private void startRace() {
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
-        List<PersonalBest> records = leaderboard.getLeaderboard(this.track);
+        List<BoatRacePlayer> records = leaderboard.getLeaderboard(this.track).stream()
+                .map(pb -> pb.player())
+                .toList();
 
-        this.gameSpace.setActivity(game -> {
-            Race.open(game, config, world, track, records);
-        });
+        this.gameSpace.setActivity(game -> Race.open(game, configRace, world, track, records));
     }
 
     private void submit(ServerPlayerEntity player) {
