@@ -25,6 +25,27 @@ public final class TextUtil {
     public static final Text PAD_SCOREBOARD_POSITION = Text.literal("   ○ ○ ○").formatted(Formatting.DARK_GRAY);
 
     /**
+     * Create a text for a countdown.
+     *
+     * @param countdown the current countdown in seconds.
+     * @return A text to be displayed as a title.
+     */
+    public static Text titleCountdown(long countdown) {
+        MutableText countdownText = Text.empty();
+
+        if (countdown <= 0) {
+            countdownText = Text.literal("Go!").formatted(Formatting.RED, Formatting.BOLD);
+        } else {
+            countdownText = Text.literal(String.valueOf(countdown)).formatted(Formatting.WHITE, Formatting.ITALIC);
+        }
+
+        return Text.empty()
+                .append(Text.literal(">> ").formatted(Formatting.GRAY))
+                .append(countdownText)
+                .append(Text.literal(" <<").formatted(Formatting.GRAY));
+    }
+
+    /**
      * Create a text for player position on the leaderboard.
      *
      * @param position The player's position to display.
@@ -225,7 +246,7 @@ public final class TextUtil {
     /**
      * Format time as a relative time.
      *
-     * @param delta    The time to use.
+     * @param delta The time to use.
      */
     public static Text scoreboardRelative(long delta) {
         MutableText timeText = Text.literal(TimeUtils.formatTime(

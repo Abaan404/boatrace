@@ -8,6 +8,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
+import com.abaan404.boatrace.game.gameplay.CountdownManager;
 import com.abaan404.boatrace.game.gameplay.LapManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
 import com.abaan404.boatrace.items.BoatRaceItems;
@@ -29,6 +30,7 @@ public class RaceStageManager {
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
     public final LapManager laps;
+    public final CountdownManager countdown;
 
     private final BoatRaceSpawnLogic spawnLogic;
     private final SequencedSet<BoatRacePlayer> participants;
@@ -46,6 +48,7 @@ public class RaceStageManager {
         this.checkpoints = new CheckpointsManager(track);
         this.splits = new SplitsManager();
         this.laps = new LapManager(track);
+        this.countdown = new CountdownManager(5000, world.getRandom().nextBetween(0, 1000));
 
         this.spawnLogic = new BoatRaceSpawnLogic(world);
         this.participants = new ObjectLinkedOpenHashSet<>();
@@ -104,6 +107,9 @@ public class RaceStageManager {
             this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
         }
 
+        if (this.countdown.getCountdown() > 0) {
+            this.spawnLogic.freezeVehicle(player);
+        }
     }
 
     /**
@@ -153,6 +159,30 @@ public class RaceStageManager {
      * Tick the game.
      */
     public void tickPlayers() {
+        // check if countdown is ready
+        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+            if (!this.participants.contains(bPlayer)) {
+                continue;
+            }
+
+            switch (this.countdown.tick(this.world)) {
+                case FINISH: {
+                    this.spawnLogic.unfreezeVehicle(player);
+                    break;
+                }
+
+                case COUNTDOWN: {
+                    return;
+                }
+
+                case IDLE: {
+                    break;
+                }
+            }
+        }
+
         this.duration += this.world.getTickManager().getMillisPerTick();
 
         if (this.duration > this.raceConfig.maxDuration()) {
@@ -262,9 +292,9 @@ public class RaceStageManager {
     }
 
     /**
-     * Get game config for qualifying.
+     * Get game config for race.
      *
-     * @return The loaded qualifying config.
+     * @return The loaded race config.
      */
     public BoatRaceConfig.Race getRaceConfig() {
         return this.raceConfig;

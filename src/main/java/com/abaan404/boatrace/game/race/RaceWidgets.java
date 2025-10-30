@@ -9,6 +9,8 @@ import com.abaan404.boatrace.utils.TextUtil;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -29,11 +31,12 @@ public class RaceWidgets {
     private final Map<BoatRacePlayer, LeaderboardType> leaderboardType = new Object2ObjectOpenHashMap<>();
     private final Map<BoatRacePlayer, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
 
+    private boolean shownGo = false;
+
     public RaceWidgets(GameSpace gameSpace, GlobalWidgets widgets, BoatRaceTrack track) {
         this.gameSpace = gameSpace;
         this.track = track;
         this.widgets = widgets;
-
     }
 
     /**
@@ -44,16 +47,28 @@ public class RaceWidgets {
     public void tick(RaceStageManager stageManager) {
         this.tickActionBar(stageManager);
         this.tickSidebar(stageManager);
+        this.tickTitle(stageManager);
     }
 
-    public void cycleLeaderboard(ServerPlayerEntity player) {
-        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+    /**
+     * Display a countdown using a title.
+     *
+     * @param stageManager The stage manager.
+     */
+    private void tickTitle(RaceStageManager stageManager) {
+        if (this.shownGo) {
+            return;
+        }
 
-        LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
-        leaderboardType = leaderboardType.cycle();
-        this.leaderboardType.put(bPlayer, leaderboardType);
+        long countdown = stageManager.countdown.getCountdown();
+        if (countdown <= 0) {
+            this.shownGo = true;
+        }
 
-        player.sendMessage(TextUtil.chat(Text.literal(leaderboardType.toString())));
+        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+            player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 30, 20));
+            player.networkHandler.sendPacket(new TitleS2CPacket(TextUtil.titleCountdown(countdown)));
+        }
     }
 
     /**
@@ -185,8 +200,31 @@ public class RaceWidgets {
         }
     }
 
+    /**
+     * Cycle active leaderboard type.
+     *
+     * @param player The player whos leaderboard should be updated.
+     */
+    public void cycleLeaderboard(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+        LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
+        leaderboardType = leaderboardType.cycle();
+        this.leaderboardType.put(bPlayer, leaderboardType);
+
+        player.sendMessage(TextUtil.chat(Text.literal(leaderboardType.toString())));
+    }
+
     public enum LeaderboardType {
-        LEADER, PLAYER;
+        /**
+         * Time to all against the leader.
+         */
+        LEADER,
+
+        /**
+         * Time to all against the current player.
+         */
+        PLAYER;
 
         public LeaderboardType cycle() {
             if (this == PLAYER) {

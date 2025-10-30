@@ -5,12 +5,13 @@ import java.util.Set;
 
 import com.abaan404.boatrace.BoatRaceTrack;
 
+import net.minecraft.entity.AreaEffectCloudEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.player.PlayerPosition;
 import net.minecraft.entity.vehicle.BoatEntity;
-import net.minecraft.entity.vehicle.VehicleEntity;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -44,7 +45,7 @@ public class BoatRaceSpawnLogic {
      * @param player The player to mount.
      * @return The entity spawned.
      */
-    public Optional<VehicleEntity> spawnVehicleAndRide(ServerPlayerEntity player) {
+    public Optional<BoatEntity> spawnVehicleAndRide(ServerPlayerEntity player) {
         BoatEntity boat = EntityType.OAK_BOAT.create(this.world, SpawnReason.COMMAND);
         if (boat == null) {
             return Optional.empty();
@@ -83,7 +84,7 @@ public class BoatRaceSpawnLogic {
         // avoid accidental stray boats
         Entity boat = player.getVehicle();
         if (boat != null) {
-            boat.kill(null);
+            boat.kill(this.world);
         }
 
         player.networkHandler.requestTeleport(new PlayerPosition(
@@ -91,5 +92,49 @@ public class BoatRaceSpawnLogic {
                 Vec3d.ZERO,
                 respawn.respawnYaw(),
                 respawn.respawnPitch()), Set.of());
+    }
+
+    /**
+     * Freeze the vehicle by making it ride an entity.
+     *
+     * @param player The player's boat to freeze.
+     * @return The entity the boat is now riding.
+     */
+    public Optional<Entity> freezeVehicle(ServerPlayerEntity player) {
+        Entity boat = player.getVehicle();
+        if (boat == null) {
+            return Optional.empty();
+        }
+
+        AreaEffectCloudEntity aec = EntityType.AREA_EFFECT_CLOUD.create(this.world, SpawnReason.COMMAND);
+        if (aec == null) {
+            return Optional.empty();
+        }
+
+        aec.setParticleType(ParticleTypes.DUST_PLUME); // why not
+        aec.setRadius(1.0f);
+        aec.refreshPositionAndAngles(player.getPos(), player.getYaw(), player.getPitch());
+        this.world.spawnEntity(aec);
+        boat.startRiding(aec);
+        return Optional.of(aec);
+    }
+
+    /**
+     * Unfreeze the vehicle by killing the entity its riding.
+     *
+     * @param player THe player's boat to unfreeze.
+     */
+    public void unfreezeVehicle(ServerPlayerEntity player) {
+        Entity boat = player.getVehicle();
+        if (boat == null) {
+            return;
+        }
+
+        Entity bat = boat.getVehicle();
+        if (bat == null) {
+            return;
+        }
+
+        bat.kill(this.world);
     }
 }
