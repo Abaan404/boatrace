@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.items.BoatRaceItems;
+import com.abaan404.boatrace.game.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.mojang.authlib.GameProfile;
 

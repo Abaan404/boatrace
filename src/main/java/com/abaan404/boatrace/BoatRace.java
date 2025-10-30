@@ -3,10 +3,10 @@ package com.abaan404.boatrace;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.abaan404.boatrace.game.BoatRaceItems;
 import com.abaan404.boatrace.game.qualifying.Qualifying;
 import com.abaan404.boatrace.game.race.Race;
 import com.abaan404.boatrace.game.timetrial.TimeTrial;
-import com.abaan404.boatrace.items.BoatRaceItems;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -18,12 +18,13 @@ import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
 import xyz.nucleoid.plasmid.api.game.GameType;
+import xyz.nucleoid.plasmid.api.game.GameTypes;
 
 public class BoatRace implements ModInitializer {
     public static final String ID = "boatrace";
     public static final Logger LOGGER = LogManager.getLogger(ID);
 
-    public static final GameType<BoatRaceConfig> TYPE = GameType.register(
+    public static final GameType<BoatRaceConfig> TYPE = GameTypes.register(
             Identifier.of(ID, "game"),
             BoatRaceConfig.CODEC,
             BoatRace::open);

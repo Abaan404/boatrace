@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.items;
+package com.abaan404.boatrace.game;
 
 import java.util.function.Function;
 
