@@ -113,10 +113,10 @@ public class LapManager {
      * @return Their completed laps.
      */
     public int getLaps(BoatRacePlayer player) {
-        int curCheckpoints = this.splits.getOrDefault(player, LongArrayList.of()).size() - 2;
+        int curCheckpoints = this.splits.getOrDefault(player, LongArrayList.of()).size() - 1;
         int trackCheckpoints = this.track.getRegions().checkpoints().size();
 
-        // -2 player hasnt started, -1 player hasnt reached first checkpoint.
+        // player hasnt reached first checkpoint.
         if (curCheckpoints < 0) {
             return 0;
         }
