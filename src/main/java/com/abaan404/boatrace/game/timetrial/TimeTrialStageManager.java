@@ -144,9 +144,6 @@ public class TimeTrialStageManager {
      * Tick the player and act on events from checkpoints and/or splits.
      */
     public void tickPlayers() {
-        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
-        Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
-
         this.splits.tick(this.world);
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
@@ -156,7 +153,6 @@ public class TimeTrialStageManager {
                 continue;
             }
 
-            Leaderboard newLeaderboard = leaderboard;
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
                     this.splits.run(bPlayer);
@@ -166,9 +162,7 @@ public class TimeTrialStageManager {
 
                 case LOOP: {
                     this.splits.recordSplit(bPlayer);
-                    newLeaderboard = leaderboard.trySubmit(overworld, this.track, new PersonalBest(
-                            bPlayer,
-                            this.splits.getSplits(bPlayer)));
+                    this.submit(player);
 
                     // start a new run
                     this.splits.reset(bPlayer);
@@ -178,9 +172,7 @@ public class TimeTrialStageManager {
 
                 case FINISH: {
                     this.splits.recordSplit(bPlayer);
-                    newLeaderboard = leaderboard.trySubmit(overworld, this.track, new PersonalBest(
-                            bPlayer,
-                            this.splits.getSplits(bPlayer)));
+                    this.submit(player);
 
                     // stop the timer
                     this.splits.stop(bPlayer);
@@ -195,15 +187,6 @@ public class TimeTrialStageManager {
                 case IDLE: {
                     break;
                 }
-            }
-
-            // leaderboard was updated, new pb
-            if (newLeaderboard != leaderboard) {
-                PersonalBest pb = newLeaderboard.getPersonalBest(this.track, bPlayer);
-                int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
-
-                player.sendMessage(TextUtil.chatNewPersonalBest(pb.timer(), position));
-                leaderboard = newLeaderboard;
             }
         }
     }
@@ -244,5 +227,23 @@ public class TimeTrialStageManager {
      */
     public boolean isParticipant(ServerPlayerEntity player) {
         return this.participants.contains(BoatRacePlayer.of(player));
+    }
+
+    private void submit(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+        // use the overworld for persistent storage
+        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
+        Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+
+        PersonalBest pb = new PersonalBest(bPlayer, this.splits.getSplits(bPlayer));
+        Leaderboard newLeaderboard = leaderboard.trySubmit(overworld, this.track, pb);
+
+        if (newLeaderboard != leaderboard) {
+            int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
+            player.sendMessage(TextUtil.chatNewPersonalBest(pb.timer(), position));
+        } else {
+            player.sendMessage(TextUtil.chatNewTime(pb.timer()));
+        }
     }
 }

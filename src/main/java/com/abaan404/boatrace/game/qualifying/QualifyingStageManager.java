@@ -144,8 +144,6 @@ public class QualifyingStageManager {
             return;
         }
 
-        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
-
         this.splits.tick(this.world);
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
@@ -155,7 +153,6 @@ public class QualifyingStageManager {
                 continue;
             }
 
-            Leaderboard newLeaderboard = leaderboard;
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
                     this.splits.run(bPlayer);
@@ -165,9 +162,7 @@ public class QualifyingStageManager {
 
                 case LOOP: {
                     this.splits.recordSplit(bPlayer);
-                    newLeaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
-                            BoatRacePlayer.of(player),
-                            this.splits.getSplits(bPlayer)));
+                    this.submit(player);
 
                     // start a new run
                     this.splits.reset(bPlayer);
@@ -177,9 +172,7 @@ public class QualifyingStageManager {
 
                 case FINISH: {
                     this.splits.recordSplit(bPlayer);
-                    newLeaderboard = leaderboard.trySubmit(this.world, this.track, new PersonalBest(
-                            BoatRacePlayer.of(player),
-                            this.splits.getSplits(bPlayer)));
+                    this.submit(player);
 
                     // stop the timer
                     this.splits.stop(bPlayer);
@@ -194,15 +187,6 @@ public class QualifyingStageManager {
                 case IDLE: {
                     break;
                 }
-            }
-
-            // leaderboard was updated, new pb
-            if (newLeaderboard != leaderboard) {
-                PersonalBest pb = newLeaderboard.getPersonalBest(this.track, bPlayer);
-                int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
-
-                player.sendMessage(TextUtil.chatNewPersonalBest(pb.timer(), position));
-                leaderboard = newLeaderboard;
             }
         }
     }
@@ -271,5 +255,21 @@ public class QualifyingStageManager {
         this.gameSpace.setActivity(game -> {
             Race.open(game, config, world, track, records);
         });
+    }
+
+    private void submit(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+
+        PersonalBest pb = new PersonalBest(bPlayer, this.splits.getSplits(bPlayer));
+        Leaderboard newLeaderboard = leaderboard.trySubmit(this.world, this.track, pb);
+
+        if (newLeaderboard != leaderboard) {
+            int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
+            player.sendMessage(TextUtil.chatNewPersonalBest(pb.timer(), position));
+        } else {
+            player.sendMessage(TextUtil.chatNewTime(pb.timer()));
+        }
     }
 }

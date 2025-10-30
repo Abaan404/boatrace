@@ -384,6 +384,19 @@ public final class TextUtil {
     }
 
     /**
+     * A text to display a new time.
+     *
+     * @param timer The player's timer.
+     * @return A text
+     */
+    public static Text chatNewTime(long timer) {
+        return Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
+                .append(Text.literal(TimeUtils.formatTime(timer)).formatted(Formatting.GRAY,
+                        Formatting.ITALIC));
+    }
+
+    /**
      * A text to show in chat.
      *
      * @param message The message.
