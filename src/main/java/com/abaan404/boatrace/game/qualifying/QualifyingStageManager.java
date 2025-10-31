@@ -21,6 +21,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
 
 public class QualifyingStageManager {
     private final GameSpace gameSpace;
@@ -247,6 +248,9 @@ public class QualifyingStageManager {
         return this.config;
     }
 
+    /**
+     * Begin the race.
+     */
     private void startRace() {
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
         List<BoatRacePlayer> records = leaderboard.getLeaderboard(this.track).stream()
@@ -256,6 +260,11 @@ public class QualifyingStageManager {
         this.gameSpace.setActivity(game -> Race.open(game, configRace, world, track, records));
     }
 
+    /**
+     * Submit a leaderboard time.
+     *
+     * @param player The player to create a new pb for.
+     */
     private void submit(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
@@ -266,7 +275,9 @@ public class QualifyingStageManager {
 
         if (newLeaderboard != leaderboard) {
             int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
-            player.sendMessage(TextUtil.chatNewPersonalBest(pb.timer(), position));
+            GameSpacePlayers players = this.gameSpace.getPlayers();
+
+            players.sendMessage(TextUtil.chatNewPersonalBest(pb.player().offlineName(), pb.timer(), position));
         } else {
             player.sendMessage(TextUtil.chatNewTime(pb.timer()));
         }

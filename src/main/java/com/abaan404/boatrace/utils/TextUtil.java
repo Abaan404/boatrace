@@ -374,10 +374,12 @@ public final class TextUtil {
      * @param position The player's position.
      * @return A text
      */
-    public static Text chatNewPersonalBest(long timer, int position) {
+    public static Text chatNewPersonalBest(String name, long timer, int position) {
         return Text.empty()
                 .append(Text.literal(" >> ").formatted(Formatting.GOLD, Formatting.BOLD))
-                .append(Text.literal("New Best Time!   ").formatted(Formatting.WHITE))
+                .append(Text.literal("[").formatted(Formatting.RED))
+                .append(Text.literal(String.format("%s", name)).formatted(Formatting.WHITE, Formatting.BOLD))
+                .append(Text.literal("]  ").formatted(Formatting.RED))
                 .append(TextUtil.scoreboardPosition(true, position))
                 .append(Text.literal(" ◇ ").formatted(Formatting.BOLD))
                 .append(Text.literal(TimeUtils.formatTime(timer)).formatted(Formatting.BOLD));

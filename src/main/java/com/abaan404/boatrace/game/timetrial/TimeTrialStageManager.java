@@ -19,6 +19,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
 
 /**
  * Handles time trial state.
@@ -229,6 +230,11 @@ public class TimeTrialStageManager {
         return this.participants.contains(BoatRacePlayer.of(player));
     }
 
+    /**
+     * Submit a leaderboard time.
+     *
+     * @param player The player to create a new pb for.
+     */
     private void submit(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
@@ -241,7 +247,9 @@ public class TimeTrialStageManager {
 
         if (newLeaderboard != leaderboard) {
             int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
-            player.sendMessage(TextUtil.chatNewPersonalBest(pb.timer(), position));
+            GameSpacePlayers players = this.gameSpace.getPlayers();
+
+            players.sendMessage(TextUtil.chatNewPersonalBest(pb.player().offlineName(), pb.timer(), position));
         } else {
             player.sendMessage(TextUtil.chatNewTime(pb.timer()));
         }
