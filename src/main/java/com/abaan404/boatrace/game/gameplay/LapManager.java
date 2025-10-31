@@ -7,9 +7,7 @@ import java.util.Map;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 
-import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
@@ -17,37 +15,30 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  */
 public class LapManager {
     private final BoatRaceTrack track;
+    private final SplitsManager splits;
 
     private Map<BoatRacePlayer, Integer> playerToPositions = new Object2IntOpenHashMap<>();
     private List<BoatRacePlayer> positions = new ObjectArrayList<>();
-    private Map<BoatRacePlayer, List<Long>> splits = new Object2ObjectOpenHashMap<>();
 
-    public LapManager(BoatRaceTrack track) {
+    public LapManager(BoatRaceTrack track, SplitsManager splits) {
         this.track = track;
+        this.splits = splits;
     }
 
     /**
-     * Submit a checkpoint split, will update lap positions accordingly.
-     *
-     * @param player The player's split to submit, will create an entry if it does
-     *               not exist.
-     * @param splits The checkpoint splits.
+     * Update the current positions according to the current SplitsManager state.
      */
-    public void submit(BoatRacePlayer player, List<Long> splits) {
-        this.splits.put(player, splits);
-        this.positions = this.splits.keySet()
-                .stream()
-                .sorted((a, b) -> {
-                    List<Long> aSplits = this.splits.get(a);
-                    List<Long> bSplits = this.splits.get(b);
+    public void update() {
+        this.positions.sort((a, b) -> {
+            List<Long> aSplits = this.splits.getSplits(a);
+            List<Long> bSplits = this.splits.getSplits(b);
 
-                    if (aSplits.size() == bSplits.size() && !aSplits.isEmpty()) {
-                        return Long.compare(bSplits.getLast(), aSplits.getLast());
-                    } else {
-                        return Integer.compare(bSplits.size(), aSplits.size());
-                    }
-                })
-                .toList();
+            if (aSplits.size() == bSplits.size() && !aSplits.isEmpty()) {
+                return Long.compare(bSplits.getLast(), aSplits.getLast());
+            } else {
+                return Integer.compare(bSplits.size(), aSplits.size());
+            }
+        });
 
         this.playerToPositions.clear();
         for (int i = 0; i < this.positions.size(); i++) {
@@ -56,25 +47,26 @@ public class LapManager {
     }
 
     /**
-     * Erase a player from being tracked.
+     * Add a player to being tracked.
+     *
+     * @param player The player to track.
+     */
+    public void add(BoatRacePlayer player) {
+        this.positions.add(player);
+
+        this.playerToPositions.clear();
+        for (int i = 0; i < this.positions.size(); i++) {
+            this.playerToPositions.put(this.positions.get(i), i);
+        }
+    }
+
+    /**
+     * Remove a player from being tracked.
      *
      * @param player The player to erase.
      */
-    public void erase(BoatRacePlayer player) {
-        this.splits.remove(player);
-        this.positions = this.splits.keySet()
-                .stream()
-                .sorted((a, b) -> {
-                    List<Long> aSplits = this.splits.get(a);
-                    List<Long> bSplits = this.splits.get(b);
-
-                    if (aSplits.size() == bSplits.size() && !aSplits.isEmpty()) {
-                        return Long.compare(bSplits.getLast(), aSplits.getLast());
-                    } else {
-                        return Integer.compare(bSplits.size(), aSplits.size());
-                    }
-                })
-                .toList();
+    public void remove(BoatRacePlayer player) {
+        this.positions.removeIf(a -> a.equals(player));
 
         this.playerToPositions.clear();
         for (int i = 0; i < this.positions.size(); i++) {
@@ -90,8 +82,8 @@ public class LapManager {
      * @return The total delta at a common checkpoint.
      */
     public long getDelta(BoatRacePlayer player1, BoatRacePlayer player2) {
-        List<Long> splits1 = this.splits.getOrDefault(player1, LongArrayList.of(0l));
-        List<Long> splits2 = this.splits.getOrDefault(player2, LongArrayList.of(0l));
+        List<Long> splits1 = this.splits.getSplits(player1);
+        List<Long> splits2 = this.splits.getSplits(player2);
 
         int splitIdx = Math.max(0, Math.min(splits1.size() - 1, splits2.size() - 1));
 
@@ -109,8 +101,8 @@ public class LapManager {
      * @return The delta at a common checkpoint.
      */
     public long getDeltaCheckpoint(BoatRacePlayer player1, BoatRacePlayer player2) {
-        List<Long> splits1 = this.splits.getOrDefault(player1, LongArrayList.of(0l));
-        List<Long> splits2 = this.splits.getOrDefault(player2, LongArrayList.of(0l));
+        List<Long> splits1 = this.splits.getSplits(player1);
+        List<Long> splits2 = this.splits.getSplits(player2);
 
         int splitIdx = Math.max(0, Math.min(splits1.size() - 1, splits2.size() - 1));
         int splitIdxPrev = Math.max(0, splitIdx - 1);
@@ -141,8 +133,8 @@ public class LapManager {
      * @return Their completed laps.
      */
     public int getLaps(BoatRacePlayer player) {
-        int curCheckpoints = this.splits.getOrDefault(player, LongArrayList.of()).size() - 1;
-        int trackCheckpoints = this.track.getRegions().checkpoints().size();
+        int curCheckpoints = this.splits.getSplits(player).size() - 1;
+        int trackCheckpoints = this.track.getRegions().checkpoints().size() - 1;
 
         // player hasnt reached first checkpoint.
         if (curCheckpoints < 0) {

@@ -48,7 +48,7 @@ public class RaceStageManager {
 
         this.checkpoints = new CheckpointsManager(track);
         this.splits = new SplitsManager();
-        this.laps = new LapManager(track);
+        this.laps = new LapManager(track, this.splits);
 
         Random random = world.getRandom();
         this.countdown = new CountdownManager(config.countdown(), random.nextBetween(0, config.countdownRandom()));
@@ -221,25 +221,25 @@ public class RaceStageManager {
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
                     this.splits.recordSplit(bPlayer);
-                    this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
+                    this.laps.update();
                     break;
                 }
 
                 case LOOP: {
                     this.splits.recordSplit(bPlayer);
-                    this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
+                    this.laps.update();
                     break;
                 }
 
                 case FINISH: {
-                    // stop the timer
-                    // this.splits.stop(bPlayer);
+                    this.splits.recordSplit(bPlayer);
+                    this.laps.update();
                     break;
                 }
 
                 case CHECKPOINT: {
                     this.splits.recordSplit(bPlayer);
-                    this.laps.submit(bPlayer, this.splits.getSplits(bPlayer));
+                    this.laps.update();
                     break;
                 }
 
@@ -262,7 +262,7 @@ public class RaceStageManager {
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
-        this.laps.erase(player);
+        this.laps.remove(player);
     }
 
     /**
@@ -277,7 +277,7 @@ public class RaceStageManager {
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
-        this.laps.submit(player, this.splits.getSplits(player));
+        this.laps.add(player);
     }
 
     /**
