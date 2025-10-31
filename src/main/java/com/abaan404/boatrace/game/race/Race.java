@@ -38,12 +38,8 @@ public class Race {
 
     private Race(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
             BoatRaceConfig.Race config, List<BoatRacePlayer> gridOrder) {
-        this.stageManager = new RaceStageManager(gameSpace, config, world, track);
+        this.stageManager = new RaceStageManager(gameSpace, config, world, track, gridOrder);
         this.widgets = new RaceWidgets(gameSpace, widgets, track);
-
-        for (BoatRacePlayer player : gridOrder) {
-            this.stageManager.toParticipant(player);
-        }
     }
 
     public static void open(GameActivity game, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,

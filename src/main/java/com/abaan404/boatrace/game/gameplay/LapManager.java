@@ -49,6 +49,34 @@ public class LapManager {
                 })
                 .toList();
 
+        this.playerToPositions.clear();
+        for (int i = 0; i < this.positions.size(); i++) {
+            this.playerToPositions.put(this.positions.get(i), i);
+        }
+    }
+
+    /**
+     * Erase a player from being tracked.
+     *
+     * @param player The player to erase.
+     */
+    public void erase(BoatRacePlayer player) {
+        this.splits.remove(player);
+        this.positions = this.splits.keySet()
+                .stream()
+                .sorted((a, b) -> {
+                    List<Long> aSplits = this.splits.get(a);
+                    List<Long> bSplits = this.splits.get(b);
+
+                    if (aSplits.size() == bSplits.size() && !aSplits.isEmpty()) {
+                        return Long.compare(bSplits.getLast(), aSplits.getLast());
+                    } else {
+                        return Integer.compare(bSplits.size(), aSplits.size());
+                    }
+                })
+                .toList();
+
+        this.playerToPositions.clear();
         for (int i = 0; i < this.positions.size(); i++) {
             this.playerToPositions.put(this.positions.get(i), i);
         }

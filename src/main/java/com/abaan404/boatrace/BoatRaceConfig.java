@@ -46,15 +46,36 @@ public record BoatRaceConfig(Identifier track, Optional<Qualifying> qualifying,
     }
 
     public record Race(
-            int maxDuration, int maxLaps,
-            int requiredPits,
+            int maxDuration, int maxLaps, int requiredPits,
+            GridType gridType,
+            int countdown, int countdownRandom,
             boolean collision) {
 
         public static final Codec<Race> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.INT.fieldOf("max_duration").forGetter(Race::maxDuration),
                 Codec.INT.fieldOf("max_laps").forGetter(Race::maxLaps),
                 Codec.INT.optionalFieldOf("required_pits", 0).forGetter(Race::requiredPits),
+                GridType.CODEC.optionalFieldOf("grid_type", GridType.NORMAL).forGetter(Race::gridType),
+                Codec.INT.optionalFieldOf("countdown", 5000).forGetter(Race::countdown),
+                Codec.INT.optionalFieldOf("countdown_random", 2000).forGetter(Race::countdownRandom),
                 Codec.BOOL.optionalFieldOf("collision", false).forGetter(Race::collision))
                 .apply(instance, Race::new));
+
+        public enum GridType implements StringIdentifiable {
+            NORMAL("normal"), REVERSED("reversed"), RANDOM("random");
+
+            private final String name;
+
+            public static final Codec<GridType> CODEC = StringIdentifiable.createCodec(GridType::values);
+
+            GridType(String name) {
+                this.name = name;
+            }
+
+            @Override
+            public String asString() {
+                return name;
+            }
+        }
     }
 }

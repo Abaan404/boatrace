@@ -1,5 +1,7 @@
 package com.abaan404.boatrace.game.race;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.SequencedSet;
 
 import com.abaan404.boatrace.BoatRaceConfig;
@@ -12,10 +14,12 @@ import com.abaan404.boatrace.game.gameplay.CountdownManager;
 import com.abaan404.boatrace.game.gameplay.LapManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 
@@ -36,7 +40,7 @@ public class RaceStageManager {
     private long duration;
 
     public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world,
-            BoatRaceTrack track) {
+            BoatRaceTrack track, List<BoatRacePlayer> gridOrder) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
@@ -45,10 +49,34 @@ public class RaceStageManager {
         this.checkpoints = new CheckpointsManager(track);
         this.splits = new SplitsManager();
         this.laps = new LapManager(track);
-        this.countdown = new CountdownManager(5000, world.getRandom().nextBetween(0, 1000));
+
+        Random random = world.getRandom();
+        this.countdown = new CountdownManager(config.countdown(), random.nextBetween(0, config.countdownRandom()));
 
         this.spawnLogic = new BoatRaceSpawnLogic(world);
         this.participants = new ObjectLinkedOpenHashSet<>();
+
+        List<BoatRacePlayer> gridOrderMutable = new ObjectArrayList<>(gridOrder);
+
+        switch (this.config.gridType()) {
+            case NORMAL: {
+                break;
+            }
+
+            case RANDOM: {
+                Collections.shuffle(gridOrderMutable);
+                break;
+            }
+
+            case REVERSED: {
+                Collections.reverse(gridOrderMutable);
+                break;
+            }
+        }
+
+        for (BoatRacePlayer player : gridOrderMutable) {
+            this.toParticipant(player);
+        }
 
         this.duration = 0;
     }
@@ -93,10 +121,6 @@ public class RaceStageManager {
 
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
-
-        if (this.splits.getTimer(bPlayer) == 0l) {
-            this.splits.run(bPlayer);
-        }
 
         if (this.countdown.getCountdown() > 0) {
             this.spawnLogic.freezeVehicle(player);
@@ -161,6 +185,7 @@ public class RaceStageManager {
                     }
 
                     this.spawnLogic.unfreezeVehicle(player);
+                    this.splits.run(bPlayer);
                 }
                 break;
             }
@@ -237,6 +262,7 @@ public class RaceStageManager {
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
+        this.laps.erase(player);
     }
 
     /**
