@@ -3,43 +3,73 @@ package com.abaan404.boatrace.game.gameplay;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.abaan404.boatrace.BoatRacePlayer;
-import com.abaan404.boatrace.BoatRaceTrack;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 /**
  * Keeps track of positions and delta times on track.
  */
-public class LapManager {
-    private final BoatRaceTrack track;
+public class PositionsManager {
     private final SplitsManager splits;
 
     private Map<BoatRacePlayer, Integer> playerToPositions = new Object2IntOpenHashMap<>();
     private List<BoatRacePlayer> positions = new ObjectArrayList<>();
+    private Set<BoatRacePlayer> waiting = new ObjectOpenHashSet<>();
 
-    public LapManager(BoatRaceTrack track, SplitsManager splits) {
-        this.track = track;
+    public PositionsManager(SplitsManager splits) {
         this.splits = splits;
     }
 
     /**
      * Update the current positions according to the current SplitsManager state.
+     * The player being updated will also be removed from their waiting state.
+     *
+     * @param player The player being updated.
+     * @param splits The split manager.
      */
-    public void update() {
-        this.positions.sort((a, b) -> {
+    public void update(BoatRacePlayer player) {
+        this.waiting.remove(player);
+
+        // divide players into those who had update() called for and those who hadn't.
+        List<BoatRacePlayer> positions = new ObjectArrayList<>();
+        List<BoatRacePlayer> waiting = new ObjectArrayList<>();
+
+        for (BoatRacePlayer bPlayer : this.positions) {
+            if (!this.waiting.contains(bPlayer)) {
+                positions.add(bPlayer);
+            } else {
+                waiting.add(bPlayer);
+            }
+        }
+
+        // sort them by checkpoints completed or their delta
+        positions.sort((a, b) -> {
             List<Long> aSplits = this.splits.getSplits(a);
             List<Long> bSplits = this.splits.getSplits(b);
 
-            if (aSplits.size() == bSplits.size() && !aSplits.isEmpty()) {
-                return Long.compare(bSplits.getLast(), aSplits.getLast());
-            } else {
+            if (aSplits.size() != bSplits.size()) {
                 return Integer.compare(bSplits.size(), aSplits.size());
             }
+
+            long aTime = aSplits.isEmpty() ? Long.MAX_VALUE : aSplits.getLast();
+            long bTime = bSplits.isEmpty() ? Long.MAX_VALUE : bSplits.getLast();
+
+            return Long.compare(aTime, bTime);
         });
 
+        // append waiting players to the back
+        for (BoatRacePlayer bPlayer : waiting) {
+            positions.add(bPlayer);
+        }
+
+        this.positions = positions;
+
+        // update cache
         this.playerToPositions.clear();
         for (int i = 0; i < this.positions.size(); i++) {
             this.playerToPositions.put(this.positions.get(i), i);
@@ -53,6 +83,7 @@ public class LapManager {
      */
     public void add(BoatRacePlayer player) {
         this.positions.add(player);
+        this.waiting.add(player);
 
         this.playerToPositions.clear();
         for (int i = 0; i < this.positions.size(); i++) {
@@ -67,6 +98,7 @@ public class LapManager {
      */
     public void remove(BoatRacePlayer player) {
         this.positions.removeIf(a -> a.equals(player));
+        this.waiting.remove(player);
 
         this.playerToPositions.clear();
         for (int i = 0; i < this.positions.size(); i++) {
@@ -108,43 +140,9 @@ public class LapManager {
         int splitIdxPrev = Math.max(0, splitIdx - 1);
 
         long split1 = splits1.get(splitIdx) - splits1.get(splitIdxPrev);
-        long split2 = splits2.get(splitIdx) - splits1.get(splitIdxPrev);
+        long split2 = splits2.get(splitIdx) - splits2.get(splitIdxPrev);
 
         return split1 - split2;
-    }
-
-    /**
-     * Get the number of laps by the leader.
-     *
-     * @return The leader's laps.
-     */
-    public int getLeadingLaps() {
-        if (this.positions.isEmpty()) {
-            return 0;
-        }
-
-        return this.getLaps(this.positions.getFirst());
-    }
-
-    /**
-     * Get the number of laps for a player.
-     *
-     * @param player The player.
-     * @return Their completed laps.
-     */
-    public int getLaps(BoatRacePlayer player) {
-        int curCheckpoints = this.splits.getSplits(player).size() - 1;
-        int trackCheckpoints = this.track.getRegions().checkpoints().size() - 1;
-
-        // player hasnt reached first checkpoint.
-        if (curCheckpoints < 0) {
-            return 0;
-        }
-
-        return switch (this.track.getMeta().layout()) {
-            case CIRCULAR -> Math.floorDiv(curCheckpoints, trackCheckpoints);
-            case LINEAR -> curCheckpoints >= trackCheckpoints ? 1 : 0;
-        };
     }
 
     /**

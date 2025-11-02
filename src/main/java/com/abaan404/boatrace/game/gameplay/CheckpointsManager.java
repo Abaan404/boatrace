@@ -18,6 +18,7 @@ public class CheckpointsManager {
     private final BoatRaceTrack track;
 
     private Map<BoatRacePlayer, Integer> checkpoints = new Object2IntOpenHashMap<>();
+    private Map<BoatRacePlayer, Integer> laps = new Object2IntOpenHashMap<>();
     private Set<BoatRacePlayer> began = new ObjectOpenHashSet<>();
 
     public CheckpointsManager(BoatRaceTrack track) {
@@ -49,6 +50,7 @@ public class CheckpointsManager {
 
         // player has reached the starting line
         if (!this.began.contains(bPlayer) && start.bounds().contains(player.getBlockPos())) {
+            this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
             this.began.add(bPlayer);
             this.checkpoints.put(bPlayer, nextCheckpointIdx);
             return TickResult.BEGIN;
@@ -67,6 +69,7 @@ public class CheckpointsManager {
                 case CIRCULAR: {
                     // checkpoint was looped back to the start
                     if (start.bounds().contains(player.getBlockPos())) {
+                        this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
                         return TickResult.LOOP;
                     }
 
@@ -124,6 +127,16 @@ public class CheckpointsManager {
         }
 
         return regions.checkpoints().get(checkpointIdx);
+    }
+
+    /**
+     * Get the number of laps for a player.
+     *
+     * @param player The player.
+     * @return Their completed laps.
+     */
+    public int getLaps(BoatRacePlayer player) {
+        return this.laps.getOrDefault(player, 0);
     }
 
     public int getCheckpointIndex(BoatRacePlayer player) {

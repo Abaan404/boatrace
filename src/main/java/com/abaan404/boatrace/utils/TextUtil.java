@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
+import com.abaan404.boatrace.game.race.RaceWidgets;
+import com.abaan404.boatrace.leaderboard.PersonalBest;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.text.MutableText;
@@ -74,8 +76,7 @@ public final class TextUtil {
      * @return The timer text.
      */
     public static Text actionBarTimer(long timer) {
-        return Text.literal(TimeUtils.formatTime(timer))
-                .formatted(Formatting.BOLD);
+        return Text.literal(TimeUtils.formatTime(timer)).formatted(Formatting.BOLD);
     }
 
     /**
@@ -166,7 +167,7 @@ public final class TextUtil {
     public static Text scoreboardLaps(int laps, int maxLaps) {
         return Text.empty()
                 .append(Text.literal(" Laps: ").formatted(Formatting.RED))
-                .append(Text.literal(String.valueOf(laps)))
+                .append(Text.literal(String.valueOf(Math.clamp(laps, 0, maxLaps))))
                 .append(Text.literal(" / ").formatted(Formatting.ITALIC))
                 .append(Text.literal(String.valueOf(maxLaps)));
     }
@@ -368,21 +369,33 @@ public final class TextUtil {
     }
 
     /**
+     * A text to display the lap delta for a finisher.
+     *
+     * @param leadingLaps The leader's laps.
+     * @param currentLaps The current player's laps.
+     * @return A text.
+     */
+    public static Text chatLapsDelta(int leadingLaps, int currentLaps) {
+        int lapDelta = leadingLaps - currentLaps;
+        return Text.literal(String.format("+%d Lap(s)", lapDelta)).formatted(Formatting.BOLD);
+    }
+
+    /**
      * A text to display a new best time.
      *
      * @param timer    The player's timer.
      * @param position The player's position.
      * @return A text
      */
-    public static Text chatNewPersonalBest(String name, long timer, int position) {
+    public static Text chatNewPersonalBest(PersonalBest pb, int position) {
         return Text.empty()
                 .append(Text.literal(" >> ").formatted(Formatting.GOLD, Formatting.BOLD))
                 .append(Text.literal("[").formatted(Formatting.RED))
-                .append(Text.literal(String.format("%s", name)).formatted(Formatting.WHITE, Formatting.BOLD))
+                .append(Text.literal(pb.player().offlineName()).formatted(Formatting.WHITE, Formatting.BOLD))
                 .append(Text.literal("]  ").formatted(Formatting.RED))
                 .append(TextUtil.scoreboardPosition(true, position))
                 .append(Text.literal(" ◇ ").formatted(Formatting.BOLD))
-                .append(Text.literal(TimeUtils.formatTime(timer)).formatted(Formatting.BOLD));
+                .append(Text.literal(TimeUtils.formatTime(pb.timer())).formatted(Formatting.BOLD));
     }
 
     /**
@@ -399,14 +412,14 @@ public final class TextUtil {
     }
 
     /**
-     * A text to show in chat.
+     * A text to show leaderboard type.
      *
-     * @param message The message.
+     * @param leaderboardType The leaderboard type.
      * @return A text with the formatted message.
      */
-    public static Text chat(MutableText message) {
+    public static Text chatLeaderboardType(RaceWidgets.LeaderboardType leaderboardType) {
         return Text.empty()
                 .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
-                .append(message.formatted(Formatting.ITALIC));
+                .append(Text.literal(leaderboardType.toString()).formatted(Formatting.ITALIC));
     }
 }

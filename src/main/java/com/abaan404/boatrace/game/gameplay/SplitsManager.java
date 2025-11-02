@@ -29,9 +29,6 @@ public class SplitsManager {
      */
     public void run(BoatRacePlayer player) {
         this.running.add(player);
-
-        this.timer.put(player, 0l);
-        this.splits.remove(player);
     }
 
     /**
@@ -41,9 +38,6 @@ public class SplitsManager {
      */
     public void stop(BoatRacePlayer player) {
         this.running.remove(player);
-
-        this.timer.put(player, 0l);
-        this.splits.remove(player);
     }
 
     /**

@@ -11,17 +11,24 @@ import com.abaan404.boatrace.game.BoatRaceItems;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.CountdownManager;
-import com.abaan404.boatrace.game.gameplay.LapManager;
+import com.abaan404.boatrace.game.gameplay.PositionsManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
+import com.abaan404.boatrace.utils.TextUtil;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
+import xyz.nucleoid.plasmid.api.game.GameCloseReason;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
 
 public class RaceStageManager {
     private final GameSpace gameSpace;
@@ -31,7 +38,7 @@ public class RaceStageManager {
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
-    public final LapManager laps;
+    public final PositionsManager positions;
     public final CountdownManager countdown;
 
     private final BoatRaceSpawnLogic spawnLogic;
@@ -48,7 +55,7 @@ public class RaceStageManager {
 
         this.checkpoints = new CheckpointsManager(track);
         this.splits = new SplitsManager();
-        this.laps = new LapManager(track, this.splits);
+        this.positions = new PositionsManager(this.splits);
 
         Random random = world.getRandom();
         this.countdown = new CountdownManager(config.countdown(), random.nextBetween(0, config.countdownRandom()));
@@ -199,17 +206,10 @@ public class RaceStageManager {
             }
         }
 
-        this.duration += this.world.getTickManager().getMillisPerTick();
-
-        if (this.duration > this.config.maxDuration()) {
-            return;
+        // max time reached or every player finished their laps
+        if (this.duration > this.config.maxDuration() || this.participants.size() == 0) {
+            this.endGame();
         }
-
-        if (this.laps.getLeadingLaps() > this.config.maxLaps()) {
-            return;
-        }
-
-        this.splits.tick(this.world);
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
@@ -219,27 +219,28 @@ public class RaceStageManager {
             }
 
             switch (this.checkpoints.tick(player)) {
-                case BEGIN: {
-                    this.splits.recordSplit(bPlayer);
-                    this.laps.update();
-                    break;
-                }
-
-                case LOOP: {
-                    this.splits.recordSplit(bPlayer);
-                    this.laps.update();
-                    break;
-                }
-
-                case FINISH: {
-                    this.splits.recordSplit(bPlayer);
-                    this.laps.update();
-                    break;
-                }
-
                 case CHECKPOINT: {
                     this.splits.recordSplit(bPlayer);
-                    this.laps.update();
+                    this.positions.update(bPlayer);
+                    break;
+                }
+
+                case BEGIN:
+                case FINISH:
+                case LOOP: {
+                    this.splits.recordSplit(bPlayer);
+                    this.positions.update(bPlayer);
+
+                    if (this.getLeadingLaps() > this.config.maxLaps()) {
+                        this.participants.remove(bPlayer);
+                        this.splits.stop(bPlayer);
+                        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+
+                        Entity boat = player.getVehicle();
+                        if (boat != null) {
+                            boat.kill(this.world);
+                        }
+                    }
                     break;
                 }
 
@@ -248,11 +249,13 @@ public class RaceStageManager {
                 }
             }
         }
+
+        this.splits.tick(this.world);
+        this.duration += this.world.getTickManager().getMillisPerTick();
     }
 
     /**
-     * Transition the player to a spectator. They can roam freely and explore the
-     * track.
+     * Transition the player to a spectator.
      *
      * @param player The player's bPlayer
      */
@@ -262,12 +265,11 @@ public class RaceStageManager {
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
-        this.laps.remove(player);
+        this.positions.remove(player);
     }
 
     /**
-     * Transition a player to a participant. They can set and submit runs in this
-     * mode.
+     * Transition a player to a participant.
      *
      * @param player The player's bPlayer
      */
@@ -277,7 +279,7 @@ public class RaceStageManager {
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
-        this.laps.add(player);
+        this.positions.add(player);
     }
 
     /**
@@ -299,6 +301,16 @@ public class RaceStageManager {
         return Math.max(0, this.config.maxDuration() - this.duration);
     }
 
+    public int getLeadingLaps() {
+        List<BoatRacePlayer> positions = this.positions.getPositions();
+
+        if (positions.isEmpty()) {
+            return -1;
+        }
+
+        return this.checkpoints.getLaps(positions.getFirst());
+    }
+
     /**
      * Get game config for race.
      *
@@ -306,5 +318,45 @@ public class RaceStageManager {
      */
     public BoatRaceConfig.Race getConfig() {
         return this.config;
+    }
+
+    private void endGame() {
+        GameSpacePlayers players = this.gameSpace.getPlayers();
+        List<BoatRacePlayer> positions = this.positions.getPositions();
+
+        if (positions.size() == 0) {
+            MutableText positionsText = Text.empty();
+            positionsText.append(" ");
+            positionsText.append(TextUtil.scoreboardPosition(true, 0)).append("  ");
+            positionsText.append(TextUtil.scoreboardName(BoatRacePlayer.of(), false, 0)).append(" ");
+
+            positionsText.append(Text.literal(" / ").formatted(Formatting.RED, Formatting.BOLD));
+
+            positionsText.append(TextUtil.actionBarTimer(0));
+
+            players.sendMessage(positionsText);
+        }
+
+        for (int i = 0; i < positions.size(); i++) {
+            BoatRacePlayer player = positions.get(i);
+            int laps = this.checkpoints.getLaps(player);
+
+            MutableText positionsText = Text.empty();
+            positionsText.append(" ");
+            positionsText.append(TextUtil.scoreboardPosition(true, i)).append("  ");
+            positionsText.append(TextUtil.scoreboardName(player, false, i)).append(" ");
+
+            positionsText.append(Text.literal(" / ").formatted(Formatting.RED, Formatting.BOLD));
+
+            if (laps < this.getLeadingLaps()) {
+                positionsText.append(TextUtil.chatLapsDelta(this.getLeadingLaps(), this.checkpoints.getLaps(player)));
+            } else {
+                positionsText.append(TextUtil.actionBarTimer(this.splits.getTimer(player)));
+            }
+
+            players.sendMessage(positionsText);
+        }
+
+        this.gameSpace.close(GameCloseReason.FINISHED);
     }
 }

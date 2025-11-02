@@ -92,7 +92,7 @@ public class RaceWidgets {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             long timer = stageManager.splits.getTimer(bPlayer);
-            int position = stageManager.laps.getPosition(bPlayer);
+            int position = stageManager.positions.getPosition(bPlayer);
             int checkpoint = stageManager.checkpoints.getCheckpointIndex(bPlayer);
 
             MutableText actionBarText = Text.empty();
@@ -101,8 +101,8 @@ public class RaceWidgets {
             actionBarText.append(TextUtil.actionBarTimer(timer)).append(" ");
 
             if (position > 0) {
-                BoatRacePlayer playerAhead = stageManager.laps.getPositions().get(position - 1);
-                long delta = stageManager.laps.getDeltaCheckpoint(bPlayer, playerAhead);
+                BoatRacePlayer playerAhead = stageManager.positions.getPositions().get(position - 1);
+                long delta = stageManager.positions.getDeltaCheckpoint(bPlayer, playerAhead);
 
                 actionBarText.append(TextUtil.actionBarDelta(delta)).append(" ");
             }
@@ -134,7 +134,7 @@ public class RaceWidgets {
                 TextUtil.scoreboardMeta(this.track.getMeta()).forEach(content::add);
 
                 content.add(TextUtil.scoreboardLaps(
-                        stageManager.laps.getLeadingLaps(),
+                        stageManager.getLeadingLaps(),
                         stageManager.getConfig().maxLaps()));
 
                 content.add(TextUtil.scoreboardDuration(
@@ -142,19 +142,19 @@ public class RaceWidgets {
                         stageManager.getConfig().maxDuration()));
                 content.add(Text.empty());
 
-                List<BoatRacePlayer> players = stageManager.laps.getPositions();
+                List<BoatRacePlayer> positions = stageManager.positions.getPositions();
 
-                if (players.isEmpty()) {
+                if (positions.isEmpty()) {
                     content.add(Text.literal(" No times submitted.")
                             .formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
                     return;
                 }
 
-                int position = stageManager.laps.getPosition(bPlayer);
+                int position = stageManager.positions.getPosition(bPlayer);
                 LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
 
                 for (Pair<Integer, BoatRacePlayer> pair : TextUtil.scoreboardAroundAndTop(
-                        players,
+                        positions,
                         position,
                         SIDEBAR_RANKING_TOP,
                         SIDEBAR_RANKING_COMPARED)) {
@@ -173,11 +173,11 @@ public class RaceWidgets {
 
                     switch (leaderboardType) {
                         case LEADER: {
-                            if (player2.equals(players.getFirst())) {
+                            if (player2.equals(positions.getFirst())) {
                                 break;
                             }
 
-                            long delta = stageManager.laps.getDelta(player2, players.getFirst());
+                            long delta = stageManager.positions.getDelta(player2, positions.getFirst());
                             text.append(TextUtil.scoreboardRelative(delta)).append(" ");
                             break;
                         }
@@ -186,7 +186,7 @@ public class RaceWidgets {
                                 break;
                             }
 
-                            long delta = stageManager.laps.getDelta(bPlayer, player2);
+                            long delta = stageManager.positions.getDelta(bPlayer, player2);
                             text.append(TextUtil.scoreboardRelative(delta)).append(" ");
                             break;
                         }
@@ -212,7 +212,7 @@ public class RaceWidgets {
         leaderboardType = leaderboardType.cycle();
         this.leaderboardType.put(bPlayer, leaderboardType);
 
-        player.sendMessage(TextUtil.chat(Text.literal(leaderboardType.toString())));
+        player.sendMessage(TextUtil.chatLeaderboardType(leaderboardType));
     }
 
     public enum LeaderboardType {

@@ -145,8 +145,6 @@ public class TimeTrialStageManager {
      * Tick the player and act on events from checkpoints and/or splits.
      */
     public void tickPlayers() {
-        this.splits.tick(this.world);
-
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
@@ -190,6 +188,8 @@ public class TimeTrialStageManager {
                 }
             }
         }
+
+        this.splits.tick(this.world);
     }
 
     /**
@@ -249,7 +249,7 @@ public class TimeTrialStageManager {
             int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
-            players.sendMessage(TextUtil.chatNewPersonalBest(pb.player().offlineName(), pb.timer(), position));
+            players.sendMessage(TextUtil.chatNewPersonalBest(pb, position));
         } else {
             player.sendMessage(TextUtil.chatNewTime(pb.timer()));
         }

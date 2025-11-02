@@ -137,14 +137,10 @@ public class QualifyingStageManager {
      * of this game.
      */
     public void tickPlayers() {
-        this.duration += this.world.getTickManager().getMillisPerTick();
-
         if (this.duration > this.config.duration()) {
             this.startRace();
             return;
         }
-
-        this.splits.tick(this.world);
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
@@ -189,6 +185,9 @@ public class QualifyingStageManager {
                 }
             }
         }
+
+        this.duration += this.world.getTickManager().getMillisPerTick();
+        this.splits.tick(this.world);
     }
 
     /**
@@ -277,7 +276,7 @@ public class QualifyingStageManager {
             int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
-            players.sendMessage(TextUtil.chatNewPersonalBest(pb.player().offlineName(), pb.timer(), position));
+            players.sendMessage(TextUtil.chatNewPersonalBest(pb, position));
         } else {
             player.sendMessage(TextUtil.chatNewTime(pb.timer()));
         }

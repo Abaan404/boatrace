@@ -29,7 +29,7 @@ public record BoatRacePlayer(PlayerRef ref, String offlineName) {
     }
 
     public static BoatRacePlayer of() {
-        return new BoatRacePlayer(PlayerRef.ofUnchecked(UUID.randomUUID()), "Jack_Black");
+        return new BoatRacePlayer(PlayerRef.ofUnchecked(UUID.randomUUID()), "Mumbo");
     }
 
     @Override
