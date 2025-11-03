@@ -6,8 +6,6 @@
     },
     "race": {
         "max_duration": 300000,
-        "max_laps": 5,
-        "required_pits": 1,
-        "collision": false
+        "max_laps": 5
     }
 }
