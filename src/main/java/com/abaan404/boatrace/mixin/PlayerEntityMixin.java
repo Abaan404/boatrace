@@ -5,7 +5,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.abaan404.boatrace.events.BoatRacePlayerEvent;
+import com.abaan404.boatrace.BoatRacePlayerEvents;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -35,7 +35,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
             ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
 
             try (EventInvokers invokers = Stimuli.select().forEntity(player)) {
-                EventResult result = invokers.get(BoatRacePlayerEvent.DISMOUNT).onDismount(player, vehicle);
+                EventResult result = invokers.get(BoatRacePlayerEvents.DISMOUNT).onDismount(player, vehicle);
                 if (result == EventResult.DENY) {
                     ci.cancel();
                     return;

@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game.gameplay;
+package com.abaan404.boatrace.gameplay;
 
 import java.util.Map;
 import java.util.Set;
@@ -14,14 +14,14 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * Keeps track of checkpoints and verifies if the player crossed the correct
  * checkpoints in order for a track.
  */
-public class CheckpointsManager {
+public class Checkpoints {
     private final BoatRaceTrack track;
 
     private Map<BoatRacePlayer, Integer> checkpoints = new Object2IntOpenHashMap<>();
     private Map<BoatRacePlayer, Integer> laps = new Object2IntOpenHashMap<>();
     private Set<BoatRacePlayer> began = new ObjectOpenHashSet<>();
 
-    public CheckpointsManager(BoatRaceTrack track) {
+    public Checkpoints(BoatRaceTrack track) {
         this.track = track;
     }
 

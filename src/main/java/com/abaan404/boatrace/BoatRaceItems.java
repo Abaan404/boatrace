@@ -1,8 +1,6 @@
-package com.abaan404.boatrace.game;
+package com.abaan404.boatrace;
 
 import java.util.function.Function;
-
-import com.abaan404.boatrace.BoatRace;
 
 import eu.pb4.polymer.core.api.item.PolymerItemGroupUtils;
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;

@@ -1,11 +1,11 @@
-package com.abaan404.boatrace.events;
+package com.abaan404.boatrace;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.StimulusEvent;
 
-public interface BoatRacePlayerEvent {
+public interface BoatRacePlayerEvents {
     StimulusEvent<Dismount> DISMOUNT = StimulusEvent.create(Dismount.class, ctx -> (player, source) -> {
         try {
             for (Dismount listener : ctx.getListeners()) {

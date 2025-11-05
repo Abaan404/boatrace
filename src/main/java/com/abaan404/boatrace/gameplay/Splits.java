@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game.gameplay;
+package com.abaan404.boatrace.gameplay;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +16,7 @@ import net.minecraft.server.world.ServerWorld;
 /**
  * Records splits and times an active run.
  */
-public class SplitsManager {
+public class Splits {
     private Set<BoatRacePlayer> running = new ObjectOpenHashSet<>();
 
     private Map<BoatRacePlayer, Long> timer = new Object2LongOpenHashMap<>();

@@ -20,8 +20,8 @@ import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
 /**
  * Common texts for widgets shared by each gamemode.
  */
-public final class TextUtil {
-    private TextUtil() {
+public final class TextUtils {
+    private TextUtils() {
     }
 
     public static final Text PAD_SCOREBOARD_POSITION = Text.literal("   ○ ○ ○").formatted(Formatting.DARK_GRAY);
@@ -54,7 +54,7 @@ public final class TextUtil {
      * @return A text if the position was valid otherwise an empty text.
      */
     public static Text actionBarPosition(int position) {
-        return TextUtil.scoreboardPosition(false, position);
+        return TextUtils.scoreboardPosition(false, position);
     }
 
     /**
@@ -309,7 +309,7 @@ public final class TextUtil {
         }
 
         // add top values
-        for (Pair<Integer, T> pair : TextUtil.scoreboardAround(list, 0, top - 1)) {
+        for (Pair<Integer, T> pair : TextUtils.scoreboardAround(list, 0, top - 1)) {
             around.add(pair);
         }
 
@@ -320,7 +320,7 @@ public final class TextUtil {
 
         // show indices around the player
         if (index > 0 && index + compared > top - 1) {
-            for (Pair<Integer, T> pair : TextUtil.scoreboardAround(list, index, compared)) {
+            for (Pair<Integer, T> pair : TextUtils.scoreboardAround(list, index, compared)) {
                 // skip overlaps from top
                 if (pair.getLeft() > top - 1) {
                     around.add(pair);
@@ -396,7 +396,7 @@ public final class TextUtil {
                 .append(Text.literal("[").formatted(Formatting.RED))
                 .append(Text.literal(pb.player().offlineName()).formatted(Formatting.WHITE, Formatting.BOLD))
                 .append(Text.literal("]  ").formatted(Formatting.RED))
-                .append(TextUtil.scoreboardPosition(true, position))
+                .append(TextUtils.scoreboardPosition(true, position))
                 .append(Text.literal(" ◇ ").formatted(Formatting.BOLD))
                 .append(Text.literal(TimeUtils.formatTime(pb.timer())).formatted(Formatting.BOLD));
     }

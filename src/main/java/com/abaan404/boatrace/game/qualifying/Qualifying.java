@@ -3,10 +3,10 @@ package com.abaan404.boatrace.game.qualifying;
 import java.util.function.Consumer;
 
 import com.abaan404.boatrace.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.game.BoatRaceItems;
-import com.abaan404.boatrace.game.BoatRaceTeams;
+import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.damage.DamageSource;
@@ -38,13 +38,13 @@ public class Qualifying {
     private final QualifyingWidgets widgets;
 
     private Qualifying(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            BoatRaceTrack track, BoatRaceTeams teams, ServerWorld world, GlobalWidgets widgets) {
+            BoatRaceTrack track, Teams teams, ServerWorld world, GlobalWidgets widgets) {
         this.stageManager = new QualifyingStageManager(gameSpace, config, configRace, world, track, teams);
         this.widgets = new QualifyingWidgets(gameSpace, world, widgets, track);
     }
 
     public static void open(GameActivity game, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            ServerWorld world, BoatRaceTrack track, BoatRaceTeams teams) {
+            ServerWorld world, BoatRaceTrack track, Teams teams) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 
         Qualifying qualifying = new Qualifying(game.getGameSpace(), config, configRace, track, teams, world, widgets);

@@ -113,21 +113,6 @@ public class BoatRaceTrack {
     }
 
     /**
-     * Loads every track under map_template/tracks.
-     *
-     * @param server The server to load from
-     * @return A list of every track that successfully loaded.
-     */
-    public static List<BoatRaceTrack> loadAll(MinecraftServer server) {
-        return server.getResourceManager().findResources("map_template/tracks",
-                id -> id.getNamespace().equals(BoatRace.ID))
-                .keySet().stream()
-                .map(id -> BoatRaceTrack.load(server, id))
-                .flatMap(Optional::stream)
-                .toList();
-    }
-
-    /**
      * Get a check generator for this track.
      *
      * @param server The server to use.

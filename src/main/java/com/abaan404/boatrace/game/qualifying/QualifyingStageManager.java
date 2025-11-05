@@ -4,17 +4,17 @@ import java.util.List;
 import java.util.Set;
 
 import com.abaan404.boatrace.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.game.BoatRaceItems;
-import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
-import com.abaan404.boatrace.game.BoatRaceTeams;
-import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
-import com.abaan404.boatrace.game.gameplay.SplitsManager;
 import com.abaan404.boatrace.game.race.Race;
+import com.abaan404.boatrace.gameplay.Checkpoints;
+import com.abaan404.boatrace.gameplay.SpawnLogic;
+import com.abaan404.boatrace.gameplay.Splits;
+import com.abaan404.boatrace.gameplay.Teams;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
-import com.abaan404.boatrace.utils.TextUtil;
+import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -33,17 +33,17 @@ public class QualifyingStageManager {
     private final BoatRaceConfig.Race configRace;
     private final BoatRaceTrack track;
 
-    public final CheckpointsManager checkpoints;
-    public final SplitsManager splits;
-    public final BoatRaceTeams teams;
+    public final Checkpoints checkpoints;
+    public final Splits splits;
+    public final Teams teams;
 
-    private final BoatRaceSpawnLogic spawnLogic;
+    private final SpawnLogic spawnLogic;
     private final Set<BoatRacePlayer> participants;
 
     private long duration;
 
     public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            ServerWorld world, BoatRaceTrack track, BoatRaceTeams teams) {
+            ServerWorld world, BoatRaceTrack track, Teams teams) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
@@ -51,10 +51,10 @@ public class QualifyingStageManager {
         this.track = track;
         this.teams = teams;
 
-        this.checkpoints = new CheckpointsManager(track);
-        this.splits = new SplitsManager();
+        this.checkpoints = new Checkpoints(track);
+        this.splits = new Splits();
 
-        this.spawnLogic = new BoatRaceSpawnLogic(world);
+        this.spawnLogic = new SpawnLogic(world);
         this.participants = new ObjectOpenHashSet<>();
 
         this.duration = 0;
@@ -265,7 +265,7 @@ public class QualifyingStageManager {
         }
 
         this.gameSpace.setActivity(game -> {
-            BoatRaceTeams teams = new BoatRaceTeams(this.teams, TeamManager.addTo(game));
+            Teams teams = new Teams(this.teams, TeamManager.addTo(game));
             Race.open(game, this.configRace, this.world, this.track, teams, records);
         });
     }
@@ -287,9 +287,9 @@ public class QualifyingStageManager {
             int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
-            players.sendMessage(TextUtil.chatNewPersonalBest(pb, position));
+            players.sendMessage(TextUtils.chatNewPersonalBest(pb, position));
         } else {
-            player.sendMessage(TextUtil.chatNewTime(pb.timer()));
+            player.sendMessage(TextUtils.chatNewTime(pb.timer()));
         }
     }
 }

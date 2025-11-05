@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game;
+package com.abaan404.boatrace.gameplay;
 
 import java.util.Set;
 
@@ -15,19 +15,19 @@ import xyz.nucleoid.plasmid.api.game.common.team.GameTeamKey;
 import xyz.nucleoid.plasmid.api.game.common.team.TeamManager;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
-public class BoatRaceTeams {
+public class Teams {
     private final TeamManager teams;
     private final BoatRaceConfig.Team config;
 
     private int nextTeamId = 0;
     private int nextColorId = 0;
 
-    public BoatRaceTeams(BoatRaceConfig.Team config, TeamManager teams) {
+    public Teams(BoatRaceConfig.Team config, TeamManager teams) {
         this.config = config;
         this.teams = teams;
     }
 
-    public BoatRaceTeams(BoatRaceTeams other, TeamManager teams) {
+    public Teams(Teams other, TeamManager teams) {
         // copy team state for a new team manager
         this.config = other.config;
         this.nextTeamId = other.nextTeamId;

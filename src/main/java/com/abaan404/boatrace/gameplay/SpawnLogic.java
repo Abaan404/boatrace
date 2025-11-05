@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game;
+package com.abaan404.boatrace.gameplay;
 
 import java.util.Optional;
 import java.util.Set;
@@ -21,10 +21,10 @@ import net.minecraft.world.GameMode;
 /**
  * Manage entity spawns in the world.
  */
-public class BoatRaceSpawnLogic {
+public class SpawnLogic {
     private final ServerWorld world;
 
-    public BoatRaceSpawnLogic(ServerWorld world) {
+    public SpawnLogic(ServerWorld world) {
         this.world = world;
     }
 

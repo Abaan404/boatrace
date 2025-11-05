@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.utils.TextUtil;
+import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
@@ -67,7 +67,7 @@ public class RaceWidgets {
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
             player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 30, 20));
-            player.networkHandler.sendPacket(new TitleS2CPacket(TextUtil.titleCountdown(countdown)));
+            player.networkHandler.sendPacket(new TitleS2CPacket(TextUtils.titleCountdown(countdown)));
         }
     }
 
@@ -97,17 +97,17 @@ public class RaceWidgets {
 
             MutableText actionBarText = Text.empty();
 
-            actionBarText.append(TextUtil.actionBarPosition(position)).append(" ");
-            actionBarText.append(TextUtil.actionBarTimer(timer)).append(" ");
+            actionBarText.append(TextUtils.actionBarPosition(position)).append(" ");
+            actionBarText.append(TextUtils.actionBarTimer(timer)).append(" ");
 
             if (position > 0) {
                 BoatRacePlayer playerAhead = stageManager.positions.getPositions().get(position - 1);
                 long delta = stageManager.positions.getDeltaCheckpoint(bPlayer, playerAhead);
 
-                actionBarText.append(TextUtil.actionBarDelta(delta)).append(" ");
+                actionBarText.append(TextUtils.actionBarDelta(delta)).append(" ");
             }
 
-            actionBarText.append(TextUtil.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
+            actionBarText.append(TextUtils.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
 
             player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
         }
@@ -122,7 +122,7 @@ public class RaceWidgets {
 
             if (!this.sidebars.containsKey(bPlayer)) {
                 SidebarWidget newSidebar = this.widgets.addSidebar(
-                        TextUtil.scoreboardTitleText("Race"),
+                        TextUtils.scoreboardTitleText("Race"),
                         p -> BoatRacePlayer.of(p).equals(bPlayer));
                 newSidebar.addPlayer(player);
                 this.sidebars.put(bPlayer, newSidebar);
@@ -131,13 +131,13 @@ public class RaceWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
-                TextUtil.scoreboardMeta(this.track.getMeta()).forEach(content::add);
+                TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
 
-                content.add(TextUtil.scoreboardLaps(
+                content.add(TextUtils.scoreboardLaps(
                         stageManager.getLeadingLaps(),
                         stageManager.getConfig().maxLaps()));
 
-                content.add(TextUtil.scoreboardDuration(
+                content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),
                         stageManager.getConfig().maxDuration()));
                 content.add(Text.empty());
@@ -153,13 +153,13 @@ public class RaceWidgets {
                 int position = stageManager.positions.getPosition(bPlayer);
                 LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
 
-                for (Pair<Integer, BoatRacePlayer> pair : TextUtil.scoreboardAroundAndTop(
+                for (Pair<Integer, BoatRacePlayer> pair : TextUtils.scoreboardAroundAndTop(
                         positions,
                         position,
                         SIDEBAR_RANKING_TOP,
                         SIDEBAR_RANKING_COMPARED)) {
                     if (pair == null) {
-                        content.add(TextUtil.PAD_SCOREBOARD_POSITION);
+                        content.add(TextUtils.PAD_SCOREBOARD_POSITION);
                         continue;
                     }
 
@@ -169,7 +169,7 @@ public class RaceWidgets {
                     boolean highlighted = bPlayer.equals(player2);
 
                     text.append(" ");
-                    text.append(TextUtil.scoreboardPosition(highlighted, position2)).append(" ");
+                    text.append(TextUtils.scoreboardPosition(highlighted, position2)).append(" ");
 
                     switch (leaderboardType) {
                         case LEADER: {
@@ -178,7 +178,7 @@ public class RaceWidgets {
                             }
 
                             long delta = stageManager.positions.getDelta(player2, positions.getFirst());
-                            text.append(TextUtil.scoreboardRelative(delta)).append(" ");
+                            text.append(TextUtils.scoreboardRelative(delta)).append(" ");
                             break;
                         }
                         case PLAYER: {
@@ -187,12 +187,12 @@ public class RaceWidgets {
                             }
 
                             long delta = stageManager.positions.getDelta(bPlayer, player2);
-                            text.append(TextUtil.scoreboardRelative(delta)).append(" ");
+                            text.append(TextUtils.scoreboardRelative(delta)).append(" ");
                             break;
                         }
                     }
 
-                    text.append(TextUtil.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted, position2));
+                    text.append(TextUtils.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted, position2));
 
                     content.add(text);
                 }
@@ -212,7 +212,7 @@ public class RaceWidgets {
         leaderboardType = leaderboardType.cycle();
         this.leaderboardType.put(bPlayer, leaderboardType);
 
-        player.sendMessage(TextUtil.chatLeaderboardType(leaderboardType));
+        player.sendMessage(TextUtils.chatLeaderboardType(leaderboardType));
     }
 
     public enum LeaderboardType {

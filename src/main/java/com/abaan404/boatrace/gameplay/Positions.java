@@ -1,4 +1,4 @@
-package com.abaan404.boatrace.game.gameplay;
+package com.abaan404.boatrace.gameplay;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,14 +14,14 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 /**
  * Keeps track of positions and delta times on track.
  */
-public class PositionsManager {
-    private final SplitsManager splits;
+public class Positions {
+    private final Splits splits;
 
     private Map<BoatRacePlayer, Integer> playerToPositions = new Object2IntOpenHashMap<>();
     private List<BoatRacePlayer> positions = new ObjectArrayList<>();
     private Set<BoatRacePlayer> waiting = new ObjectOpenHashSet<>();
 
-    public PositionsManager(SplitsManager splits) {
+    public Positions(Splits splits) {
         this.splits = splits;
     }
 

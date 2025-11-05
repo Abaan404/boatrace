@@ -1,14 +1,14 @@
-package com.abaan404.boatrace.game.gameplay;
+package com.abaan404.boatrace.gameplay;
 
 import net.minecraft.server.world.ServerWorld;
 
-public class CountdownManager {
+public class Countdown {
     public final long COUNTDOWN_DIVISOR = 1000;
 
     private long countdown;
     private long goCountdown;
 
-    public CountdownManager(long countdown, long goCountdown) {
+    public Countdown(long countdown, long goCountdown) {
         this.countdown = countdown;
         this.goCountdown = goCountdown;
     }

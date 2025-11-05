@@ -2,15 +2,15 @@ package com.abaan404.boatrace.game.timetrial;
 
 import java.util.Set;
 
+import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.game.BoatRaceItems;
-import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
-import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
-import com.abaan404.boatrace.game.gameplay.SplitsManager;
+import com.abaan404.boatrace.gameplay.Checkpoints;
+import com.abaan404.boatrace.gameplay.SpawnLogic;
+import com.abaan404.boatrace.gameplay.Splits;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
-import com.abaan404.boatrace.utils.TextUtil;
+import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
@@ -29,10 +29,10 @@ public class TimeTrialStageManager {
     private final ServerWorld world;
     private final BoatRaceTrack track;
 
-    public final CheckpointsManager checkpoints;
-    public final SplitsManager splits;
+    public final Checkpoints checkpoints;
+    public final Splits splits;
 
-    private final BoatRaceSpawnLogic spawnLogic;
+    private final SpawnLogic spawnLogic;
     private final Set<BoatRacePlayer> participants;
 
     public TimeTrialStageManager(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track) {
@@ -40,10 +40,10 @@ public class TimeTrialStageManager {
         this.track = track;
         this.world = world;
 
-        this.checkpoints = new CheckpointsManager(track);
-        this.splits = new SplitsManager();
+        this.checkpoints = new Checkpoints(track);
+        this.splits = new Splits();
 
-        this.spawnLogic = new BoatRaceSpawnLogic(world);
+        this.spawnLogic = new SpawnLogic(world);
         this.participants = new ObjectOpenHashSet<>();
     }
 
@@ -249,9 +249,9 @@ public class TimeTrialStageManager {
             int position = newLeaderboard.getLeaderboardPosition(this.track, bPlayer);
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
-            players.sendMessage(TextUtil.chatNewPersonalBest(pb, position));
+            players.sendMessage(TextUtils.chatNewPersonalBest(pb, position));
         } else {
-            player.sendMessage(TextUtil.chatNewTime(pb.timer()));
+            player.sendMessage(TextUtils.chatNewTime(pb.timer()));
         }
     }
 }

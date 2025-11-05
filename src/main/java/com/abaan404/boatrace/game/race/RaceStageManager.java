@@ -8,16 +8,16 @@ import java.util.SequencedSet;
 import java.util.Set;
 
 import com.abaan404.boatrace.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.game.BoatRaceItems;
-import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
-import com.abaan404.boatrace.game.BoatRaceTeams;
-import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
-import com.abaan404.boatrace.game.gameplay.CountdownManager;
-import com.abaan404.boatrace.game.gameplay.PositionsManager;
-import com.abaan404.boatrace.game.gameplay.SplitsManager;
-import com.abaan404.boatrace.utils.TextUtil;
+import com.abaan404.boatrace.gameplay.Checkpoints;
+import com.abaan404.boatrace.gameplay.Countdown;
+import com.abaan404.boatrace.gameplay.Positions;
+import com.abaan404.boatrace.gameplay.SpawnLogic;
+import com.abaan404.boatrace.gameplay.Splits;
+import com.abaan404.boatrace.gameplay.Teams;
+import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -43,33 +43,33 @@ public class RaceStageManager {
     private final BoatRaceConfig.Race config;
     private final BoatRaceTrack track;
 
-    public final CheckpointsManager checkpoints;
-    public final SplitsManager splits;
-    public final PositionsManager positions;
-    public final CountdownManager countdown;
-    public final BoatRaceTeams teams;
+    public final Checkpoints checkpoints;
+    public final Splits splits;
+    public final Positions positions;
+    public final Countdown countdown;
+    public final Teams teams;
 
-    private final BoatRaceSpawnLogic spawnLogic;
+    private final SpawnLogic spawnLogic;
     private final SequencedSet<BoatRacePlayer> participants;
 
     private long duration;
 
     public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
-            BoatRaceTeams teams, List<BoatRacePlayer> gridOrder) {
+            Teams teams, List<BoatRacePlayer> gridOrder) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
         this.track = track;
         this.teams = teams;
 
-        this.checkpoints = new CheckpointsManager(track);
-        this.splits = new SplitsManager();
-        this.positions = new PositionsManager(this.splits);
+        this.checkpoints = new Checkpoints(track);
+        this.splits = new Splits();
+        this.positions = new Positions(this.splits);
 
         Random random = world.getRandom();
-        this.countdown = new CountdownManager(config.countdown(), random.nextBetween(0, config.countdownRandom()));
+        this.countdown = new Countdown(config.countdown(), random.nextBetween(0, config.countdownRandom()));
 
-        this.spawnLogic = new BoatRaceSpawnLogic(world);
+        this.spawnLogic = new SpawnLogic(world);
         this.participants = new ObjectLinkedOpenHashSet<>();
 
         switch (this.config.gridType()) {
@@ -338,14 +338,14 @@ public class RaceStageManager {
 
             MutableText positionsText = Text.empty();
             positionsText.append(" ");
-            positionsText.append(TextUtil.scoreboardPosition(true, 0)).append(" ");
-            positionsText.append(TextUtil.scoreboardName(BoatRacePlayer.of(), GameTeamConfig.DEFAULT, false, 0))
+            positionsText.append(TextUtils.scoreboardPosition(true, 0)).append(" ");
+            positionsText.append(TextUtils.scoreboardName(BoatRacePlayer.of(), GameTeamConfig.DEFAULT, false, 0))
                     .append(" ");
 
             positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD));
 
-            positionsText.append(TextUtil.actionBarTimer(0)).append("  ");
-            positionsText.append(TextUtil.chatPoints(points));
+            positionsText.append(TextUtils.actionBarTimer(0)).append("  ");
+            positionsText.append(TextUtils.chatPoints(points));
 
             players.sendMessage(positionsText);
         }
@@ -362,18 +362,18 @@ public class RaceStageManager {
 
             MutableText positionsText = Text.empty();
             positionsText.append(" ");
-            positionsText.append(TextUtil.scoreboardPosition(true, i)).append(" ");
-            positionsText.append(TextUtil.scoreboardName(player, this.teams.getConfig(team), false, i)).append(" ");
+            positionsText.append(TextUtils.scoreboardPosition(true, i)).append(" ");
+            positionsText.append(TextUtils.scoreboardName(player, this.teams.getConfig(team), false, i)).append(" ");
             positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD)).append(" ");
 
             if (laps < this.getLeadingLaps()) {
-                positionsText.append(TextUtil.chatLapsDelta(this.getLeadingLaps(), this.checkpoints.getLaps(player)))
+                positionsText.append(TextUtils.chatLapsDelta(this.getLeadingLaps(), this.checkpoints.getLaps(player)))
                         .append("  ");
             } else {
-                positionsText.append(TextUtil.actionBarTimer(this.splits.getTimer(player))).append("  ");
+                positionsText.append(TextUtils.actionBarTimer(this.splits.getTimer(player))).append("  ");
             }
 
-            positionsText.append(TextUtil.chatPoints(points));
+            positionsText.append(TextUtils.chatPoints(points));
 
             players.sendMessage(positionsText);
         }

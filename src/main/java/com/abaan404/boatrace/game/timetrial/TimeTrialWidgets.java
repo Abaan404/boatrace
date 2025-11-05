@@ -7,7 +7,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
-import com.abaan404.boatrace.utils.TextUtil;
+import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
@@ -86,18 +86,18 @@ public final class TimeTrialWidgets {
 
             // player has a position
             if (position >= 0) {
-                actionBarText.append(TextUtil.actionBarPosition(position)).append(" ");
+                actionBarText.append(TextUtils.actionBarPosition(position)).append(" ");
             }
 
             if (checkpoint > 0 && pb.exists()) {
                 long delta = pb.getCheckpointDelta(currentSplits, checkpoint);
-                actionBarText.append(TextUtil.actionBarTimer(timer)).append(" ");
-                actionBarText.append(TextUtil.actionBarDelta(delta)).append(" ");
+                actionBarText.append(TextUtils.actionBarTimer(timer)).append(" ");
+                actionBarText.append(TextUtils.actionBarDelta(delta)).append(" ");
             } else {
-                actionBarText.append(TextUtil.actionBarTimer(timer)).append(" ");
+                actionBarText.append(TextUtils.actionBarTimer(timer)).append(" ");
             }
 
-            actionBarText.append(TextUtil.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
+            actionBarText.append(TextUtils.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
             player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
         }
     }
@@ -114,7 +114,7 @@ public final class TimeTrialWidgets {
 
             if (!this.sidebars.containsKey(bPlayer)) {
                 SidebarWidget newSidebar = this.widgets.addSidebar(
-                        TextUtil.scoreboardTitleText("TimeTrial"),
+                        TextUtils.scoreboardTitleText("TimeTrial"),
                         p -> BoatRacePlayer.of(p).equals(bPlayer));
                 newSidebar.addPlayer(player);
 
@@ -124,7 +124,7 @@ public final class TimeTrialWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
-                TextUtil.scoreboardMeta(this.track.getMeta()).forEach(content::add);
+                TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
 
                 List<PersonalBest> records = leaderboard.getLeaderboard(this.track);
 
@@ -136,13 +136,13 @@ public final class TimeTrialWidgets {
 
                 int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
 
-                for (Pair<Integer, PersonalBest> pair : TextUtil.scoreboardAroundAndTop(
+                for (Pair<Integer, PersonalBest> pair : TextUtils.scoreboardAroundAndTop(
                         records,
                         position,
                         SIDEBAR_RANKING_TOP,
                         SIDEBAR_RANKING_COMPARED)) {
                     if (pair == null) {
-                        content.add(TextUtil.PAD_SCOREBOARD_POSITION);
+                        content.add(TextUtils.PAD_SCOREBOARD_POSITION);
                         continue;
                     }
 
@@ -151,9 +151,9 @@ public final class TimeTrialWidgets {
                     boolean highlighted = bPlayer.equals(pb.player());
 
                     text.append(" ");
-                    text.append(TextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
-                    text.append(TextUtil.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
-                    text.append(TextUtil.scoreboardName(pb.player(), GameTeamConfig.DEFAULT, highlighted, pair.getLeft()));
+                    text.append(TextUtils.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
+                    text.append(TextUtils.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
+                    text.append(TextUtils.scoreboardName(pb.player(), GameTeamConfig.DEFAULT, highlighted, pair.getLeft()));
 
                     content.add(text);
                 }

@@ -2,10 +2,10 @@ package com.abaan404.boatrace.game.timetrial;
 
 import java.util.function.Consumer;
 
+import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.events.BoatRacePlayerEvent;
-import com.abaan404.boatrace.game.BoatRaceItems;
+import com.abaan404.boatrace.BoatRacePlayerEvents;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.Entity;
@@ -62,7 +62,7 @@ public class TimeTrial {
         game.listen(PlayerDeathEvent.EVENT, timeTrial::onPlayerDeath);
         game.listen(ItemUseEvent.EVENT, timeTrial::onItemUse);
 
-        game.listen(BoatRacePlayerEvent.DISMOUNT, timeTrial::onDismount);
+        game.listen(BoatRacePlayerEvents.DISMOUNT, timeTrial::onDismount);
 
         game.listen(GamePlayerEvents.OFFER, timeTrial::offerPlayer);
         game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));

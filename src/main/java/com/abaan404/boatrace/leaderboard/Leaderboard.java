@@ -2,7 +2,6 @@ package com.abaan404.boatrace.leaderboard;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 import com.abaan404.boatrace.BoatRace;
 import com.abaan404.boatrace.BoatRacePlayer;
@@ -54,11 +53,13 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @return Their personal best.
      */
     public PersonalBest getPersonalBest(BoatRaceTrack track, BoatRacePlayer player) {
-        return this.leaderboard
-                .getOrDefault(String.valueOf(track.hashCode()), ObjectArrayList.of()).stream()
-                .filter(pb -> pb.player().equals(player))
-                .findFirst()
-                .orElse(PersonalBest.of());
+        for (PersonalBest pb : this.leaderboard.getOrDefault(track.hashCode(), ObjectArrayList.of())) {
+            if (pb.player().equals(player)) {
+                return pb;
+            }
+        }
+
+        return PersonalBest.of();
     }
 
     /**
@@ -70,11 +71,13 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      */
     public int getLeaderboardPosition(BoatRaceTrack track, BoatRacePlayer player) {
         List<PersonalBest> trackLeaderboard = this.getLeaderboard(track);
+        for (int i = 0; i < trackLeaderboard.size(); i++) {
+            if (trackLeaderboard.get(i).player().equals(player)) {
+                return i;
+            }
+        }
 
-        return IntStream.range(0, trackLeaderboard.size())
-                .filter(i -> trackLeaderboard.get(i).player().equals(player))
-                .findFirst()
-                .orElse(-1);
+        return -1;
     }
 
     /**
