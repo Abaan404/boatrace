@@ -1,8 +1,11 @@
 package com.abaan404.boatrace.game;
 
+import java.util.Set;
+
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
@@ -64,6 +67,36 @@ public class BoatRaceTeams {
      */
     public void remove(BoatRacePlayer player) {
         this.teams.removePlayer(player.ref());
+    }
+
+    /**
+     * Get the team for this player.
+     *
+     * @param player The player.
+     * @return The player's team.
+     */
+    public GameTeamKey getTeamFor(BoatRacePlayer player) {
+        return this.teams.teamFor(player.ref());
+    }
+
+    /**
+     * Get a list of players in this team.
+     *
+     * @param key     The team's key.
+     * @param players The list of all participants to reference from.
+     * @return The list of every player in this team.
+     */
+    public Set<BoatRacePlayer> getPlayersIn(GameTeamKey key, Iterable<BoatRacePlayer> players) {
+        Set<PlayerRef> members = this.teams.allPlayersIn(key);
+        Set<BoatRacePlayer> bMembers = new ObjectOpenHashSet<>();
+
+        for (BoatRacePlayer player : players) {
+            if (members.contains(player.ref())) {
+                bMembers.add(player);
+            }
+        }
+
+        return bMembers;
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.abaan404.boatrace;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.mojang.serialization.Codec;
@@ -51,14 +52,18 @@ public record BoatRaceConfig(
     public record Race(
             int maxDuration, int maxLaps,
             GridType gridType,
-            int countdown, int countdownRandom) {
+            int countdown, int countdownRandom,
+            List<Integer> scoring) {
+
+        private static final List<Integer> DEFAULT_SCORING = List.of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
 
         public static final Codec<Race> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.INT.fieldOf("max_duration").forGetter(Race::maxDuration),
                 Codec.INT.fieldOf("max_laps").forGetter(Race::maxLaps),
                 GridType.CODEC.optionalFieldOf("grid_type", GridType.NORMAL).forGetter(Race::gridType),
                 Codec.INT.optionalFieldOf("countdown", 5000).forGetter(Race::countdown),
-                Codec.INT.optionalFieldOf("countdown_random", 2000).forGetter(Race::countdownRandom))
+                Codec.INT.optionalFieldOf("countdown_random", 2000).forGetter(Race::countdownRandom),
+                Codec.INT.listOf().optionalFieldOf("scoring", DEFAULT_SCORING).forGetter(Race::scoring))
                 .apply(instance, Race::new));
 
         public enum GridType implements StringIdentifiable {

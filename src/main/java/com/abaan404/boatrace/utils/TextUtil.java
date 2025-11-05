@@ -2,7 +2,6 @@ package com.abaan404.boatrace.utils;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -147,8 +146,7 @@ public final class TextUtil {
             list.add(Text.literal("    - By Unknown Author(s)")
                     .formatted(Formatting.GRAY, Formatting.ITALIC));
         } else {
-            list.add(Text.literal("    - By " + meta.authors().stream()
-                    .collect(Collectors.joining(", ")))
+            list.add(Text.literal("    - By " + String.join(", ", meta.authors()))
                     .formatted(Formatting.GRAY, Formatting.ITALIC));
         }
 

@@ -16,6 +16,7 @@ import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.utils.TextUtil;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -257,9 +258,11 @@ public class QualifyingStageManager {
      */
     private void startRace() {
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
-        List<BoatRacePlayer> records = leaderboard.getLeaderboard(this.track).stream()
-                .map(pb -> pb.player())
-                .toList();
+
+        List<BoatRacePlayer> records = new ObjectArrayList<>();
+        for (PersonalBest pb : leaderboard.getLeaderboard(this.track)) {
+            records.add(pb.player());
+        }
 
         this.gameSpace.setActivity(game -> {
             BoatRaceTeams teams = new BoatRaceTeams(this.teams, TeamManager.addTo(game));

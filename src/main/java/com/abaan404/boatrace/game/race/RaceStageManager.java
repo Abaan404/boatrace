@@ -2,7 +2,10 @@ package com.abaan404.boatrace.game.race;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.SequencedSet;
+import java.util.Set;
 
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
@@ -16,6 +19,7 @@ import com.abaan404.boatrace.game.gameplay.PositionsManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
 import com.abaan404.boatrace.utils.TextUtil;
 
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.entity.Entity;
@@ -30,6 +34,7 @@ import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
+import xyz.nucleoid.plasmid.api.game.common.team.GameTeamKey;
 
 public class RaceStageManager {
     private final GameSpace gameSpace;
@@ -66,25 +71,23 @@ public class RaceStageManager {
         this.spawnLogic = new BoatRaceSpawnLogic(world);
         this.participants = new ObjectLinkedOpenHashSet<>();
 
-        List<BoatRacePlayer> gridOrderMutable = new ObjectArrayList<>(gridOrder);
-
         switch (this.config.gridType()) {
             case NORMAL: {
                 break;
             }
 
             case RANDOM: {
-                Collections.shuffle(gridOrderMutable);
+                Collections.shuffle(gridOrder);
                 break;
             }
 
             case REVERSED: {
-                Collections.reverse(gridOrderMutable);
+                Collections.reverse(gridOrder);
                 break;
             }
         }
 
-        for (BoatRacePlayer player : gridOrderMutable) {
+        for (BoatRacePlayer player : gridOrder) {
             this.toParticipant(player);
         }
 
@@ -340,16 +343,21 @@ public class RaceStageManager {
             players.sendMessage(positionsText);
         }
 
+        Map<GameTeamKey, Integer> teamPoints = new Object2IntOpenHashMap<>();
+
         for (int i = 0; i < positions.size(); i++) {
             BoatRacePlayer player = positions.get(i);
+            GameTeamKey team = this.teams.getTeamFor(player);
+
             int laps = this.checkpoints.getLaps(player);
+            int score = i < this.config.scoring().size() ? this.config.scoring().get(i) : 0;
+            teamPoints.put(team, teamPoints.getOrDefault(team, 0) + score);
 
             MutableText positionsText = Text.empty();
             positionsText.append(" ");
             positionsText.append(TextUtil.scoreboardPosition(true, i)).append("  ");
             positionsText.append(TextUtil.scoreboardName(player, false, i)).append(" ");
-
-            positionsText.append(Text.literal(" / ").formatted(Formatting.RED, Formatting.BOLD));
+            positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD)).append(" ");
 
             if (laps < this.getLeadingLaps()) {
                 positionsText.append(TextUtil.chatLapsDelta(this.getLeadingLaps(), this.checkpoints.getLaps(player)));
@@ -358,6 +366,47 @@ public class RaceStageManager {
             }
 
             players.sendMessage(positionsText);
+        }
+
+        Optional<GameTeamKey> winner = Optional.empty();
+        int winnerPoints = Integer.MIN_VALUE;
+        int winnerBestMemberPosition = positions.size() - 1;
+
+        for (Map.Entry<GameTeamKey, Integer> entry : teamPoints.entrySet()) {
+            GameTeamKey teamKey = entry.getKey();
+            int points = entry.getValue();
+
+            int memberBestPosition = positions.size() - 1;
+            Set<BoatRacePlayer> members = this.teams.getPlayersIn(teamKey, positions);
+            for (BoatRacePlayer player : members) {
+                int position = this.positions.getPosition(player);
+                if (position < memberBestPosition) {
+                    memberBestPosition = position;
+                }
+            }
+
+            // tie break with leading member
+            if (points > winnerPoints || (points == winnerPoints && memberBestPosition < winnerBestMemberPosition)) {
+                winnerPoints = points;
+                winnerBestMemberPosition = memberBestPosition;
+                winner = Optional.of(teamKey);
+            }
+        }
+
+        if (winner.isPresent()) {
+            MutableText teamsText = Text.empty();
+
+            List<String> playerNames = new ObjectArrayList<>();
+            for (BoatRacePlayer winners : this.teams.getPlayersIn(winner.get(), positions)) {
+                playerNames.add(winners.offlineName());
+            }
+
+            teamsText.append(" ");
+            teamsText.append(Text.literal(String.join(", ", playerNames)).formatted(Formatting.BOLD));
+            teamsText.append(String.format(" won the game with %d point(s).", winnerPoints));
+
+            players.sendMessage(Text.empty());
+            players.sendMessage(teamsText.formatted(Formatting.GOLD));
         }
 
         this.gameSpace.close(GameCloseReason.FINISHED);
