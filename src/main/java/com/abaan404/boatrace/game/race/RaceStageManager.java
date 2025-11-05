@@ -267,6 +267,7 @@ public class RaceStageManager {
      * @param player The player's bPlayer
      */
     public void toSpectator(BoatRacePlayer player) {
+        this.teams.remove(player);
         this.participants.remove(player);
 
         this.checkpoints.reset(player);
@@ -281,6 +282,7 @@ public class RaceStageManager {
      * @param player The player's bPlayer
      */
     public void toParticipant(BoatRacePlayer player) {
+        this.teams.add(player);
         this.participants.add(player);
 
         this.checkpoints.reset(player);
