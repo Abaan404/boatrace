@@ -9,11 +9,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 
-public record BoatRaceConfig(Identifier track, Optional<Qualifying> qualifying,
-        Optional<Race> race) {
+public record BoatRaceConfig(
+        Identifier track,
+        Team team,
+        Optional<Qualifying> qualifying, Optional<Race> race) {
 
     public static final MapCodec<BoatRaceConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Identifier.CODEC.fieldOf("track").forGetter(BoatRaceConfig::track),
+            Team.CODEC.optionalFieldOf("team", Team.DEFAULT).forGetter(BoatRaceConfig::team),
             Qualifying.CODEC.optionalFieldOf("qualifying").forGetter(BoatRaceConfig::qualifying),
             Race.CODEC.optionalFieldOf("race").forGetter(BoatRaceConfig::race))
             .apply(instance, BoatRaceConfig::new));
@@ -74,5 +77,14 @@ public record BoatRaceConfig(Identifier track, Optional<Qualifying> qualifying,
                 return name;
             }
         }
+    }
+
+    public record Team(int size) {
+        public static final Team DEFAULT = new Team(1);
+
+        public static final Codec<Team> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.INT.optionalFieldOf("size", DEFAULT.size()).forGetter(Team::size))
+                .apply(instance, Team::new));
+
     }
 }

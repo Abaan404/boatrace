@@ -9,6 +9,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceItems;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
+import com.abaan404.boatrace.game.BoatRaceTeams;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.CountdownManager;
 import com.abaan404.boatrace.game.gameplay.PositionsManager;
@@ -35,6 +36,7 @@ public class RaceStageManager {
     private final ServerWorld world;
     private final BoatRaceConfig.Race config;
     private final BoatRaceTrack track;
+    private final BoatRaceTeams teams;
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
@@ -46,12 +48,13 @@ public class RaceStageManager {
 
     private long duration;
 
-    public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world,
-            BoatRaceTrack track, List<BoatRacePlayer> gridOrder) {
+    public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
+            BoatRaceTeams teams, List<BoatRacePlayer> gridOrder) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
         this.track = track;
+        this.teams = teams;
 
         this.checkpoints = new CheckpointsManager(track);
         this.splits = new SplitsManager();

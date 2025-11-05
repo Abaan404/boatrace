@@ -7,6 +7,7 @@ import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceItems;
+import com.abaan404.boatrace.game.BoatRaceTeams;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.damage.DamageSource;
@@ -36,17 +37,17 @@ public class Race {
     private final RaceStageManager stageManager;
     private final RaceWidgets widgets;
 
-    private Race(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
-            BoatRaceConfig.Race config, List<BoatRacePlayer> gridOrder) {
-        this.stageManager = new RaceStageManager(gameSpace, config, world, track, gridOrder);
+    private Race(GameSpace gameSpace, BoatRaceConfig.Race config, BoatRaceTrack track, BoatRaceTeams teams,
+            ServerWorld world, GlobalWidgets widgets, List<BoatRacePlayer> gridOrder) {
+        this.stageManager = new RaceStageManager(gameSpace, config, world, track, teams, gridOrder);
         this.widgets = new RaceWidgets(gameSpace, widgets, track);
     }
 
     public static void open(GameActivity game, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
-            List<BoatRacePlayer> gridOrder) {
+            BoatRaceTeams teams, List<BoatRacePlayer> gridOrder) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 
-        Race race = new Race(game.getGameSpace(), world, track, widgets, config, gridOrder);
+        Race race = new Race(game.getGameSpace(), config, track, teams, world, widgets, gridOrder);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
 

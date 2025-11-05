@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.abaan404.boatrace.game.BoatRaceItems;
+import com.abaan404.boatrace.game.BoatRaceTeams;
 import com.abaan404.boatrace.game.qualifying.Qualifying;
 import com.abaan404.boatrace.game.race.Race;
 import com.abaan404.boatrace.game.timetrial.TimeTrial;
@@ -19,6 +20,7 @@ import xyz.nucleoid.plasmid.api.game.GameOpenException;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
 import xyz.nucleoid.plasmid.api.game.GameType;
 import xyz.nucleoid.plasmid.api.game.GameTypes;
+import xyz.nucleoid.plasmid.api.game.common.team.TeamManager;
 
 public class BoatRace implements ModInitializer {
     public static final String ID = "boatrace";
@@ -32,32 +34,36 @@ public class BoatRace implements ModInitializer {
     public static GameOpenProcedure open(GameOpenContext<BoatRaceConfig> context) {
         BoatRaceConfig config = context.config();
 
-        BoatRaceTrack map = BoatRaceTrack.load(context.server(), config.track()).orElseThrow();
+        BoatRaceTrack track = BoatRaceTrack.load(context.server(), config.track()).orElseThrow();
         RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
-                .setGenerator(map.asGenerator(context.server()));
+                .setGenerator(track.asGenerator(context.server()));
 
-        // qualifying must also come with a race config
-        if (config.qualifying().isPresent() && config.race().isPresent()) {
+        if (config.qualifying().isPresent()) {
+            if (!config.race().isPresent()) {
+                throw new GameOpenException(Text.of("A race config is required to begin qualifying for."));
+            }
+
             return context.openWithWorld(worldConfig, (game, world) -> {
-                Qualifying.open(game, config.qualifying().orElseThrow(), config.race().orElseThrow(), world, map);
+                BoatRaceTeams teams = new BoatRaceTeams(config.team(), TeamManager.addTo(game));
+                BoatRaceConfig.Qualifying qualifying = config.qualifying().orElseThrow();
+                BoatRaceConfig.Race race = config.race().orElseThrow();
+
+                Qualifying.open(game, qualifying, race, world, track, teams);
             });
         }
 
-        // random order race
         if (config.race().isPresent()) {
             return context.openWithWorld(worldConfig, (game, world) -> {
-                Race.open(game, config.race().orElseThrow(), world, map, ObjectArrayList.of());
+                BoatRaceTeams teams = new BoatRaceTeams(config.team(), TeamManager.addTo(game));
+                BoatRaceConfig.Race race = config.race().orElseThrow();
+
+                Race.open(game, race, world, track, teams, ObjectArrayList.of());
             });
         }
 
-        // time trial
-        if (config.race().isEmpty() && config.race().isEmpty()) {
-            return context.openWithWorld(worldConfig, (game, world) -> {
-                TimeTrial.open(game, world, map);
-            });
-        }
-
-        throw new GameOpenException(Text.of("invalid config detected, someone was bald."));
+        return context.openWithWorld(worldConfig, (game, world) -> {
+            TimeTrial.open(game, world, track);
+        });
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceItems;
 import com.abaan404.boatrace.game.BoatRaceSpawnLogic;
+import com.abaan404.boatrace.game.BoatRaceTeams;
 import com.abaan404.boatrace.game.gameplay.CheckpointsManager;
 import com.abaan404.boatrace.game.gameplay.SplitsManager;
 import com.abaan404.boatrace.game.race.Race;
@@ -22,6 +23,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
+import xyz.nucleoid.plasmid.api.game.common.team.TeamManager;
 
 public class QualifyingStageManager {
     private final GameSpace gameSpace;
@@ -29,6 +31,7 @@ public class QualifyingStageManager {
     private final BoatRaceConfig.Qualifying config;
     private final BoatRaceConfig.Race configRace;
     private final BoatRaceTrack track;
+    private final BoatRaceTeams teams;
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
@@ -39,12 +42,13 @@ public class QualifyingStageManager {
     private long duration;
 
     public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            ServerWorld world, BoatRaceTrack track) {
+            ServerWorld world, BoatRaceTrack track, BoatRaceTeams teams) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
         this.configRace = configRace;
         this.track = track;
+        this.teams = teams;
 
         this.checkpoints = new CheckpointsManager(track);
         this.splits = new SplitsManager();
@@ -197,6 +201,7 @@ public class QualifyingStageManager {
      * @param player The player's bPlayer
      */
     public void toSpectator(BoatRacePlayer player) {
+        this.teams.remove(player);
         this.participants.remove(player);
 
         this.checkpoints.reset(player);
@@ -211,7 +216,7 @@ public class QualifyingStageManager {
      * @param player The player's bPlayer
      */
     public void toParticipant(BoatRacePlayer player) {
-        // TODO teams
+        this.teams.add(player);
         this.participants.add(player);
 
         this.checkpoints.reset(player);
@@ -256,7 +261,10 @@ public class QualifyingStageManager {
                 .map(pb -> pb.player())
                 .toList();
 
-        this.gameSpace.setActivity(game -> Race.open(game, configRace, world, track, records));
+        this.gameSpace.setActivity(game -> {
+            BoatRaceTeams teams = new BoatRaceTeams(this.teams, TeamManager.addTo(game));
+            Race.open(game, this.configRace, this.world, this.track, teams, records);
+        });
     }
 
     /**

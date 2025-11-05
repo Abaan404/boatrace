@@ -6,6 +6,7 @@ import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.game.BoatRaceItems;
+import com.abaan404.boatrace.game.BoatRaceTeams;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.damage.DamageSource;
@@ -36,16 +37,17 @@ public class Qualifying {
     private final QualifyingStageManager stageManager;
     private final QualifyingWidgets widgets;
 
-    private Qualifying(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
-            BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace) {
-        this.stageManager = new QualifyingStageManager(gameSpace, config, configRace, world, track);
+    private Qualifying(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
+            BoatRaceTrack track, BoatRaceTeams teams, ServerWorld world, GlobalWidgets widgets) {
+        this.stageManager = new QualifyingStageManager(gameSpace, config, configRace, world, track, teams);
         this.widgets = new QualifyingWidgets(gameSpace, world, widgets, track);
     }
 
-    public static void open(GameActivity game, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace, ServerWorld world, BoatRaceTrack track) {
+    public static void open(GameActivity game, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
+            ServerWorld world, BoatRaceTrack track, BoatRaceTeams teams) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 
-        Qualifying qualifying = new Qualifying(game.getGameSpace(), world, track, widgets, config, configRace);
+        Qualifying qualifying = new Qualifying(game.getGameSpace(), config, configRace, track, teams, world, widgets);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
 
