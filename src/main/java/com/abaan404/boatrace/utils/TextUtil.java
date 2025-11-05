@@ -15,6 +15,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
+import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
 
 /**
  * Common texts for widgets shared by each gamemode.
@@ -266,11 +267,15 @@ public final class TextUtil {
      * Format player name as text.
      *
      * @param player      The player the position belongs to.
+     * @param teamConfig  The player's team config.
      * @param highlighted Should this be highlighted.
      * @param position    The track position.
      */
-    public static Text scoreboardName(BoatRacePlayer player, boolean highlighted, int position) {
-        MutableText nameText = Text.literal(player.offlineName());
+    public static Text scoreboardName(BoatRacePlayer player, GameTeamConfig teamConfig, boolean highlighted,
+            int position) {
+        MutableText nameText = Text.empty()
+                .append(teamConfig.prefix())
+                .append(player.offlineName());
 
         if (position == 0) {
             return nameText.formatted(Formatting.YELLOW, Formatting.BOLD);
@@ -419,5 +424,15 @@ public final class TextUtil {
         return Text.empty()
                 .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
                 .append(Text.literal(leaderboardType.toString()).formatted(Formatting.ITALIC));
+    }
+
+    /**
+     * A text to show winning points.
+     *
+     * @param points The points.
+     * @return The formatted text.
+     */
+    public static Text chatPoints(int points) {
+        return Text.literal(String.format("+%d", points)).formatted(Formatting.GRAY, Formatting.ITALIC);
     }
 }

@@ -20,6 +20,7 @@ import net.minecraft.util.Pair;
 import net.minecraft.world.World;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
+import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
 import xyz.nucleoid.plasmid.api.game.common.widget.SidebarWidget;
 
 public final class TimeTrialWidgets {
@@ -152,7 +153,7 @@ public final class TimeTrialWidgets {
                     text.append(" ");
                     text.append(TextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
                     text.append(TextUtil.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
-                    text.append(TextUtil.scoreboardName(pb.player(), highlighted, pair.getLeft()));
+                    text.append(TextUtil.scoreboardName(pb.player(), GameTeamConfig.DEFAULT, highlighted, pair.getLeft()));
 
                     content.add(text);
                 }

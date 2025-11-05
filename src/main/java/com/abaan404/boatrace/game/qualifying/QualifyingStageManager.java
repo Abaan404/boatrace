@@ -32,10 +32,10 @@ public class QualifyingStageManager {
     private final BoatRaceConfig.Qualifying config;
     private final BoatRaceConfig.Race configRace;
     private final BoatRaceTrack track;
-    private final BoatRaceTeams teams;
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
+    public final BoatRaceTeams teams;
 
     private final BoatRaceSpawnLogic spawnLogic;
     private final Set<BoatRacePlayer> participants;

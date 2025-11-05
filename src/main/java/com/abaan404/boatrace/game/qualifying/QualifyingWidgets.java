@@ -152,7 +152,8 @@ public class QualifyingWidgets {
                     text.append(" ");
                     text.append(TextUtil.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
                     text.append(TextUtil.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
-                    text.append(TextUtil.scoreboardName(pb.player(), highlighted, pair.getLeft()));
+                    text.append(TextUtil.scoreboardName(pb.player(), stageManager.teams.getConfig(pb.player()),
+                            highlighted, pair.getLeft()));
 
                     content.add(text);
                 }

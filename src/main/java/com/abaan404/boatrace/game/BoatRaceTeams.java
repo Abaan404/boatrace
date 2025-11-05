@@ -100,6 +100,26 @@ public class BoatRaceTeams {
     }
 
     /**
+     * Get the team config for this player.
+     *
+     * @param player The player.
+     * @return Their team's config.
+     */
+    public GameTeamConfig getConfig(BoatRacePlayer player) {
+        return this.teams.getTeamConfig(this.getTeamFor(player));
+    }
+
+    /**
+     * Get the team config for this team.
+     *
+     * @param team the team.
+     * @return Their teams' config.
+     */
+    public GameTeamConfig getConfig(GameTeamKey team) {
+        return this.teams.getTeamConfig(team);
+    }
+
+    /**
      * Generate a new team.
      *
      * @return A new team key
@@ -122,8 +142,8 @@ public class BoatRaceTeams {
         GameTeamKey key = new GameTeamKey(String.valueOf(this.nextTeamId));
 
         Text prefix = Text.empty()
-                .append(Text.literal("⟫").formatted(this.indexToColor(color1), Formatting.BOLD))
-                .append(Text.literal("⟫").formatted(this.indexToColor(color2), Formatting.BOLD))
+                .append(Text.literal("›").formatted(this.indexToColor(color1), Formatting.BOLD))
+                .append(Text.literal("›").formatted(this.indexToColor(color2), Formatting.BOLD))
                 .append(" ");
 
         this.teams.addTeam(key, GameTeamConfig.builder()

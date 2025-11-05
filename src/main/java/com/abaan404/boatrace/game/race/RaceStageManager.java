@@ -34,6 +34,7 @@ import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
+import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamKey;
 
 public class RaceStageManager {
@@ -41,12 +42,12 @@ public class RaceStageManager {
     private final ServerWorld world;
     private final BoatRaceConfig.Race config;
     private final BoatRaceTrack track;
-    private final BoatRaceTeams teams;
 
     public final CheckpointsManager checkpoints;
     public final SplitsManager splits;
     public final PositionsManager positions;
     public final CountdownManager countdown;
+    public final BoatRaceTeams teams;
 
     private final BoatRaceSpawnLogic spawnLogic;
     private final SequencedSet<BoatRacePlayer> participants;
@@ -331,14 +332,18 @@ public class RaceStageManager {
         List<BoatRacePlayer> positions = this.positions.getPositions();
 
         if (positions.size() == 0) {
+            int points = this.config.scoring().isEmpty() ? 1 : this.config.scoring().getFirst();
+
             MutableText positionsText = Text.empty();
             positionsText.append(" ");
-            positionsText.append(TextUtil.scoreboardPosition(true, 0)).append("  ");
-            positionsText.append(TextUtil.scoreboardName(BoatRacePlayer.of(), false, 0)).append(" ");
+            positionsText.append(TextUtil.scoreboardPosition(true, 0)).append(" ");
+            positionsText.append(TextUtil.scoreboardName(BoatRacePlayer.of(), GameTeamConfig.DEFAULT, false, 0))
+                    .append(" ");
 
-            positionsText.append(Text.literal(" / ").formatted(Formatting.RED, Formatting.BOLD));
+            positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD));
 
-            positionsText.append(TextUtil.actionBarTimer(0));
+            positionsText.append(TextUtil.actionBarTimer(0)).append("  ");
+            positionsText.append(TextUtil.chatPoints(points));
 
             players.sendMessage(positionsText);
         }
@@ -350,20 +355,23 @@ public class RaceStageManager {
             GameTeamKey team = this.teams.getTeamFor(player);
 
             int laps = this.checkpoints.getLaps(player);
-            int score = i < this.config.scoring().size() ? this.config.scoring().get(i) : 0;
-            teamPoints.put(team, teamPoints.getOrDefault(team, 0) + score);
+            int points = i < this.config.scoring().size() ? this.config.scoring().get(i) : 0;
+            teamPoints.put(team, teamPoints.getOrDefault(team, 0) + points);
 
             MutableText positionsText = Text.empty();
             positionsText.append(" ");
-            positionsText.append(TextUtil.scoreboardPosition(true, i)).append("  ");
-            positionsText.append(TextUtil.scoreboardName(player, false, i)).append(" ");
+            positionsText.append(TextUtil.scoreboardPosition(true, i)).append(" ");
+            positionsText.append(TextUtil.scoreboardName(player, this.teams.getConfig(team), false, i)).append(" ");
             positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD)).append(" ");
 
             if (laps < this.getLeadingLaps()) {
-                positionsText.append(TextUtil.chatLapsDelta(this.getLeadingLaps(), this.checkpoints.getLaps(player)));
+                positionsText.append(TextUtil.chatLapsDelta(this.getLeadingLaps(), this.checkpoints.getLaps(player)))
+                        .append("  ");
             } else {
-                positionsText.append(TextUtil.actionBarTimer(this.splits.getTimer(player)));
+                positionsText.append(TextUtil.actionBarTimer(this.splits.getTimer(player))).append("  ");
             }
+
+            positionsText.append(TextUtil.chatPoints(points));
 
             players.sendMessage(positionsText);
         }

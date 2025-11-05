@@ -192,7 +192,7 @@ public class RaceWidgets {
                         }
                     }
 
-                    text.append(TextUtil.scoreboardName(player2, highlighted, position2));
+                    text.append(TextUtil.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted, position2));
 
                     content.add(text);
                 }
