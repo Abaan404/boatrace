@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "id": "boatrace",
-    "version": "0.0.2a-dev",
+    "version": "0.1.0-alpha",
     "name": "Boat-Race",
     "description": "A Boat Racing Minigame!",
     "authors": ["abaan404"],
