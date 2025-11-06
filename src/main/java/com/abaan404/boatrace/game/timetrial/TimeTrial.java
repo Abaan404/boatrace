@@ -116,7 +116,9 @@ public class TimeTrial {
 
         // turn them into a participant and spawn them as if they just started
         if (item.equals(BoatRaceItems.RESET)) {
+            this.stageManager.toSpectator(BoatRacePlayer.of(player));
             this.stageManager.toParticipant(BoatRacePlayer.of(player));
+
             this.stageManager.spawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
             return ActionResult.CONSUME;
