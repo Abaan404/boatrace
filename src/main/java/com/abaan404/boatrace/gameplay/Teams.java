@@ -163,7 +163,7 @@ public class Teams {
      * @return A text formatting color.
      */
     private Formatting indexToColor(int index) {
-        return switch (DyeColor.byIndex(index)) {
+        return switch (DyeColor.byId(index)) {
             case WHITE -> Formatting.WHITE;
             case ORANGE -> Formatting.GOLD;
             case MAGENTA -> Formatting.DARK_RED;

@@ -10,6 +10,8 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
@@ -32,15 +34,15 @@ public class BoatRaceTrack {
     private BoatRaceTrack(MapTemplate template) {
         this.template = template;
 
-        this.meta = template.getMetadata()
-                .getData()
-                .decode(Meta.CODEC)
+        this.meta = Meta.CODEC
+                .decode(NbtOps.INSTANCE, NbtOps.INSTANCE.getMap(template.getMetadata().getData()).getOrThrow())
+                .resultOrPartial((error) -> BoatRace.LOGGER.error("Failed to read track meta: {}", error))
                 .orElse(Meta.DEFAULT);
 
         List<RespawnRegion> checkpoints = template.getMetadata()
                 .getRegions("checkpoint")
-                .filter(cp -> cp.getData().getInt("index").isPresent())
-                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index").orElseThrow()))
+                .filter(cp -> cp.getData().contains("index", NbtElement.INT_TYPE))
+                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index")))
                 .map(RespawnRegion::of)
                 .toList();
 
@@ -57,8 +59,8 @@ public class BoatRaceTrack {
 
         List<RespawnRegion> gridBoxes = template.getMetadata()
                 .getRegions("grid_box")
-                .filter(gb -> gb.getData().getInt("index").isPresent())
-                .sorted(Comparator.comparingInt(gb -> gb.getData().getInt("index").orElseThrow()))
+                .filter(cp -> cp.getData().contains("index", NbtElement.INT_TYPE))
+                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index")))
                 .map(RespawnRegion::of)
                 .toList();
 
@@ -76,8 +78,8 @@ public class BoatRaceTrack {
 
         List<RespawnRegion> pitBoxes = template.getMetadata()
                 .getRegions("pit_box")
-                .filter(pb -> pb.getData().getInt("index").isPresent())
-                .sorted(Comparator.comparingInt(pb -> pb.getData().getInt("index").orElseThrow()))
+                .filter(cp -> cp.getData().contains("index", NbtElement.INT_TYPE))
+                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index")))
                 .map(RespawnRegion::of)
                 .toList();
 
@@ -170,10 +172,21 @@ public class BoatRaceTrack {
         public static RespawnRegion DEFAULT = new RespawnRegion(BlockBounds.ofBlock(BlockPos.ORIGIN), 0.0f, 0.0f);
 
         private static RespawnRegion of(TemplateRegion templateRegion) {
+            float respawnYaw = DEFAULT.respawnYaw();
+            float respawnPitch = DEFAULT.respawnPitch();
+
+            if (templateRegion.getData().contains("respawnYaw", NbtElement.FLOAT_TYPE)) {
+                respawnYaw = templateRegion.getData().getFloat("respawnYaw");
+            }
+
+            if (templateRegion.getData().contains("respawnPitch", NbtElement.FLOAT_TYPE)) {
+                respawnPitch = templateRegion.getData().getFloat("respawnPitch");
+            }
+
             return new RespawnRegion(
                     templateRegion.getBounds(),
-                    templateRegion.getData().getFloat("respawnYaw", DEFAULT.respawnYaw()),
-                    templateRegion.getData().getFloat("respawnPitch", DEFAULT.respawnPitch()));
+                    respawnYaw,
+                    respawnPitch);
         }
     }
 
