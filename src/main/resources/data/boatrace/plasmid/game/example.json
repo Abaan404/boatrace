@@ -1,6 +1,6 @@
 {
     "type": "boatrace:game",
-    "track": "boatrace:tracks/test_2",
+    "track": "boatrace:test",
     "qualifying": {
         "duration": 300000
     },

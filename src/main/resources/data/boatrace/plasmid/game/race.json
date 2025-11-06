@@ -1,8 +1,0 @@
-{
-    "type": "boatrace:game",
-    "track": "boatrace:tracks/test_2",
-    "race": {
-        "max_duration": 1800000,
-        "max_laps": 50
-    }
-}
