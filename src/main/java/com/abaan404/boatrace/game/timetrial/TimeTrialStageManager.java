@@ -33,7 +33,7 @@ public class TimeTrialStageManager {
     public final Splits splits;
 
     private final SpawnLogic spawnLogic;
-    private final Set<BoatRacePlayer> participants;
+    private final Set<BoatRacePlayer> participants = new ObjectOpenHashSet<>();
 
     public TimeTrialStageManager(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track) {
         this.gameSpace = gameSpace;
@@ -44,7 +44,6 @@ public class TimeTrialStageManager {
         this.splits = new Splits();
 
         this.spawnLogic = new SpawnLogic(world);
-        this.participants = new ObjectOpenHashSet<>();
     }
 
     /**
@@ -130,12 +129,7 @@ public class TimeTrialStageManager {
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
-        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-        this.participants.remove(bPlayer);
-
-        this.checkpoints.reset(bPlayer);
-        this.splits.reset(bPlayer);
-        this.splits.stop(bPlayer);
+        this.toSpectator(BoatRacePlayer.of(player));
 
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
@@ -193,12 +187,15 @@ public class TimeTrialStageManager {
     }
 
     /**
-     * Transition the player to a spectator. They can roam freely and explore the
-     * track.
+     * Transition the player to a spectator.
      *
-     * @param player The player's bPlayer
+     * @param player The player.
      */
     public void toSpectator(BoatRacePlayer player) {
+        if (!this.participants.contains(player)) {
+            return;
+        }
+
         this.participants.remove(player);
 
         this.checkpoints.reset(player);
@@ -207,12 +204,15 @@ public class TimeTrialStageManager {
     }
 
     /**
-     * Transition a player to a participant. They can set and submit runs in this
-     * mode.
+     * Transition a player to a participant.
      *
-     * @param player The player's bPlayer
+     * @param player The player.
      */
     public void toParticipant(BoatRacePlayer player) {
+        if (this.participants.contains(player)) {
+            return;
+        }
+
         this.participants.add(player);
 
         this.checkpoints.reset(player);
@@ -226,8 +226,8 @@ public class TimeTrialStageManager {
      * @param player The player.
      * @return If they are on track ready to set a time.
      */
-    public boolean isParticipant(ServerPlayerEntity player) {
-        return this.participants.contains(BoatRacePlayer.of(player));
+    public boolean isParticipant(BoatRacePlayer player) {
+        return this.participants.contains(player);
     }
 
     /**

@@ -16,6 +16,7 @@ import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.utils.TextUtils;
 
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
@@ -38,9 +39,9 @@ public class QualifyingStageManager {
     public final Teams teams;
 
     private final SpawnLogic spawnLogic;
-    private final Set<BoatRacePlayer> participants;
+    private final Set<BoatRacePlayer> participants = new ObjectOpenHashSet<>();;
 
-    private long duration;
+    private long duration = 0;
 
     public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
             ServerWorld world, BoatRaceTrack track, Teams teams) {
@@ -55,9 +56,6 @@ public class QualifyingStageManager {
         this.splits = new Splits();
 
         this.spawnLogic = new SpawnLogic(world);
-        this.participants = new ObjectOpenHashSet<>();
-
-        this.duration = 0;
     }
 
     /**
@@ -104,6 +102,10 @@ public class QualifyingStageManager {
 
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
+
+        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+        leaderboard.submit(this.world, this.track,
+                new PersonalBest(bPlayer, LongArrayList.of(this.world.random.nextBetween(1000, 2000))));
     }
 
     /**
@@ -126,12 +128,8 @@ public class QualifyingStageManager {
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
-        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-        this.participants.remove(bPlayer);
-
-        this.checkpoints.reset(bPlayer);
-        this.splits.reset(bPlayer);
-        this.splits.stop(bPlayer);
+        this.toSpectator(BoatRacePlayer.of(player));
+        this.spawnLogic.despawnVehicle(player);
 
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
@@ -196,13 +194,15 @@ public class QualifyingStageManager {
     }
 
     /**
-     * Transition the player to a spectator. They can roam freely and explore the
-     * track.
+     * Transition the player to a spectator.
      *
-     * @param player The player's bPlayer
+     * @param player The player.
      */
     public void toSpectator(BoatRacePlayer player) {
-        this.teams.remove(player);
+        if (!this.participants.contains(player)) {
+            return;
+        }
+
         this.participants.remove(player);
 
         this.checkpoints.reset(player);
@@ -211,13 +211,15 @@ public class QualifyingStageManager {
     }
 
     /**
-     * Transition a player to a participant. They can set and submit runs in this
-     * mode.
+     * Transition a player to a participant.
      *
-     * @param player The player's bPlayer
+     * @param player The player.
      */
     public void toParticipant(BoatRacePlayer player) {
-        this.teams.add(player);
+        if (this.participants.contains(player)) {
+            return;
+        }
+
         this.participants.add(player);
 
         this.checkpoints.reset(player);
@@ -231,8 +233,8 @@ public class QualifyingStageManager {
      * @param player The player.
      * @return If they are on track ready to set a time.
      */
-    public boolean isParticipant(ServerPlayerEntity player) {
-        return this.participants.contains(BoatRacePlayer.of(player));
+    public boolean isParticipant(BoatRacePlayer player) {
+        return this.participants.contains(player);
     }
 
     /**

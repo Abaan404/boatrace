@@ -65,11 +65,11 @@ public class QualifyingWidgets {
         };
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-            if (!stageManager.isParticipant(player)) {
+            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+            if (!stageManager.isParticipant(bPlayer)) {
                 continue;
             }
 
-            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
             PersonalBest pb = leaderboard.getPersonalBest(this.track, bPlayer);
 
             List<Long> currentSplits = stageManager.splits.getSplits(bPlayer);

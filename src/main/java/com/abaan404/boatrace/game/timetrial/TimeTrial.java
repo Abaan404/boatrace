@@ -1,7 +1,5 @@
 package com.abaan404.boatrace.game.timetrial;
 
-import java.util.function.Consumer;
-
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
@@ -73,18 +71,17 @@ public class TimeTrial {
     }
 
     private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
-        Consumer<BoatRacePlayer> mode = this.stageManager::toSpectator;
-        switch (offer.intent()) {
-            case PLAY:
-                mode = this.stageManager::toParticipant;
-                break;
-            case SPECTATE:
-                mode = this.stageManager::toSpectator;
-                break;
-        }
-
         for (GameProfile profile : offer.players()) {
-            mode.accept(BoatRacePlayer.of(profile));
+            BoatRacePlayer player = BoatRacePlayer.of(profile);
+
+            switch (offer.intent()) {
+                case PLAY:
+                    this.stageManager.toParticipant(player);
+                    break;
+                case SPECTATE:
+                    this.stageManager.toSpectator(player);
+                    break;
+            }
         }
 
         return offer.accept();

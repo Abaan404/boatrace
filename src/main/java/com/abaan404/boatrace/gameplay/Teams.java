@@ -49,7 +49,7 @@ public class Teams {
      *
      * @param player The player to assign.
      */
-    public void add(BoatRacePlayer player) {
+    public void assign(BoatRacePlayer player) {
         GameTeamKey key = this.teams.getSmallestTeam();
 
         // create a new team if the team doesnt exist or the team is already full
@@ -65,7 +65,7 @@ public class Teams {
      *
      * @param player The player to unassign.
      */
-    public void remove(BoatRacePlayer player) {
+    public void unassign(BoatRacePlayer player) {
         this.teams.removePlayer(player.ref());
     }
 

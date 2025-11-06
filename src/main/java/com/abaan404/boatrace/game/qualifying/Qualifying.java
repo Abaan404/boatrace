@@ -1,7 +1,5 @@
 package com.abaan404.boatrace.game.qualifying;
 
-import java.util.function.Consumer;
-
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
@@ -75,18 +73,19 @@ public class Qualifying {
     }
 
     private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
-        Consumer<BoatRacePlayer> mode = this.stageManager::toSpectator;
-        switch (offer.intent()) {
-            case PLAY:
-                mode = this.stageManager::toParticipant;
-                break;
-            case SPECTATE:
-                mode = this.stageManager::toSpectator;
-                break;
-        }
-
         for (GameProfile profile : offer.players()) {
-            mode.accept(BoatRacePlayer.of(profile));
+            BoatRacePlayer player = BoatRacePlayer.of(profile);
+
+            switch (offer.intent()) {
+                case PLAY:
+                    this.stageManager.toParticipant(player);
+                    this.stageManager.teams.assign(player);
+                    break;
+                case SPECTATE:
+                    this.stageManager.toSpectator(player);
+                    this.stageManager.teams.unassign(player);
+                    break;
+            }
         }
 
         return offer.accept();

@@ -1,7 +1,8 @@
 package com.abaan404.boatrace.game.race;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Set;
 
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRaceItems;
@@ -36,11 +37,33 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 public class Race {
     private final RaceStageManager stageManager;
     private final RaceWidgets widgets;
+    private final Set<BoatRacePlayer> qualified;
 
     private Race(GameSpace gameSpace, BoatRaceConfig.Race config, BoatRaceTrack track, Teams teams,
             ServerWorld world, GlobalWidgets widgets, List<BoatRacePlayer> gridOrder) {
-        this.stageManager = new RaceStageManager(gameSpace, config, world, track, teams, gridOrder);
+        this.stageManager = new RaceStageManager(gameSpace, config, world, track, teams);
         this.widgets = new RaceWidgets(gameSpace, widgets, track);
+        this.qualified = Set.copyOf(gridOrder);
+
+        switch (config.gridType()) {
+            case NORMAL: {
+                break;
+            }
+
+            case RANDOM: {
+                Collections.shuffle(gridOrder);
+                break;
+            }
+
+            case REVERSED: {
+                Collections.reverse(gridOrder);
+                break;
+            }
+        }
+
+        for (BoatRacePlayer player : gridOrder) {
+            this.stageManager.toParticipant(player);
+        }
     }
 
     public static void open(GameActivity game, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
@@ -75,19 +98,31 @@ public class Race {
     }
 
     private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
-        Consumer<BoatRacePlayer> mode = this.stageManager::toSpectator;
-
-        switch (offer.intent()) {
-            case PLAY:
-                mode = this.stageManager::toParticipant;
-                break;
-            case SPECTATE:
-                mode = this.stageManager::toSpectator;
-                break;
-        }
-
         for (GameProfile profile : offer.players()) {
-            mode.accept(BoatRacePlayer.of(profile));
+            BoatRacePlayer player = BoatRacePlayer.of(profile);
+
+            // noone qualified, respect intent
+            if (this.qualified.isEmpty()) {
+                switch (offer.intent()) {
+                    case PLAY:
+                        this.stageManager.toParticipant(player);
+                        this.stageManager.teams.assign(player);
+                        break;
+                    case SPECTATE:
+                        this.stageManager.toSpectator(player);
+                        this.stageManager.teams.unassign(player);
+                        break;
+                }
+            }
+
+            // only qualified players can participate
+            else {
+                if (this.qualified.contains(player)) {
+                    this.stageManager.toParticipant(player);
+                } else {
+                    this.stageManager.toSpectator(player);
+                }
+            }
         }
 
         return offer.accept();

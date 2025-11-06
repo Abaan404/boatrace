@@ -40,21 +40,33 @@ public class SpawnLogic {
     }
 
     /**
-     * Spawn and mount a boat on the player.
+     * Spawn and mount a boat on the entity.
      *
-     * @param player The player to mount.
-     * @return The entity spawned.
+     * @param entity The entity to mount.
+     * @return The boat entity spawned.
      */
-    public Optional<BoatEntity> spawnVehicleAndRide(ServerPlayerEntity player) {
+    public Optional<BoatEntity> spawnVehicleAndRide(Entity entity) {
         BoatEntity boat = EntityType.OAK_BOAT.create(this.world, SpawnReason.COMMAND);
         if (boat == null) {
             return Optional.empty();
         }
 
-        boat.refreshPositionAndAngles(player.getPos(), player.getYaw(), player.getPitch());
+        boat.refreshPositionAndAngles(entity.getPos(), entity.getYaw(), entity.getPitch());
         this.world.spawnEntity(boat);
-        player.startRiding(boat);
+        entity.startRiding(boat);
         return Optional.of(boat);
+    }
+
+    /**
+     * Unmount and kill the vehicle the entity is riding.
+     *
+     * @param entity The entity to dismount.
+     */
+    public void despawnVehicle(Entity entity) {
+        Entity boat = entity.getVehicle();
+        if (boat != null) {
+            boat.kill(this.world);
+        }
     }
 
     /**
@@ -82,10 +94,7 @@ public class SpawnLogic {
         }
 
         // avoid accidental stray boats
-        Entity boat = player.getVehicle();
-        if (boat != null) {
-            boat.kill(this.world);
-        }
+        this.despawnVehicle(player);
 
         player.networkHandler.requestTeleport(new PlayerPosition(
                 spawn.toBottomCenterPos(),
@@ -130,11 +139,6 @@ public class SpawnLogic {
             return;
         }
 
-        Entity bat = boat.getVehicle();
-        if (bat == null) {
-            return;
-        }
-
-        bat.kill(this.world);
+        this.despawnVehicle(boat);
     }
 }

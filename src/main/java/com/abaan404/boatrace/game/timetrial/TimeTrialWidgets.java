@@ -66,14 +66,14 @@ public final class TimeTrialWidgets {
         };
 
         for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-            if (!stageManager.isParticipant(player)) {
+            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+            if (!stageManager.isParticipant(bPlayer)) {
                 Text freeRoamText = Text.literal("Free Roaming").formatted(Formatting.GRAY, Formatting.ITALIC,
                         Formatting.BOLD);
                 player.networkHandler.sendPacket(new OverlayMessageS2CPacket(freeRoamText));
                 continue;
             }
 
-            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
             PersonalBest pb = leaderboard.getPersonalBest(this.track, bPlayer);
 
             List<Long> currentSplits = stageManager.splits.getSplits(bPlayer);

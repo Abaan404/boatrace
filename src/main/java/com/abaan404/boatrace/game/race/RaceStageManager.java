@@ -1,6 +1,5 @@
 package com.abaan404.boatrace.game.race;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,12 +49,12 @@ public class RaceStageManager {
     public final Teams teams;
 
     private final SpawnLogic spawnLogic;
-    private final SequencedSet<BoatRacePlayer> participants;
+    private final SequencedSet<BoatRacePlayer> participants = new ObjectLinkedOpenHashSet<>();
 
-    private long duration;
+    private long duration = 0;
 
     public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
-            Teams teams, List<BoatRacePlayer> gridOrder) {
+            Teams teams) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
@@ -70,29 +69,6 @@ public class RaceStageManager {
         this.countdown = new Countdown(config.countdown(), random.nextBetween(0, config.countdownRandom()));
 
         this.spawnLogic = new SpawnLogic(world);
-        this.participants = new ObjectLinkedOpenHashSet<>();
-
-        switch (this.config.gridType()) {
-            case NORMAL: {
-                break;
-            }
-
-            case RANDOM: {
-                Collections.shuffle(gridOrder);
-                break;
-            }
-
-            case REVERSED: {
-                Collections.reverse(gridOrder);
-                break;
-            }
-        }
-
-        for (BoatRacePlayer player : gridOrder) {
-            this.toParticipant(player);
-        }
-
-        this.duration = 0;
     }
 
     /**
@@ -126,11 +102,13 @@ public class RaceStageManager {
             gridBox++;
         }
 
-        // not enough grid boxes, spawn at pit entry
-        if (gridBox > regions.gridBoxes().size() - 1) {
-            respawn = regions.pitEntry();
-        } else {
+        if (this.checkpoints.getCheckpointIndex(bPlayer) > 0) {
+            respawn = this.checkpoints.getCheckpoint(bPlayer);
+        } else if (gridBox <= regions.gridBoxes().size() - 1) {
             respawn = regions.gridBoxes().get(gridBox);
+        } else {
+            // not enough grid boxes, spawn at pit entry
+            respawn = regions.pitEntry();
         }
 
         this.spawnLogic.spawnPlayer(player, respawn);
@@ -181,7 +159,7 @@ public class RaceStageManager {
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
-        // do nothing
+        this.spawnLogic.despawnVehicle(player);
     }
 
     /**
@@ -264,10 +242,13 @@ public class RaceStageManager {
     /**
      * Transition the player to a spectator.
      *
-     * @param player The player's bPlayer
+     * @param player The player.
      */
     public void toSpectator(BoatRacePlayer player) {
-        this.teams.remove(player);
+        if (!this.participants.contains(player)) {
+            return;
+        }
+
         this.participants.remove(player);
 
         this.checkpoints.reset(player);
@@ -279,10 +260,13 @@ public class RaceStageManager {
     /**
      * Transition a player to a participant.
      *
-     * @param player The player's bPlayer
+     * @param player The player.
      */
     public void toParticipant(BoatRacePlayer player) {
-        this.teams.add(player);
+        if (this.participants.contains(player)) {
+            return;
+        }
+
         this.participants.add(player);
 
         this.checkpoints.reset(player);
@@ -297,8 +281,8 @@ public class RaceStageManager {
      * @param player The player.
      * @return If they are on track ready to set a time.
      */
-    public boolean isParticipant(ServerPlayerEntity player) {
-        return this.participants.contains(BoatRacePlayer.of(player));
+    public boolean isParticipant(BoatRacePlayer player) {
+        return this.participants.contains(player);
     }
 
     /**
@@ -412,7 +396,7 @@ public class RaceStageManager {
             }
 
             teamsText.append(" ");
-            teamsText.append(Text.literal(String.join(", ", playerNames)).formatted(Formatting.BOLD));
+            teamsText.append(String.join(", ", playerNames));
             teamsText.append(String.format(" won the game with %d point(s).", winnerPoints));
 
             players.sendMessage(Text.empty());
