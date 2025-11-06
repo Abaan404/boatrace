@@ -94,7 +94,7 @@ public class QualifyingStageManager {
             }
 
             case SPAWN: {
-                if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.of())) {
+                if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.DEFAULT)) {
                     respawn = regions.spawn();
                 }
             }

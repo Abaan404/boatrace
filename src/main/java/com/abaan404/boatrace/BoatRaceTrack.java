@@ -35,7 +35,7 @@ public class BoatRaceTrack {
         this.meta = template.getMetadata()
                 .getData()
                 .decode(Meta.CODEC)
-                .orElse(Meta.of());
+                .orElse(Meta.DEFAULT);
 
         List<RespawnRegion> checkpoints = template.getMetadata()
                 .getRegions("checkpoint")
@@ -46,14 +46,14 @@ public class BoatRaceTrack {
 
         // make sure there is atleast one checkpoint in this track
         if (checkpoints.size() == 0) {
-            checkpoints.add(RespawnRegion.of());
+            checkpoints.add(RespawnRegion.DEFAULT);
         }
 
         RespawnRegion spawn = template.getMetadata()
                 .getRegions("spawn")
                 .map(RespawnRegion::of)
                 .findFirst()
-                .orElse(RespawnRegion.of());
+                .orElse(RespawnRegion.DEFAULT);
 
         List<RespawnRegion> gridBoxes = template.getMetadata()
                 .getRegions("grid_box")
@@ -66,13 +66,13 @@ public class BoatRaceTrack {
                 .getRegions("pit_entry")
                 .map(RespawnRegion::of)
                 .findFirst()
-                .orElse(RespawnRegion.of());
+                .orElse(RespawnRegion.DEFAULT);
 
         RespawnRegion pitExit = template.getMetadata()
                 .getRegions("pit_exit")
                 .map(RespawnRegion::of)
                 .findFirst()
-                .orElse(RespawnRegion.of());
+                .orElse(RespawnRegion.DEFAULT);
 
         List<RespawnRegion> pitBoxes = template.getMetadata()
                 .getRegions("pit_box")
@@ -144,7 +144,6 @@ public class BoatRaceTrack {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((regions == null) ? 0 : regions.hashCode());
         result = prime * result + ((meta == null) ? 0 : meta.hashCode());
         return result;
     }
@@ -158,11 +157,6 @@ public class BoatRaceTrack {
         if (getClass() != obj.getClass())
             return false;
         BoatRaceTrack other = (BoatRaceTrack) obj;
-        if (regions == null) {
-            if (other.regions != null)
-                return false;
-        } else if (!regions.equals(other.regions))
-            return false;
         if (meta == null) {
             if (other.meta != null)
                 return false;
@@ -172,15 +166,14 @@ public class BoatRaceTrack {
     }
 
     public record RespawnRegion(BlockBounds bounds, float respawnYaw, float respawnPitch) {
-        public static RespawnRegion of() {
-            return new RespawnRegion(BlockBounds.ofBlock(BlockPos.ORIGIN), 0.0f, 0.0f);
-        }
+
+        public static RespawnRegion DEFAULT = new RespawnRegion(BlockBounds.ofBlock(BlockPos.ORIGIN), 0.0f, 0.0f);
 
         private static RespawnRegion of(TemplateRegion templateRegion) {
             return new RespawnRegion(
                     templateRegion.getBounds(),
-                    templateRegion.getData().getFloat("respawnYaw", 0.0f),
-                    templateRegion.getData().getFloat("respawnPitch", 0.0f));
+                    templateRegion.getData().getFloat("respawnYaw", DEFAULT.respawnYaw()),
+                    templateRegion.getData().getFloat("respawnPitch", DEFAULT.respawnPitch()));
         }
     }
 
@@ -191,18 +184,17 @@ public class BoatRaceTrack {
     }
 
     public record Meta(
-            String name, List<String> authors,
+            String name, List<String> authors, long version,
             Layout layout) {
 
-        public static final MapCodec<Meta> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                Codec.STRING.optionalFieldOf("name", "Unknown Track").forGetter(Meta::name),
-                Codec.STRING.listOf().optionalFieldOf("authors", ObjectArrayList.of()).forGetter(Meta::authors),
-                Layout.CODEC.optionalFieldOf("layout", Layout.CIRCULAR).forGetter(Meta::layout))
-                .apply(instance, Meta::new));
+        public static final Meta DEFAULT = new Meta("Unknown Track", ObjectArrayList.of(), 0, Layout.CIRCULAR);
 
-        public static Meta of() {
-            return new Meta("Unknown Track", ObjectArrayList.of(), Layout.CIRCULAR);
-        }
+        public static final MapCodec<Meta> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Codec.STRING.optionalFieldOf("name", DEFAULT.name()).forGetter(Meta::name),
+                Codec.STRING.listOf().optionalFieldOf("authors", DEFAULT.authors()).forGetter(Meta::authors),
+                Codec.LONG.optionalFieldOf("version", DEFAULT.version()).forGetter(Meta::version),
+                Layout.CODEC.optionalFieldOf("layout", DEFAULT.layout()).forGetter(Meta::layout))
+                .apply(instance, Meta::new));
 
         @Override
         public int hashCode() {

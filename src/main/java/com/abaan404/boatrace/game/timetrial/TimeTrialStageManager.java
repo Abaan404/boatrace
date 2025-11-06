@@ -66,7 +66,7 @@ public class TimeTrialStageManager {
             return;
         }
 
-        if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.of())) {
+        if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.DEFAULT)) {
             respawn = regions.spawn();
         } else if (!regions.gridBoxes().isEmpty()) {
             respawn = regions.gridBoxes().getFirst();

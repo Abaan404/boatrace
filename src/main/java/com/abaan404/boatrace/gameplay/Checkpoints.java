@@ -117,7 +117,7 @@ public class Checkpoints {
 
         // no checkpoints, return default
         if (regions.checkpoints().size() == 0) {
-            return BoatRaceTrack.RespawnRegion.of();
+            return BoatRaceTrack.RespawnRegion.DEFAULT;
         }
 
         // return the first checkpoint if the player has just spawned
