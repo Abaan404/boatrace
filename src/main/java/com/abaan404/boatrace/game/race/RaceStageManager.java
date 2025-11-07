@@ -151,7 +151,10 @@ public class RaceStageManager {
 
         if (this.participants.contains(BoatRacePlayer.of(player))) {
             inventory.setStack(8, BoatRaceItems.CYCLE_LEADERBOARD.getDefaultStack());
-            inventory.setStack(7, BoatRaceItems.RESPAWN.getDefaultStack());
+
+            if (!this.config.noRespawn()) {
+                inventory.setStack(7, BoatRaceItems.RESPAWN.getDefaultStack());
+            }
         }
     }
 
