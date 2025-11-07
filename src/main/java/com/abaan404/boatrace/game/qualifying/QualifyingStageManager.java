@@ -16,7 +16,6 @@ import com.abaan404.boatrace.leaderboard.Leaderboard;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.utils.TextUtils;
 
-import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
@@ -102,10 +101,6 @@ public class QualifyingStageManager {
 
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
-
-        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
-        leaderboard.submit(this.world, this.track,
-                new PersonalBest(bPlayer, LongArrayList.of(this.world.random.nextBetween(1000, 2000))));
     }
 
     /**
