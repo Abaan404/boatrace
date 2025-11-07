@@ -204,14 +204,15 @@ public class RaceWidgets {
      *
      * @param player The player whos leaderboard should be updated.
      */
-    public void cycleLeaderboard(ServerPlayerEntity player) {
+    public LeaderboardType cycleLeaderboard(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
-        leaderboardType = leaderboardType.cycle();
+        leaderboardType = LeaderboardType.values()[(leaderboardType.ordinal() + 1) % LeaderboardType.values().length];
         this.leaderboardType.put(bPlayer, leaderboardType);
 
         player.sendMessage(TextUtils.chatLeaderboardType(leaderboardType));
+        return leaderboardType;
     }
 
     public enum LeaderboardType {
@@ -224,14 +225,5 @@ public class RaceWidgets {
          * Time to all against the current player.
          */
         PLAYER;
-
-        public LeaderboardType cycle() {
-            if (this == PLAYER) {
-                return LEADER;
-            }
-
-            // Otherwise, get the next enum by ordinal position
-            return LeaderboardType.values()[this.ordinal() + 1];
-        }
     }
 }

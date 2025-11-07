@@ -11,8 +11,10 @@ import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
 
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
@@ -145,18 +147,24 @@ public class Race {
     }
 
     private ActionResult onItemUse(ServerPlayerEntity player, Hand hand) {
-        Item item = player.getStackInHand(hand).getItem();
+        ItemStack stack = player.getStackInHand(hand);
 
         // only respawn the player at their last checkpoint
-        if (item.equals(BoatRaceItems.RESPAWN)) {
+        if (stack.getItem().equals(BoatRaceItems.RESPAWN)) {
             this.stageManager.respawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
             return ActionResult.CONSUME;
         }
 
         // cycle leaderboard type
-        else if (item.equals(BoatRaceItems.CYCLE_LEADERBOARD)) {
-            this.widgets.cycleLeaderboard(player);
+        else if (stack.getItem().equals(BoatRaceItems.CYCLE_LEADERBOARD)) {
+            RaceWidgets.LeaderboardType nextType = this.widgets.cycleLeaderboard(player);
+            stack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(
+                    List.of(),
+                    List.of(),
+                    List.of(nextType.toString()),
+                    List.of()));
+
             return ActionResult.CONSUME;
         }
 
