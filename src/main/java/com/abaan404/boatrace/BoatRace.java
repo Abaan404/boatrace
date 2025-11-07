@@ -9,6 +9,7 @@ import com.abaan404.boatrace.game.timetrial.TimeTrial;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
 
+import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.text.Text;
@@ -67,6 +68,7 @@ public class BoatRace implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        PolymerResourcePackUtils.addModAssets(ID);
         BoatRaceItems.initialize();
         Leaderboard.initialize();
     }
