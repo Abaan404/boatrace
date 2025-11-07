@@ -6,20 +6,16 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-
 /**
  * Stores the player's time and splits and their info.
  */
 public record PersonalBest(BoatRacePlayer player, List<Long> splits) {
+    public static final PersonalBest DEFAULT = new PersonalBest(BoatRacePlayer.DEFAULT, List.of());
+
     public static final Codec<PersonalBest> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BoatRacePlayer.CODEC.fieldOf("player").forGetter(PersonalBest::player),
             Codec.LONG.listOf().fieldOf("splits").forGetter(PersonalBest::splits))
             .apply(instance, PersonalBest::new));
-
-    public static PersonalBest of() {
-        return new PersonalBest(BoatRacePlayer.of(), LongArrayList.of());
-    }
 
     public long timer() {
         if (this.splits().isEmpty()) {

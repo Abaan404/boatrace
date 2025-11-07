@@ -16,12 +16,13 @@ import com.abaan404.boatrace.gameplay.Positions;
 import com.abaan404.boatrace.gameplay.SpawnLogic;
 import com.abaan404.boatrace.gameplay.Splits;
 import com.abaan404.boatrace.gameplay.Teams;
+import com.abaan404.boatrace.leaderboard.Leaderboard;
+import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -51,6 +52,7 @@ public class RaceStageManager {
     private final SpawnLogic spawnLogic;
     private final SequencedSet<BoatRacePlayer> participants = new ObjectLinkedOpenHashSet<>();
 
+    private PersonalBest fastestLap = PersonalBest.DEFAULT;
     private long duration = 0;
 
     public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
@@ -63,7 +65,7 @@ public class RaceStageManager {
 
         this.checkpoints = new Checkpoints(track);
         this.splits = new Splits();
-        this.positions = new Positions(this.splits);
+        this.positions = new Positions();
 
         Random random = world.getRandom();
         this.countdown = new Countdown(config.countdown(), random.nextBetween(0, config.countdownRandom()));
@@ -177,7 +179,7 @@ public class RaceStageManager {
                     }
 
                     this.spawnLogic.unfreezeVehicle(player);
-                    this.splits.run(bPlayer);
+                    this.positions.run(bPlayer);
                 }
                 break;
             }
@@ -203,38 +205,60 @@ public class RaceStageManager {
                 continue;
             }
 
-            switch (this.checkpoints.tick(player)) {
-                case CHECKPOINT: {
+            Checkpoints.TickResult result = this.checkpoints.tick(player);
+
+            switch (result) {
+                case BEGIN: {
+                    this.splits.run(bPlayer);
                     this.splits.recordSplit(bPlayer);
                     this.positions.update(bPlayer);
                     break;
                 }
 
-                case BEGIN:
-                case FINISH:
                 case LOOP: {
+                    // start a new lap time
                     this.splits.recordSplit(bPlayer);
+                    this.submit(player);
+
+                    this.splits.reset(bPlayer);
                     this.positions.update(bPlayer);
 
                     if (this.getLeadingLaps() > this.config.maxLaps()) {
                         this.participants.remove(bPlayer);
                         this.splits.stop(bPlayer);
+                        this.positions.stop(bPlayer);
                         this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-
-                        Entity boat = player.getVehicle();
-                        if (boat != null) {
-                            boat.kill(this.world);
-                        }
+                        this.spawnLogic.despawnVehicle(player);
                     }
                     break;
                 }
 
+                case FINISH: {
+                    this.splits.stop(bPlayer);
+                    this.positions.update(bPlayer);
+
+                    if (this.getLeadingLaps() > this.config.maxLaps()) {
+                        this.participants.remove(bPlayer);
+                        this.splits.stop(bPlayer);
+                        this.positions.stop(bPlayer);
+                        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+                        this.spawnLogic.despawnVehicle(player);
+                    }
+                    break;
+                }
+
+                case CHECKPOINT: {
+                    this.splits.recordSplit(bPlayer);
+                    this.positions.update(bPlayer);
+                    break;
+                }
                 case IDLE: {
                     break;
                 }
             }
         }
 
+        this.positions.tick(this.world);
         this.splits.tick(this.world);
         this.duration += this.world.getTickManager().getMillisPerTick();
     }
@@ -313,6 +337,29 @@ public class RaceStageManager {
         return this.config;
     }
 
+    /**
+     * Submit a leaderboard time.
+     *
+     * @param player The player to create a new pb for.
+     */
+    private void submit(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+        PersonalBest pb = new PersonalBest(bPlayer, this.splits.getSplits(bPlayer));
+
+        if (Leaderboard.validate(this.track, pb) && pb.timer() < this.fastestLap.timer()) {
+            this.fastestLap = pb;
+
+            GameSpacePlayers players = this.gameSpace.getPlayers();
+            players.sendMessage(TextUtils.chatNewFastestLap(pb));
+        } else {
+            player.sendMessage(TextUtils.chatNewTime(pb.timer()));
+        }
+
+    }
+
+    /**
+     * End the game.
+     */
     private void endGame() {
         GameSpacePlayers players = this.gameSpace.getPlayers();
         List<BoatRacePlayer> positions = this.positions.getPositions();
@@ -323,7 +370,7 @@ public class RaceStageManager {
             MutableText positionsText = Text.empty();
             positionsText.append(" ");
             positionsText.append(TextUtils.scoreboardPosition(true, 0)).append(" ");
-            positionsText.append(TextUtils.scoreboardName(BoatRacePlayer.of(), GameTeamConfig.DEFAULT, false, 0))
+            positionsText.append(TextUtils.scoreboardName(BoatRacePlayer.DEFAULT, GameTeamConfig.DEFAULT, false, 0))
                     .append(" ");
 
             positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD));
@@ -354,7 +401,7 @@ public class RaceStageManager {
                 positionsText.append(TextUtils.chatLapsDelta(this.getLeadingLaps(), this.checkpoints.getLaps(player)))
                         .append("  ");
             } else {
-                positionsText.append(TextUtils.actionBarTimer(this.splits.getTimer(player))).append("  ");
+                positionsText.append(TextUtils.actionBarTimer(this.positions.getTimer(player))).append("  ");
             }
 
             positionsText.append(TextUtils.chatPoints(points));

@@ -10,23 +10,20 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import net.minecraft.server.world.ServerWorld;
 
 /**
  * Keeps track of positions and delta times on track.
  */
 public class Positions {
-    private final Splits splits;
+    private final Splits splits = new Splits();
 
     private Map<BoatRacePlayer, Integer> playerToPositions = new Object2IntOpenHashMap<>();
     private List<BoatRacePlayer> positions = new ObjectArrayList<>();
     private Set<BoatRacePlayer> waiting = new ObjectOpenHashSet<>();
 
-    public Positions(Splits splits) {
-        this.splits = splits;
-    }
-
     /**
-     * Update the current positions according to the current SplitsManager state.
+     * Update the current positions according to the internal SplitsManager state.
      * The player being updated will also be removed from their waiting state.
      *
      * @param player The player being updated.
@@ -34,6 +31,7 @@ public class Positions {
      */
     public void update(BoatRacePlayer player) {
         this.waiting.remove(player);
+        this.splits.recordSplit(player);
 
         // divide players into those who had update() called for and those who hadn't.
         List<BoatRacePlayer> positions = new ObjectArrayList<>();
@@ -99,11 +97,47 @@ public class Positions {
     public void remove(BoatRacePlayer player) {
         this.positions.removeIf(a -> a.equals(player));
         this.waiting.remove(player);
+        this.splits.stop(player);
 
         this.playerToPositions.clear();
         for (int i = 0; i < this.positions.size(); i++) {
             this.playerToPositions.put(this.positions.get(i), i);
         }
+    }
+
+    /**
+     * Tick the internal splits.
+     */
+    public void tick(ServerWorld world) {
+        this.splits.tick(world);
+    }
+
+    /**
+     * Begin the internal timer for this player.
+     *
+     * @param player The player.
+     */
+    public void run(BoatRacePlayer player) {
+        this.splits.run(player);
+    }
+
+    /**
+     * Stop the internal timer for this player.
+     *
+     * @param player The player.
+     */
+    public void stop(BoatRacePlayer player) {
+        this.splits.stop(player);
+    }
+
+    /**
+     * Get the internal timer for this player.
+     *
+     * @param player The player.
+     * @return Their timer.
+     */
+    public long getTimer(BoatRacePlayer player) {
+        return this.splits.getTimer(player);
     }
 
     /**

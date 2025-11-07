@@ -59,7 +59,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
             }
         }
 
-        return PersonalBest.of();
+        return PersonalBest.DEFAULT;
     }
 
     /**
@@ -153,8 +153,6 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
                     return false;
                 }
 
-                break;
-            default:
                 break;
         }
 

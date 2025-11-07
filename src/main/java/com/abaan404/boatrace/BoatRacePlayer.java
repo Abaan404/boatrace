@@ -15,6 +15,8 @@ public record BoatRacePlayer(PlayerRef ref, String offlineName) {
             Uuids.CODEC.fieldOf("uuid").forGetter(PlayerRef::id))
             .apply(instance, PlayerRef::new));
 
+    public static final BoatRacePlayer DEFAULT = new BoatRacePlayer(PlayerRef.ofUnchecked(UUID.randomUUID()), "Mumbo");
+
     public static final Codec<BoatRacePlayer> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             CODEC_REF.fieldOf("player").forGetter(BoatRacePlayer::ref),
             Codec.STRING.fieldOf("offlineName").forGetter(BoatRacePlayer::offlineName))
@@ -26,10 +28,6 @@ public record BoatRacePlayer(PlayerRef ref, String offlineName) {
 
     public static BoatRacePlayer of(GameProfile profile) {
         return new BoatRacePlayer(PlayerRef.of(profile), profile.getName());
-    }
-
-    public static BoatRacePlayer of() {
-        return new BoatRacePlayer(PlayerRef.ofUnchecked(UUID.randomUUID()), "Mumbo");
     }
 
     @Override

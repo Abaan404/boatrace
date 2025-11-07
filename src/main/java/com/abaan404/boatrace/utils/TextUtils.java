@@ -386,7 +386,7 @@ public final class TextUtils {
     /**
      * A text to display a new best time.
      *
-     * @param timer    The player's timer.
+     * @param pb       The player's pb.
      * @param position The player's position.
      * @return A text
      */
@@ -398,6 +398,21 @@ public final class TextUtils {
                 .append(Text.literal("]  ").formatted(Formatting.RED))
                 .append(TextUtils.scoreboardPosition(true, position))
                 .append(Text.literal(" ◇ ").formatted(Formatting.BOLD))
+                .append(Text.literal(TimeUtils.formatTime(pb.timer())).formatted(Formatting.BOLD));
+    }
+
+    /**
+     * A text to display a new best time.
+     *
+     * @param pb The player's pb.
+     * @return A text
+     */
+    public static Text chatNewFastestLap(PersonalBest pb) {
+        return Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.GOLD, Formatting.BOLD))
+                .append(Text.literal("[").formatted(Formatting.RED))
+                .append(Text.literal(pb.player().offlineName()).formatted(Formatting.WHITE, Formatting.BOLD))
+                .append(Text.literal("]  ").formatted(Formatting.RED))
                 .append(Text.literal(TimeUtils.formatTime(pb.timer())).formatted(Formatting.BOLD));
     }
 
