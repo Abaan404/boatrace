@@ -144,11 +144,41 @@ public final class TextUtils {
         list.add(Text.literal(" ").append(meta.name()).formatted(Formatting.BOLD));
 
         if (meta.authors().isEmpty()) {
-            list.add(Text.literal("    - By Unknown Author(s)")
-                    .formatted(Formatting.GRAY, Formatting.ITALIC));
-        } else {
-            list.add(Text.literal("    - By " + String.join(", ", meta.authors()))
-                    .formatted(Formatting.GRAY, Formatting.ITALIC));
+            list.add(Text.literal("    - By Unknown Author(s)").formatted(Formatting.GRAY, Formatting.ITALIC));
+            list.add(Text.empty());
+            return list;
+
+        }
+
+        List<String> authorLines = new ObjectArrayList<>();
+
+        final int maxLength = 36;
+        StringBuilder currentLine = new StringBuilder();
+
+        // wrap author names
+        for (int i = 0; i < meta.authors().size(); i++) {
+            String next = new String();
+
+            if (authorLines.isEmpty() && currentLine.isEmpty()) {
+                next += "  - By ";
+            }
+
+            next += meta.authors().get(i) + (i != meta.authors().size() - 1 ? ", " : " ");
+
+            if (currentLine.length() + next.length() > maxLength) {
+                authorLines.add(currentLine.toString());
+                currentLine = new StringBuilder("     " + next);
+            } else {
+                currentLine.append(next);
+            }
+        }
+
+        if (currentLine.length() > 0) {
+            authorLines.add(currentLine.toString());
+        }
+
+        for (String line : authorLines) {
+            list.add(Text.literal(line).formatted(Formatting.GRAY, Formatting.ITALIC));
         }
 
         list.add(Text.empty());
