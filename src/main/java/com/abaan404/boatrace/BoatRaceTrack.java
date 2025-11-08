@@ -46,7 +46,7 @@ public class BoatRaceTrack {
 
         // make sure there is atleast one checkpoint in this track
         if (checkpoints.size() == 0) {
-            checkpoints.add(RespawnRegion.DEFAULT);
+            checkpoints = List.of(RespawnRegion.DEFAULT);
         }
 
         RespawnRegion spawn = template.getMetadata()
