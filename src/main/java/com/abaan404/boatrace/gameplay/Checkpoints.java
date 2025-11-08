@@ -1,6 +1,7 @@
 package com.abaan404.boatrace.gameplay;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.abaan404.boatrace.BoatRacePlayer;
@@ -42,7 +43,10 @@ public class Checkpoints {
         BoatRaceTrack.Regions regions = track.getRegions();
         BoatRaceTrack.Meta meta = track.getMeta();
 
-        BlockPos pos = player.getBlockPos();
+        BlockPos pos = Optional.ofNullable(player.getVehicle())
+                .orElse(player)
+                .getBlockPos();
+
         BlockPos prevPos = this.prevPositions.getOrDefault(bPlayer, pos);
         this.prevPositions.put(bPlayer, pos);
 
