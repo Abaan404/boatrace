@@ -1,0 +1,22 @@
+{
+    "model": {
+        "type": "minecraft:select",
+        "property": "minecraft:custom_model_data",
+        "cases": [
+            {
+                "when": "LEADER",
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "boatrace:item/cycle_leaderboard_leader"
+                }
+            },
+            {
+                "when": "PLAYER",
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "boatrace:item/cycle_leaderboard_player"
+                }
+            }
+        ]
+    }
+}

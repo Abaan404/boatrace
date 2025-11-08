@@ -8,7 +8,7 @@ import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
@@ -112,10 +112,10 @@ public class TimeTrial {
     }
 
     private ActionResult onItemUse(ServerPlayerEntity player, Hand hand) {
-        Item item = player.getStackInHand(hand).getItem();
+        ItemStack item = player.getStackInHand(hand);
 
         // turn them into a participant and spawn them as if they just started
-        if (item.equals(BoatRaceItems.RESET)) {
+        if (item.getItem().equals(BoatRaceItems.RESET)) {
             this.stageManager.toSpectator(BoatRacePlayer.of(player));
             this.stageManager.toParticipant(BoatRacePlayer.of(player));
 
@@ -125,7 +125,7 @@ public class TimeTrial {
         }
 
         // only respawn the player at their last checkpoint
-        else if (item.equals(BoatRaceItems.RESPAWN)) {
+        else if (item.getItem().equals(BoatRaceItems.RESPAWN)) {
             this.stageManager.respawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
             return ActionResult.CONSUME;

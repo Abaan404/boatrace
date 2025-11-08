@@ -53,13 +53,13 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @return Their personal best.
      */
     public PersonalBest getPersonalBest(BoatRaceTrack track, BoatRacePlayer player) {
-        for (PersonalBest pb : this.leaderboard.getOrDefault(track.hashCode(), ObjectArrayList.of())) {
+        for (PersonalBest pb : this.getLeaderboard(track)) {
             if (pb.player().equals(player)) {
                 return pb;
             }
         }
 
-        return PersonalBest.of();
+        return PersonalBest.DEFAULT;
     }
 
     /**
@@ -153,8 +153,6 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
                     return false;
                 }
 
-                break;
-            default:
                 break;
         }
 

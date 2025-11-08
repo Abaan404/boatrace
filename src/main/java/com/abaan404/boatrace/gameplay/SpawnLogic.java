@@ -80,16 +80,16 @@ public class SpawnLogic {
         BlockPos spawn = center;
 
         // find a solid ground from the center
+        boolean solidBlockFound = false;
         while (spawn.getY() >= respawn.bounds().min().getY()) {
-            if (!this.world.getBlockState(spawn).isAir()) {
-                spawn = spawn.up();
+            if (!this.world.getBlockState(spawn.down()).isAir()) {
+                solidBlockFound = true;
                 break;
             }
             spawn = spawn.down();
         }
 
-        // no solid groud, spawn mid air
-        if (this.world.getBlockState(spawn.down()).isAir()) {
+        if (!solidBlockFound) {
             spawn = center;
         }
 

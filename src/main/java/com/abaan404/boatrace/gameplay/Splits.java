@@ -98,7 +98,7 @@ public class Splits {
      * @return The player's splits.
      */
     public List<Long> getSplits(BoatRacePlayer player) {
-        return Collections.unmodifiableList(this.splits.getOrDefault(player, LongArrayList.of(0l)));
+        return Collections.unmodifiableList(this.splits.getOrDefault(player, List.of(0l)));
     }
 
     /**

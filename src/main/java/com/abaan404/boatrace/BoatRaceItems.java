@@ -1,10 +1,15 @@
 package com.abaan404.boatrace;
 
+import java.util.List;
 import java.util.function.Function;
+
+import com.abaan404.boatrace.game.race.RaceWidgets;
 
 import eu.pb4.polymer.core.api.item.PolymerItemGroupUtils;
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -33,7 +38,12 @@ public class BoatRaceItems {
             new SimplePolymerItem.Settings());
 
     public static final SimplePolymerItem CYCLE_LEADERBOARD = register("cycle_leaderboard", SimplePolymerItem::new,
-            new SimplePolymerItem.Settings());
+            new SimplePolymerItem.Settings()
+                    .component(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(
+                            List.of(),
+                            List.of(),
+                            List.of(RaceWidgets.LeaderboardType.PLAYER.toString()),
+                            List.of())));
 
     public static void initialize() {
         Registry.register(Registries.ITEM_GROUP, ITEM_GROUP_KEY, ITEM_GROUP);
