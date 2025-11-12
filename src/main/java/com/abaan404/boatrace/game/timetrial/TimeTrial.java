@@ -14,6 +14,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.GameRules;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
@@ -42,7 +43,11 @@ public class TimeTrial {
 
     public static void open(GameActivity game, ServerWorld world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
+
         TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets);
+
+        world.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).set(false, game.getGameSpace().getServer());
+        world.setTimeOfDay(track.getAttributes().timeOfDay());
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
         game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);

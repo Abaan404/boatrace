@@ -210,11 +210,13 @@ public class BoatRaceTrack {
     }
 
     public record Attributes(
+            int timeOfDay,
             Layout layout) {
 
-        public static final Attributes DEFAULT = new Attributes(Layout.CIRCULAR);
+        public static final Attributes DEFAULT = new Attributes(0, Layout.CIRCULAR);
 
         public static final MapCodec<Attributes> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Codec.INT.optionalFieldOf("time_of_day", DEFAULT.timeOfDay()).forGetter(Attributes::timeOfDay),
                 Layout.CODEC.optionalFieldOf("layout", DEFAULT.layout()).forGetter(Attributes::layout))
                 .apply(instance, Attributes::new));
     }
