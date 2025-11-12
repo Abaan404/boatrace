@@ -67,10 +67,12 @@ public class QualifyingStageManager {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         BoatRaceTrack.Regions regions = this.track.getRegions();
 
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+
         // spawn spectators at spawn without boats
         if (!this.participants.contains(bPlayer)) {
             this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-            this.spawnLogic.spawnPlayer(player, regions.checkpoints().getFirst());
+            this.spawnLogic.spawnPlayer(player, regions.spawn());
             return;
         }
 

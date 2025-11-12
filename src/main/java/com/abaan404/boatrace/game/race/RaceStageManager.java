@@ -83,10 +83,12 @@ public class RaceStageManager {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         BoatRaceTrack.Regions regions = this.track.getRegions();
 
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+
         // spawn spectators or non qualified at spawn without boats
         if (!this.participants.contains(bPlayer)) {
             this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-            this.spawnLogic.spawnPlayer(player, regions.checkpoints().getFirst());
+            this.spawnLogic.spawnPlayer(player, regions.spawn());
             return;
         }
 
@@ -109,8 +111,8 @@ public class RaceStageManager {
         } else if (gridBox <= regions.gridBoxes().size() - 1) {
             respawn = regions.gridBoxes().get(gridBox);
         } else {
-            // not enough grid boxes, spawn at pit entry
-            respawn = regions.pitEntry();
+            // not enough grid boxes
+            respawn = regions.spawn();
         }
 
         this.spawnLogic.spawnPlayer(player, respawn);

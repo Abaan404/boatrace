@@ -77,7 +77,7 @@ public class RaceWidgets {
      * @param stageManager The stage manager.
      */
     private void tickActionBar(RaceStageManager stageManager) {
-        int maxCheckpoints = switch (this.track.getMeta().layout()) {
+        int maxCheckpoints = switch (this.track.getAttributes().layout()) {
             // dont count start
             case CIRCULAR -> this.track.getRegions().checkpoints().size() - 1;
             // dont count start and end
@@ -130,7 +130,9 @@ public class RaceWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
+                content.add(Text.empty());
                 TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
+                content.add(Text.empty());
 
                 content.add(TextUtils.scoreboardLaps(
                         stageManager.getLeadingLaps(),

@@ -9,8 +9,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 import net.minecraft.util.math.BlockPos;
@@ -19,6 +19,7 @@ import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
 import xyz.nucleoid.map_templates.MapTemplateSerializer;
 import xyz.nucleoid.map_templates.TemplateRegion;
+import xyz.nucleoid.plasmid.api.game.GameOpenException;
 import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
 
 /**
@@ -27,15 +28,34 @@ import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
 public class BoatRaceTrack {
     private final Regions regions;
     private final Meta meta;
+    private final Attributes attributes;
+
     private final MapTemplate template;
+
+    private static final int CURRENT_TRACK_FORMAT = 1;
 
     private BoatRaceTrack(MapTemplate template) {
         this.template = template;
 
+        int trackFormat = template.getMetadata()
+                .getData()
+                .getInt("track_format", 0);
+
+        if (trackFormat < CURRENT_TRACK_FORMAT) {
+            throw new GameOpenException(Text.of("This track was built for an earlier version of boatrace."));
+        } else if (trackFormat > CURRENT_TRACK_FORMAT) {
+            throw new GameOpenException(Text.of("This track was built for a future version of boatrace."));
+        }
+
         this.meta = template.getMetadata()
                 .getData()
-                .decode(Meta.CODEC)
+                .get("meta", Meta.CODEC.codec())
                 .orElse(Meta.DEFAULT);
+
+        this.attributes = template.getMetadata()
+                .getData()
+                .get("attributes", Attributes.CODEC.codec())
+                .orElse(Attributes.DEFAULT);
 
         List<RespawnRegion> checkpoints = template.getMetadata()
                 .getRegions("checkpoint")
@@ -97,19 +117,16 @@ public class BoatRaceTrack {
      * @param identifier The resource id of the track
      * @return A loaded track.
      */
-    public static Optional<BoatRaceTrack> load(MinecraftServer server, Identifier identifier) {
+    public static BoatRaceTrack load(MinecraftServer server, Identifier identifier) {
         MapTemplate template;
 
         try {
             template = MapTemplateSerializer.loadFromResource(server, identifier);
         } catch (IOException e) {
-            BoatRace.LOGGER.warn("No map with the resource \"{}\" found.", identifier);
-            return Optional.empty();
+            throw new GameOpenException(Text.of(String.format("Couldn't load track {}", identifier.toString())));
         }
 
-        BoatRaceTrack map = new BoatRaceTrack(template);
-
-        return Optional.of(map);
+        return new BoatRaceTrack(template);
     }
 
     /**
@@ -140,6 +157,15 @@ public class BoatRaceTrack {
         return this.meta;
     }
 
+    /**
+     * Misc attributes loaded from its template.
+     *
+     * @return The attributes.
+     */
+    public Attributes getAttributes() {
+        return attributes;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -165,15 +191,15 @@ public class BoatRaceTrack {
         return true;
     }
 
-    public record RespawnRegion(BlockBounds bounds, float respawnYaw, float respawnPitch) {
+    public record RespawnRegion(BlockBounds bounds, float yaw, float pitch) {
 
         public static RespawnRegion DEFAULT = new RespawnRegion(BlockBounds.ofBlock(BlockPos.ORIGIN), 0.0f, 0.0f);
 
         private static RespawnRegion of(TemplateRegion templateRegion) {
             return new RespawnRegion(
                     templateRegion.getBounds(),
-                    templateRegion.getData().getFloat("respawnYaw", DEFAULT.respawnYaw()),
-                    templateRegion.getData().getFloat("respawnPitch", DEFAULT.respawnPitch()));
+                    templateRegion.getData().getFloat("yaw", DEFAULT.yaw()),
+                    templateRegion.getData().getFloat("pitch", DEFAULT.pitch()));
         }
     }
 
@@ -183,17 +209,27 @@ public class BoatRaceTrack {
             RespawnRegion pitEntry, RespawnRegion pitExit, List<RespawnRegion> pitBoxes) {
     }
 
-    public record Meta(
-            String name, List<String> authors, long version,
+    public record Attributes(
             Layout layout) {
 
-        public static final Meta DEFAULT = new Meta("Unknown Track", ObjectArrayList.of(), 0, Layout.CIRCULAR);
+        public static final Attributes DEFAULT = new Attributes(Layout.CIRCULAR);
+
+        public static final MapCodec<Attributes> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Layout.CODEC.optionalFieldOf("layout", DEFAULT.layout()).forGetter(Attributes::layout))
+                .apply(instance, Attributes::new));
+    }
+
+    public record Meta(
+            String name, List<String> authors, Optional<String> description, Optional<String> url) {
+
+        public static final Meta DEFAULT = new Meta("Unknown Track", List.of("Unknown Authors"), Optional.empty(),
+                Optional.empty());
 
         public static final MapCodec<Meta> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 Codec.STRING.optionalFieldOf("name", DEFAULT.name()).forGetter(Meta::name),
                 Codec.STRING.listOf().optionalFieldOf("authors", DEFAULT.authors()).forGetter(Meta::authors),
-                Codec.LONG.optionalFieldOf("version", DEFAULT.version()).forGetter(Meta::version),
-                Layout.CODEC.optionalFieldOf("layout", DEFAULT.layout()).forGetter(Meta::layout))
+                Codec.STRING.optionalFieldOf("description").forGetter(Meta::description),
+                Codec.STRING.optionalFieldOf("url").forGetter(Meta::url))
                 .apply(instance, Meta::new));
 
         @Override
@@ -201,11 +237,24 @@ public class BoatRaceTrack {
             final int prime = 31;
             int result = 1;
             result = prime * result + ((name == null) ? 0 : name.hashCode());
-            result = prime * result + ((authors == null) ? 0 : authors.hashCode());
-
-            // use enum's names for serializing hashCodes
-            result = prime * result + ((layout == null) ? 0 : layout.toString().hashCode());
             return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Meta other = (Meta) obj;
+            if (name == null) {
+                if (other.name != null)
+                    return false;
+            } else if (!name.equals(other.name))
+                return false;
+            return true;
         }
     }
 

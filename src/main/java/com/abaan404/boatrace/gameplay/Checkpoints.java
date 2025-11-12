@@ -41,7 +41,7 @@ public class Checkpoints {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         BoatRaceTrack.Regions regions = track.getRegions();
-        BoatRaceTrack.Meta meta = track.getMeta();
+        BoatRaceTrack.Attributes attributes = track.getAttributes();
 
         BlockPos pos = Optional.ofNullable(player.getVehicle())
                 .orElse(player)
@@ -77,7 +77,7 @@ public class Checkpoints {
         if (this.intersect(pos, prevPos, regions.checkpoints().get(nextCheckpointIdx).bounds())) {
             this.checkpoints.put(bPlayer, nextCheckpointIdx);
 
-            switch (meta.layout()) {
+            switch (attributes.layout()) {
                 case CIRCULAR: {
                     // checkpoint was looped back to the start
                     if (this.intersect(pos, prevPos, start.bounds())) {
