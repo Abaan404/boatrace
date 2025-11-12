@@ -48,7 +48,7 @@ public class Qualifying {
         Qualifying qualifying = new Qualifying(game.getGameSpace(), config, configRace, track, teams, world, widgets);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
-
+        game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);
         game.setRule(GameRuleType.PVP, EventResult.DENY);
         game.setRule(GameRuleType.HUNGER, EventResult.DENY);
         game.setRule(GameRuleType.FALL_DAMAGE, EventResult.DENY);

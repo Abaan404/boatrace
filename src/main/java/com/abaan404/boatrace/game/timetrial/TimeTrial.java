@@ -45,7 +45,7 @@ public class TimeTrial {
         TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
-
+        game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);
         game.setRule(GameRuleType.PVP, EventResult.DENY);
         game.setRule(GameRuleType.HUNGER, EventResult.DENY);
         game.setRule(GameRuleType.FALL_DAMAGE, EventResult.DENY);

@@ -75,7 +75,7 @@ public class Race {
         Race race = new Race(game.getGameSpace(), config, track, teams, world, widgets, gridOrder);
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
-
+        game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);
         game.setRule(GameRuleType.PVP, EventResult.DENY);
         game.setRule(GameRuleType.HUNGER, EventResult.DENY);
         game.setRule(GameRuleType.FALL_DAMAGE, EventResult.DENY);
