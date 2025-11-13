@@ -196,8 +196,14 @@ public class RaceStageManager {
             }
         }
 
-        // max time reached or every player finished their laps
-        if (this.duration > this.config.maxDuration() || this.participants.size() == 0) {
+        boolean allDisconnected = true;
+        for (BoatRacePlayer player : this.participants) {
+            allDisconnected &= !player.ref().isOnline(this.gameSpace);
+        }
+
+        // max time reached or every player finished their laps or every participant has
+        // disconnected
+        if (this.duration > this.config.maxDuration() || this.participants.isEmpty() || allDisconnected) {
             this.endGame();
         }
 
