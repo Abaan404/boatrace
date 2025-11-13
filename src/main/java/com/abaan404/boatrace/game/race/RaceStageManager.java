@@ -219,12 +219,13 @@ public class RaceStageManager {
                 }
 
                 case LOOP: {
-                    // start a new lap time
+                    this.positions.update(bPlayer);
                     this.splits.recordSplit(bPlayer);
                     this.submit(player);
 
+                    // start a new lap time
                     this.splits.reset(bPlayer);
-                    this.positions.update(bPlayer);
+                    this.splits.recordSplit(bPlayer);
 
                     if (this.getLeadingLaps() > this.config.maxLaps()) {
                         this.participants.remove(bPlayer);
