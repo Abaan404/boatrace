@@ -135,6 +135,7 @@ public class Race {
     }
 
     private void addPlayer(ServerPlayerEntity player) {
+        this.widgets.sendTrackMessage(player);
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
     }

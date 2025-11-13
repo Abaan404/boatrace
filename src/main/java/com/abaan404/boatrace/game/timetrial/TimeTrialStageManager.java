@@ -56,8 +56,6 @@ public class TimeTrialStageManager {
         BoatRaceTrack.Regions regions = this.track.getRegions();
         BoatRaceTrack.Attributes attributes = this.track.getAttributes();
 
-        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
-
         if (!this.participants.contains(bPlayer)) {
             this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
             this.spawnLogic.spawnPlayer(player, regions.spawn());

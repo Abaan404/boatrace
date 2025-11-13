@@ -40,6 +40,15 @@ public class RaceWidgets {
     }
 
     /**
+     * Send track info through chat.
+     *
+     * @param player The player to send the message to.
+     */
+    public void sendTrackMessage(ServerPlayerEntity player) {
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+    }
+
+    /**
      * Tick the UI for the player.
      *
      * @param stageManager The game's state.
@@ -193,7 +202,8 @@ public class RaceWidgets {
                         }
                     }
 
-                    text.append(TextUtils.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted, position2));
+                    text.append(TextUtils.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted,
+                            position2));
 
                     content.add(text);
                 }

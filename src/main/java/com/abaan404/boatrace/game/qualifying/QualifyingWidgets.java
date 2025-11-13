@@ -40,6 +40,15 @@ public class QualifyingWidgets {
     }
 
     /**
+     * Send track info through chat.
+     *
+     * @param player The player to send the message to.
+     */
+    public void sendTrackMessage(ServerPlayerEntity player) {
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+    }
+
+    /**
      * Tick the UI for the player.
      *
      * @param stageManager The game's state.
