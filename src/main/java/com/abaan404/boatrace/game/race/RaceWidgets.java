@@ -40,6 +40,15 @@ public class RaceWidgets {
     }
 
     /**
+     * Send track info through chat.
+     *
+     * @param player The player to send the message to.
+     */
+    public void sendTrackMessage(ServerPlayerEntity player) {
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+    }
+
+    /**
      * Tick the UI for the player.
      *
      * @param stageManager The game's state.
@@ -77,7 +86,7 @@ public class RaceWidgets {
      * @param stageManager The stage manager.
      */
     private void tickActionBar(RaceStageManager stageManager) {
-        int maxCheckpoints = switch (this.track.getMeta().layout()) {
+        int maxCheckpoints = switch (this.track.getAttributes().layout()) {
             // dont count start
             case CIRCULAR -> this.track.getRegions().checkpoints().size() - 1;
             // dont count start and end
@@ -130,11 +139,13 @@ public class RaceWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
+                content.add(Text.empty());
                 TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
+                content.add(Text.empty());
 
                 content.add(TextUtils.scoreboardLaps(
                         stageManager.getLeadingLaps(),
-                        stageManager.getConfig().maxLaps()));
+                        stageManager.getMaxLaps()));
 
                 content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),
@@ -191,7 +202,8 @@ public class RaceWidgets {
                         }
                     }
 
-                    text.append(TextUtils.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted, position2));
+                    text.append(TextUtils.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted,
+                            position2));
 
                     content.add(text);
                 }

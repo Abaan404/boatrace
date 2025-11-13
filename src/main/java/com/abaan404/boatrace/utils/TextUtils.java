@@ -11,7 +11,10 @@ import com.abaan404.boatrace.game.race.RaceWidgets;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
@@ -140,15 +143,7 @@ public final class TextUtils {
     public static List<Text> scoreboardMeta(BoatRaceTrack.Meta meta) {
         List<Text> list = new ObjectArrayList<>();
 
-        list.add(Text.empty());
         list.add(Text.literal(" ").append(meta.name()).formatted(Formatting.BOLD));
-
-        if (meta.authors().isEmpty()) {
-            list.add(Text.literal("    - By Unknown Author(s)").formatted(Formatting.GRAY, Formatting.ITALIC));
-            list.add(Text.empty());
-            return list;
-
-        }
 
         List<String> authorLines = new ObjectArrayList<>();
 
@@ -180,8 +175,6 @@ public final class TextUtils {
         for (String line : authorLines) {
             list.add(Text.literal(line).formatted(Formatting.GRAY, Formatting.ITALIC));
         }
-
-        list.add(Text.empty());
 
         return list;
     }
@@ -479,5 +472,42 @@ public final class TextUtils {
      */
     public static Text chatPoints(int points) {
         return Text.literal(String.format("+%d", points)).formatted(Formatting.GRAY, Formatting.ITALIC);
+    }
+
+    /**
+     * A text to show track info in chat.
+     *
+     * @param meta The track's metadata.
+     * @return A list of chat message(s).
+     */
+    public static List<Text> chatMeta(BoatRaceTrack.Meta meta) {
+        List<Text> lines = new ObjectArrayList<>();
+
+        MutableText titleText = Text.empty()
+                .append(Text.literal(meta.name()).formatted(Formatting.BOLD));
+
+        meta.url().ifPresent(url -> titleText.setStyle(Style.EMPTY
+                .withFormatting(Formatting.BLUE, Formatting.UNDERLINE)
+                .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url))
+                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of("Open track's website.")))));
+
+        Text authorText = Text.empty()
+                .append("By ")
+                .append(String.join(", ", meta.authors()))
+                .formatted(Formatting.GRAY, Formatting.ITALIC);
+
+        lines.add(Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
+                .append(titleText)
+                .append(Text.of(" "))
+                .append(authorText));
+
+        meta.description().ifPresent(description -> {
+            lines.add(Text.empty()
+                    .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
+                    .append(Text.literal(description).formatted(Formatting.GRAY)));
+        });
+
+        return lines;
     }
 }

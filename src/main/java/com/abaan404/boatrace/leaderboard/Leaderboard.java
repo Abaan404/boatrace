@@ -136,7 +136,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     public static boolean validate(BoatRaceTrack track, PersonalBest personalBest) {
         // NOTE: detect track limits using regions?
 
-        switch (track.getMeta().layout()) {
+        switch (track.getAttributes().layout()) {
             case CIRCULAR:
                 // first checkpoint and last checkpoints are counted splits.
                 if (personalBest.splits().size() != track.getRegions().checkpoints().size() + 1) {
@@ -160,7 +160,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
         for (long split : personalBest.splits()) {
             if (split < prevSplit) {
                 BoatRace.LOGGER.warn("Splits dont ascend in the personal best ({}) for track \"{}\"",
-                        personalBest.toString(), track.getMeta().name());
+                        personalBest.toString(), track.toString());
                 return false;
             }
 

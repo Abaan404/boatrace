@@ -99,8 +99,8 @@ public class SpawnLogic {
         player.networkHandler.requestTeleport(new PlayerPosition(
                 spawn.toBottomCenterPos(),
                 Vec3d.ZERO,
-                respawn.respawnYaw(),
-                respawn.respawnPitch()), Set.of());
+                respawn.yaw(),
+                respawn.pitch()), Set.of());
     }
 
     /**

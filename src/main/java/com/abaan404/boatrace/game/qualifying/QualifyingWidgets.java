@@ -40,6 +40,15 @@ public class QualifyingWidgets {
     }
 
     /**
+     * Send track info through chat.
+     *
+     * @param player The player to send the message to.
+     */
+    public void sendTrackMessage(ServerPlayerEntity player) {
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+    }
+
+    /**
      * Tick the UI for the player.
      *
      * @param stageManager The game's state.
@@ -57,7 +66,7 @@ public class QualifyingWidgets {
     private void tickActionBar(QualifyingStageManager stageManager) {
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
-        int maxCheckpoints = switch (this.track.getMeta().layout()) {
+        int maxCheckpoints = switch (this.track.getAttributes().layout()) {
             // dont count start
             case CIRCULAR -> this.track.getRegions().checkpoints().size() - 1;
             // dont count start and end
@@ -118,7 +127,9 @@ public class QualifyingWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
+                content.add(Text.empty());
                 TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
+                content.add(Text.empty());
 
                 content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),

@@ -54,24 +54,22 @@ public class TimeTrialStageManager {
     public void spawnPlayer(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         BoatRaceTrack.Regions regions = this.track.getRegions();
-        BoatRaceTrack.Meta meta = this.track.getMeta();
+        BoatRaceTrack.Attributes attributes = this.track.getAttributes();
 
-        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
-
-        BoatRaceTrack.RespawnRegion respawn = regions.checkpoints().getFirst();
-
-        // spawn spectators at spawn without boats
         if (!this.participants.contains(bPlayer)) {
-            this.spawnLogic.spawnPlayer(player, respawn);
+            this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+            this.spawnLogic.spawnPlayer(player, regions.spawn());
             return;
         }
+
+        BoatRaceTrack.RespawnRegion respawn = regions.checkpoints().getFirst();
 
         if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.DEFAULT)) {
             respawn = regions.spawn();
         } else if (!regions.gridBoxes().isEmpty()) {
             respawn = regions.gridBoxes().getFirst();
         } else if (!regions.checkpoints().isEmpty()) {
-            switch (meta.layout()) {
+            switch (attributes.layout()) {
                 case CIRCULAR: {
                     respawn = regions.checkpoints().getLast();
                     break;

@@ -33,7 +33,7 @@ public class BoatRace implements ModInitializer {
     public static GameOpenProcedure open(GameOpenContext<BoatRaceConfig> context) {
         BoatRaceConfig config = context.config();
 
-        BoatRaceTrack track = BoatRaceTrack.load(context.server(), config.track()).orElseThrow();
+        BoatRaceTrack track = BoatRaceTrack.load(context.server(), config.track());
         RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
                 .setGenerator(track.asGenerator(context.server()));
 

@@ -86,7 +86,7 @@ public class RaceStageManager {
         // spawn spectators or non qualified at spawn without boats
         if (!this.participants.contains(bPlayer)) {
             this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-            this.spawnLogic.spawnPlayer(player, regions.checkpoints().getFirst());
+            this.spawnLogic.spawnPlayer(player, regions.spawn());
             return;
         }
 
@@ -109,8 +109,8 @@ public class RaceStageManager {
         } else if (gridBox <= regions.gridBoxes().size() - 1) {
             respawn = regions.gridBoxes().get(gridBox);
         } else {
-            // not enough grid boxes, spawn at pit entry
-            respawn = regions.pitEntry();
+            // not enough grid boxes
+            respawn = regions.spawn();
         }
 
         this.spawnLogic.spawnPlayer(player, respawn);
@@ -196,8 +196,14 @@ public class RaceStageManager {
             }
         }
 
-        // max time reached or every player finished their laps
-        if (this.duration > this.config.maxDuration() || this.participants.size() == 0) {
+        boolean allDisconnected = true;
+        for (BoatRacePlayer player : this.participants) {
+            allDisconnected &= !player.ref().isOnline(this.gameSpace);
+        }
+
+        // max time reached or every player finished their laps or every participant has
+        // disconnected
+        if (this.duration > this.config.maxDuration() || this.participants.isEmpty() || allDisconnected) {
             this.endGame();
         }
 
@@ -219,14 +225,15 @@ public class RaceStageManager {
                 }
 
                 case LOOP: {
-                    // start a new lap time
+                    this.positions.update(bPlayer);
                     this.splits.recordSplit(bPlayer);
                     this.submit(player);
 
+                    // start a new lap time
                     this.splits.reset(bPlayer);
-                    this.positions.update(bPlayer);
+                    this.splits.recordSplit(bPlayer);
 
-                    if (this.getLeadingLaps() > this.config.maxLaps()) {
+                    if (this.getLeadingLaps() > this.getMaxLaps()) {
                         this.participants.remove(bPlayer);
                         this.splits.stop(bPlayer);
                         this.positions.stop(bPlayer);
@@ -237,16 +244,11 @@ public class RaceStageManager {
                 }
 
                 case FINISH: {
+                    this.participants.remove(bPlayer);
                     this.splits.stop(bPlayer);
-                    this.positions.update(bPlayer);
-
-                    if (this.getLeadingLaps() > this.config.maxLaps()) {
-                        this.participants.remove(bPlayer);
-                        this.splits.stop(bPlayer);
-                        this.positions.stop(bPlayer);
-                        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-                        this.spawnLogic.despawnVehicle(player);
-                    }
+                    this.positions.stop(bPlayer);
+                    this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+                    this.spawnLogic.despawnVehicle(player);
                     break;
                 }
 
@@ -329,6 +331,18 @@ public class RaceStageManager {
         }
 
         return this.checkpoints.getLaps(positions.getFirst());
+    }
+
+    /**
+     * Get the max laps for this race.
+     *
+     * @return The number of laps to finish.
+     */
+    public int getMaxLaps() {
+        return switch (this.track.getAttributes().layout()) {
+            case CIRCULAR -> this.config.maxLaps();
+            case LINEAR -> 1;
+        };
     }
 
     /**

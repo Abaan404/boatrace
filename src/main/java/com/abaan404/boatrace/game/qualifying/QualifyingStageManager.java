@@ -70,7 +70,7 @@ public class QualifyingStageManager {
         // spawn spectators at spawn without boats
         if (!this.participants.contains(bPlayer)) {
             this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-            this.spawnLogic.spawnPlayer(player, regions.checkpoints().getFirst());
+            this.spawnLogic.spawnPlayer(player, regions.spawn());
             return;
         }
 
