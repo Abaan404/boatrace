@@ -233,7 +233,7 @@ public class RaceStageManager {
                     this.splits.reset(bPlayer);
                     this.splits.recordSplit(bPlayer);
 
-                    if (this.getLeadingLaps() > this.config.maxLaps()) {
+                    if (this.getLeadingLaps() > this.getMaxLaps()) {
                         this.participants.remove(bPlayer);
                         this.splits.stop(bPlayer);
                         this.positions.stop(bPlayer);
@@ -244,16 +244,11 @@ public class RaceStageManager {
                 }
 
                 case FINISH: {
+                    this.participants.remove(bPlayer);
                     this.splits.stop(bPlayer);
-                    this.positions.update(bPlayer);
-
-                    if (this.getLeadingLaps() > this.config.maxLaps()) {
-                        this.participants.remove(bPlayer);
-                        this.splits.stop(bPlayer);
-                        this.positions.stop(bPlayer);
-                        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-                        this.spawnLogic.despawnVehicle(player);
-                    }
+                    this.positions.stop(bPlayer);
+                    this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+                    this.spawnLogic.despawnVehicle(player);
                     break;
                 }
 
@@ -336,6 +331,18 @@ public class RaceStageManager {
         }
 
         return this.checkpoints.getLaps(positions.getFirst());
+    }
+
+    /**
+     * Get the max laps for this race.
+     *
+     * @return The number of laps to finish.
+     */
+    public int getMaxLaps() {
+        return switch (this.track.getAttributes().layout()) {
+            case CIRCULAR -> this.config.maxLaps();
+            case LINEAR -> 1;
+        };
     }
 
     /**

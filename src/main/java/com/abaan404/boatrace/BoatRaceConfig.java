@@ -59,7 +59,7 @@ public record BoatRaceConfig(
 
         public static final Codec<Race> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.INT.fieldOf("max_duration").forGetter(Race::maxDuration),
-                Codec.INT.fieldOf("max_laps").forGetter(Race::maxLaps),
+                Codec.INT.optionalFieldOf("max_laps", 1).forGetter(Race::maxLaps),
                 GridType.CODEC.optionalFieldOf("grid_type", GridType.NORMAL).forGetter(Race::gridType),
                 Codec.BOOL.optionalFieldOf("no_respawn", false).forGetter(Race::noRespawn),
                 Codec.INT.optionalFieldOf("countdown", 5000).forGetter(Race::countdown),

@@ -145,7 +145,7 @@ public class RaceWidgets {
 
                 content.add(TextUtils.scoreboardLaps(
                         stageManager.getLeadingLaps(),
-                        stageManager.getConfig().maxLaps()));
+                        stageManager.getMaxLaps()));
 
                 content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),
