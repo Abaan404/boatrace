@@ -141,7 +141,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
                 // first checkpoint and last checkpoints are counted splits.
                 if (personalBest.splits().size() != track.getRegions().checkpoints().size() + 1) {
                     BoatRace.LOGGER.warn("Invalid number of splits in the personal best ({}) for track \"{}\"",
-                            personalBest.toString(), track.toString());
+                            personalBest.toString(), track.getMeta().name());
                     return false;
                 }
 
@@ -149,7 +149,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
             case LINEAR:
                 if (personalBest.splits().size() != track.getRegions().checkpoints().size()) {
                     BoatRace.LOGGER.warn("Invalid number of splits in the personal best ({}) for track \"{}\"",
-                            personalBest.toString(), track.toString());
+                            personalBest.toString(), track.getMeta().name());
                     return false;
                 }
 
