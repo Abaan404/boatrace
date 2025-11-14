@@ -3,7 +3,7 @@
     "minVersion": "0.8",
     "package": "com.abaan404.boatrace.mixin",
     "compatibilityLevel": "JAVA_21",
-    "mixins": ["PlayerEntityMixin"],
+    "mixins": ["PlayerEntityMixin", "AbstractBoatEntityMixin"],
     "client": [],
     "server": [],
     "injectors": {

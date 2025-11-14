@@ -1,5 +1,6 @@
 package com.abaan404.boatrace.game.timetrial;
 
+import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
@@ -60,6 +61,7 @@ public class TimeTrial {
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
+        game.setRule(BoatRaceGameRules.SINGLE_SEAT, EventResult.ALLOW);
 
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, timeTrial::onPlayerDeath);

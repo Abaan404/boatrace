@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.abaan404.boatrace.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
@@ -90,6 +91,7 @@ public class Race {
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.DISMOUNT_VEHICLE, EventResult.DENY);
+        game.setRule(BoatRaceGameRules.SINGLE_SEAT, EventResult.ALLOW);
 
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, race::onPlayerDeath);
