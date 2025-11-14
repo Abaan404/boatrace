@@ -53,7 +53,7 @@ public class SpawnLogic {
 
         boat.refreshPositionAndAngles(entity.getPos(), entity.getYaw(), entity.getPitch());
         this.world.spawnEntity(boat);
-        entity.startRiding(boat);
+        entity.startRiding(boat, true);
         return Optional.of(boat);
     }
 

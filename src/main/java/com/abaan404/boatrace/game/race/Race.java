@@ -9,11 +9,13 @@ import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
+import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.CustomModelDataComponent;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -96,6 +98,7 @@ public class Race {
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, race::onPlayerDeath);
         game.listen(ItemUseEvent.EVENT, race::onItemUse);
+        game.listen(PlayerDismountEvent.EVENT, race::onDismount);
 
         game.listen(GamePlayerEvents.OFFER, race::offerPlayer);
         game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
@@ -176,6 +179,13 @@ public class Race {
         }
 
         return ActionResult.PASS;
+    }
+
+    private EventResult onDismount(ServerPlayerEntity player, Entity vehicle) {
+        this.stageManager.respawnPlayer(player);
+        this.stageManager.updatePlayerInventory(player);
+
+        return EventResult.DENY;
     }
 
     private void onTick() {

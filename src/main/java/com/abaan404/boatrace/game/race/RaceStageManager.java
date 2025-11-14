@@ -127,6 +127,10 @@ public class RaceStageManager {
      * @param player The player.
      */
     public void respawnPlayer(ServerPlayerEntity player) {
+        if (this.config.noRespawn()) {
+            return;
+        }
+
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
