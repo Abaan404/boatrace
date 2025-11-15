@@ -12,7 +12,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
-import xyz.nucleoid.map_templates.BlockBounds;
 
 /**
  * Keeps track of checkpoints and verifies if the player crossed the correct
@@ -61,7 +60,7 @@ public class Checkpoints {
         BoatRaceTrack.RespawnRegion start = regions.checkpoints().getFirst();
 
         // player has reached the starting line
-        if (!this.began.contains(bPlayer) && this.intersect(pos, prevPos, start.bounds())) {
+        if (!this.began.contains(bPlayer) && this.intersect(pos, prevPos, start)) {
             this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
             this.began.add(bPlayer);
             this.checkpoints.put(bPlayer, nextCheckpointIdx);
@@ -74,13 +73,13 @@ public class Checkpoints {
         }
 
         // reached the next checkpoint
-        if (this.intersect(pos, prevPos, regions.checkpoints().get(nextCheckpointIdx).bounds())) {
+        if (this.intersect(pos, prevPos, regions.checkpoints().get(nextCheckpointIdx))) {
             this.checkpoints.put(bPlayer, nextCheckpointIdx);
 
             switch (attributes.layout()) {
                 case CIRCULAR: {
                     // checkpoint was looped back to the start
-                    if (this.intersect(pos, prevPos, start.bounds())) {
+                    if (this.intersect(pos, prevPos, start)) {
                         this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
                         return TickResult.LOOP;
                     }
@@ -92,7 +91,7 @@ public class Checkpoints {
                     BoatRaceTrack.RespawnRegion finish = regions.checkpoints().getLast();
 
                     // checkpoint reached the end
-                    if (this.intersect(pos, prevPos, finish.bounds())) {
+                    if (this.intersect(pos, prevPos, finish)) {
                         this.checkpoints.remove(bPlayer);
                         this.began.remove(bPlayer);
                         return TickResult.FINISH;
@@ -103,6 +102,18 @@ public class Checkpoints {
             }
 
             return TickResult.CHECKPOINT;
+        }
+
+        // test if player went to an incorrect checkpoint
+        for (int i = 0; i < regions.checkpoints().size(); i++) {
+            BoatRaceTrack.RespawnRegion checkpoint = regions.checkpoints().get(i);
+
+            if (this.intersect(pos, prevPos, checkpoint)) {
+                if (i != nextCheckpointIdx && i != prevCheckpointIdx) {
+                    return TickResult.MISSED;
+                }
+                break;
+            }
         }
 
         return TickResult.IDLE;
@@ -163,11 +174,11 @@ public class Checkpoints {
      *
      * @param playerPos     The player's current position.
      * @param playerPrevPos The player's previous position.
-     * @param bounds        The bounds of the region.
+     * @param region        The region to check.
      * @return If it intersected.
      */
-    private boolean intersect(BlockPos playerPos, BlockPos playerPrevPos, BlockBounds bounds) {
-        return bounds.asBox()
+    private boolean intersect(BlockPos playerPos, BlockPos playerPrevPos, BoatRaceTrack.RespawnRegion region) {
+        return region.bounds().asBox()
                 .intersects(playerPrevPos.toCenterPos(), playerPos.toCenterPos());
     }
 
@@ -191,6 +202,11 @@ public class Checkpoints {
          * Crossed a valid checkpoint.
          */
         CHECKPOINT,
+
+        /**
+         * Missed a checkpoint.
+         */
+        MISSED,
 
         /**
          * Nothing happened

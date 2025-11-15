@@ -51,6 +51,18 @@ public final class TextUtils {
     }
 
     /**
+     * A text to alert the player if theyre going backwards.
+     *
+     * @param reverse Is the direction reversed or not.
+     * @return A pair of texts for a title and subtitle.
+     */
+    public static Pair<Text, Text> titleAlertCheckpoint() {
+        return new Pair<>(
+                Text.literal("⚠ Missed Checkpoint ⚠").formatted(Formatting.YELLOW),
+                Text.literal("Respawn or go back!").formatted(Formatting.RED, Formatting.BOLD));
+    }
+
+    /**
      * Create a text for player position on the leaderboard.
      *
      * @param position The player's position to display.

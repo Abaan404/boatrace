@@ -19,8 +19,13 @@ import com.abaan404.boatrace.utils.TextUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
+import net.minecraft.util.Pair;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
@@ -123,11 +128,15 @@ public class QualifyingStageManager {
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
-        this.toSpectator(BoatRacePlayer.of(player));
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+        this.toSpectator(bPlayer);
         this.spawnLogic.despawnVehicle(player);
 
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
+
+        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+        leaderboard.delete(this.world, this.track, bPlayer);
     }
 
     /**
@@ -175,6 +184,14 @@ public class QualifyingStageManager {
 
                 case CHECKPOINT: {
                     this.splits.recordSplit(bPlayer);
+                    break;
+                }
+
+                case MISSED: {
+                    Pair<Text, Text> titles = TextUtils.titleAlertCheckpoint();
+                    player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 30, 20));
+                    player.networkHandler.sendPacket(new SubtitleS2CPacket(titles.getRight()));
+                    player.networkHandler.sendPacket(new TitleS2CPacket(titles.getLeft()));
                     break;
                 }
 

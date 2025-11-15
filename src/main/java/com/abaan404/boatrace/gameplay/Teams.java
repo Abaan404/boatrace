@@ -50,6 +50,11 @@ public class Teams {
      * @param player The player to assign.
      */
     public void assign(BoatRacePlayer player) {
+        // player already is in a team
+        if (this.teams.teamFor(player.ref()) != null) {
+            return;
+        }
+
         GameTeamKey key = this.teams.getSmallestTeam();
 
         // create a new team if the team doesnt exist or the team is already full

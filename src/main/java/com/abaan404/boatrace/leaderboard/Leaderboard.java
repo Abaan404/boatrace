@@ -127,6 +127,28 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
     }
 
     /**
+     * deletes the personal best for this track.
+     *
+     * @param track  The track.
+     * @param player The player to delete for.
+     * @return A new leaderboard with the new personal best.
+     */
+    public Leaderboard delete(ServerWorld world, BoatRaceTrack track, BoatRacePlayer player) {
+        List<PersonalBest> newTrackLeaderboard = new ObjectArrayList<>(this.getLeaderboard(track));
+
+        if (!newTrackLeaderboard.removeIf(pb -> pb.player().equals(player))) {
+            return this;
+        }
+
+        Map<String, List<PersonalBest>> newLeaderboardMap = new Object2ObjectOpenHashMap<>(this.leaderboard);
+        newLeaderboardMap.put(String.valueOf(track.hashCode()), newTrackLeaderboard);
+
+        Leaderboard newLeaderboard = new Leaderboard(newLeaderboardMap);
+        world.setAttached(Leaderboard.ATTACHMENT, newLeaderboard);
+        return newLeaderboard;
+    }
+
+    /**
      * Validates the run and checks if its a better run.
      *
      * @param track        The track the run belongs to.

@@ -1,9 +1,10 @@
 package com.abaan404.boatrace.game.timetrial;
 
+import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.BoatRacePlayerEvents;
+import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.Entity;
@@ -60,12 +61,12 @@ public class TimeTrial {
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
+        game.setRule(BoatRaceGameRules.SINGLE_SEAT, EventResult.ALLOW);
 
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, timeTrial::onPlayerDeath);
         game.listen(ItemUseEvent.EVENT, timeTrial::onItemUse);
-
-        game.listen(BoatRacePlayerEvents.DISMOUNT, timeTrial::onDismount);
+        game.listen(PlayerDismountEvent.EVENT, timeTrial::onDismount);
 
         game.listen(GamePlayerEvents.OFFER, timeTrial::offerPlayer);
         game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));

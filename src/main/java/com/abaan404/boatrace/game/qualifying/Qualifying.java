@@ -1,12 +1,18 @@
 package com.abaan404.boatrace.game.qualifying;
 
+import java.util.Collections;
+import java.util.List;
+
 import com.abaan404.boatrace.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
+import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -62,11 +68,12 @@ public class Qualifying {
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
-        game.setRule(GameRuleType.DISMOUNT_VEHICLE, EventResult.DENY);
+        game.setRule(BoatRaceGameRules.SINGLE_SEAT, EventResult.ALLOW);
 
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, qualifying::onPlayerDeath);
         game.listen(ItemUseEvent.EVENT, qualifying::onItemUse);
+        game.listen(PlayerDismountEvent.EVENT, (player, vehicle) -> EventResult.DENY);
 
         game.listen(GamePlayerEvents.OFFER, qualifying::offerPlayer);
         game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
@@ -77,19 +84,26 @@ public class Qualifying {
     }
 
     private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
+        List<BoatRacePlayer> toAssign = new ObjectArrayList<>();
+
         for (GameProfile profile : offer.players()) {
             BoatRacePlayer player = BoatRacePlayer.of(profile);
 
             switch (offer.intent()) {
                 case PLAY:
                     this.stageManager.toParticipant(player);
-                    this.stageManager.teams.assign(player);
+                    toAssign.add(player);
                     break;
                 case SPECTATE:
                     this.stageManager.toSpectator(player);
                     this.stageManager.teams.unassign(player);
                     break;
             }
+        }
+
+        Collections.shuffle(toAssign);
+        for (BoatRacePlayer player : toAssign) {
+            this.stageManager.teams.assign(player);
         }
 
         return offer.accept();

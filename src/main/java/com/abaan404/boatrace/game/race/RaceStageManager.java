@@ -24,11 +24,15 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Pair;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
@@ -116,8 +120,10 @@ public class RaceStageManager {
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
 
-        if (this.countdown.getCountdown() > 0) {
+        if (this.countdown.isCounting()) {
             this.spawnLogic.freezeVehicle(player);
+        } else {
+            this.spawnLogic.unfreezeVehicle(player);
         }
     }
 
@@ -127,6 +133,10 @@ public class RaceStageManager {
      * @param player The player.
      */
     public void respawnPlayer(ServerPlayerEntity player) {
+        if (this.config.noRespawn()) {
+            return;
+        }
+
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
@@ -175,13 +185,15 @@ public class RaceStageManager {
         switch (this.countdown.tick(this.world)) {
             case FINISH: {
                 for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-                    BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-
-                    if (!this.participants.contains(bPlayer)) {
+                    if (!this.participants.contains(BoatRacePlayer.of(player))) {
                         continue;
                     }
 
                     this.spawnLogic.unfreezeVehicle(player);
+                }
+
+                // start positions timer for non server players
+                for (BoatRacePlayer bPlayer : this.participants) {
                     this.positions.run(bPlayer);
                 }
                 break;
@@ -249,6 +261,14 @@ public class RaceStageManager {
                     this.positions.stop(bPlayer);
                     this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
                     this.spawnLogic.despawnVehicle(player);
+                    break;
+                }
+
+                case MISSED: {
+                    Pair<Text, Text> titles = TextUtils.titleAlertCheckpoint();
+                    player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 30, 20));
+                    player.networkHandler.sendPacket(new SubtitleS2CPacket(titles.getRight()));
+                    player.networkHandler.sendPacket(new TitleS2CPacket(titles.getLeft()));
                     break;
                 }
 

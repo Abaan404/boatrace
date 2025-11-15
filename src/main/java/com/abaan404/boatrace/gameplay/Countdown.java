@@ -54,6 +54,15 @@ public class Countdown {
         return Math.ceilDiv(this.countdown, COUNTDOWN_DIVISOR);
     }
 
+    /**
+     * If the timer has finished counting.
+     *
+     * @return If the timer has finished counting.
+     */
+    public boolean isCounting() {
+        return this.countdown + this.goCountdown > 0;
+    }
+
     public enum TickResult {
         /**
          * The timer is counting down.
