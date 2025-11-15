@@ -13,6 +13,7 @@ import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.entity.Entity;
@@ -44,12 +45,14 @@ public class Race {
     private final RaceStageManager stageManager;
     private final RaceWidgets widgets;
     private final Set<BoatRacePlayer> qualified;
+    private final boolean acceptUnqualified;
 
     private Race(GameSpace gameSpace, BoatRaceConfig.Race config, BoatRaceTrack track, Teams teams,
             ServerWorld world, GlobalWidgets widgets, List<BoatRacePlayer> gridOrder) {
         this.stageManager = new RaceStageManager(gameSpace, config, world, track, teams);
         this.widgets = new RaceWidgets(gameSpace, widgets, track);
         this.qualified = Set.copyOf(gridOrder);
+        this.acceptUnqualified = config.acceptUnqualified() || this.qualified.isEmpty();
 
         switch (config.gridType()) {
             case NORMAL: {
@@ -69,6 +72,12 @@ public class Race {
 
         for (BoatRacePlayer player : gridOrder) {
             this.stageManager.toParticipant(player);
+        }
+
+        if (this.acceptUnqualified) {
+            for (ServerPlayerEntity player : gameSpace.getPlayers().participants()) {
+                this.stageManager.toParticipant(BoatRacePlayer.of(player));
+            }
         }
     }
 
@@ -109,15 +118,23 @@ public class Race {
     }
 
     private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
+        List<BoatRacePlayer> toAssign = new ObjectArrayList<>();
+
         for (GameProfile profile : offer.players()) {
             BoatRacePlayer player = BoatRacePlayer.of(profile);
 
-            // noone qualified, respect intent
-            if (this.qualified.isEmpty()) {
+            // race has begun, spectate only unless a participant already
+            if (!this.stageManager.countdown.isCounting() && !this.stageManager.isParticipant(player)) {
+                this.stageManager.toSpectator(player);
+                this.stageManager.teams.unassign(player);
+            }
+
+            // accepting anyone, respect intent
+            else if (this.acceptUnqualified) {
                 switch (offer.intent()) {
                     case PLAY:
                         this.stageManager.toParticipant(player);
-                        this.stageManager.teams.assign(player);
+                        toAssign.add(player);
                         break;
                     case SPECTATE:
                         this.stageManager.toSpectator(player);
@@ -127,13 +144,21 @@ public class Race {
             }
 
             // only qualified players can participate
-            else {
-                if (this.qualified.contains(player)) {
-                    this.stageManager.toParticipant(player);
-                } else {
-                    this.stageManager.toSpectator(player);
-                }
+            else if (this.qualified.contains(player)) {
+                this.stageManager.toParticipant(player);
+                toAssign.add(player);
             }
+
+            // fallback spectator
+            else {
+                this.stageManager.toSpectator(player);
+                this.stageManager.teams.unassign(player);
+            }
+        }
+
+        Collections.shuffle(toAssign);
+        for (BoatRacePlayer player : toAssign) {
+            this.stageManager.teams.assign(player);
         }
 
         return offer.accept();

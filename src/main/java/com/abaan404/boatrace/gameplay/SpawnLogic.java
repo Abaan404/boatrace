@@ -58,14 +58,18 @@ public class SpawnLogic {
     }
 
     /**
-     * Unmount and kill the vehicle the entity is riding.
+     * Unmount and kill the vehicle the entity is riding and all further ridden
+     * entities.
      *
      * @param entity The entity to dismount.
      */
     public void despawnVehicle(Entity entity) {
-        Entity boat = entity.getVehicle();
-        if (boat != null) {
-            boat.kill(this.world);
+        if (entity.hasVehicle()) {
+            Entity vehicle = entity.getVehicle();
+            this.despawnVehicle(vehicle);
+
+            vehicle.stopRiding();
+            vehicle.kill(this.world);
         }
     }
 

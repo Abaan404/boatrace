@@ -116,8 +116,10 @@ public class RaceStageManager {
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
 
-        if (this.countdown.getCountdown() > 0) {
+        if (this.countdown.isCounting()) {
             this.spawnLogic.freezeVehicle(player);
+        } else {
+            this.spawnLogic.unfreezeVehicle(player);
         }
     }
 
@@ -179,13 +181,15 @@ public class RaceStageManager {
         switch (this.countdown.tick(this.world)) {
             case FINISH: {
                 for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-                    BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-
-                    if (!this.participants.contains(bPlayer)) {
+                    if (!this.participants.contains(BoatRacePlayer.of(player))) {
                         continue;
                     }
 
                     this.spawnLogic.unfreezeVehicle(player);
+                }
+
+                // start positions timer for non server players
+                for (BoatRacePlayer bPlayer : this.participants) {
                     this.positions.run(bPlayer);
                 }
                 break;

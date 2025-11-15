@@ -51,7 +51,8 @@ public record BoatRaceConfig(
 
     public record Race(
             int maxDuration, int maxLaps,
-            GridType gridType, boolean noRespawn,
+            GridType gridType,
+            boolean noRespawn, boolean acceptUnqualified,
             int countdown, int countdownRandom,
             List<Integer> scoring) {
 
@@ -62,6 +63,7 @@ public record BoatRaceConfig(
                 Codec.INT.optionalFieldOf("max_laps", 1).forGetter(Race::maxLaps),
                 GridType.CODEC.optionalFieldOf("grid_type", GridType.NORMAL).forGetter(Race::gridType),
                 Codec.BOOL.optionalFieldOf("no_respawn", false).forGetter(Race::noRespawn),
+                Codec.BOOL.optionalFieldOf("accept_unqualified", false).forGetter(Race::acceptUnqualified),
                 Codec.INT.optionalFieldOf("countdown", 5000).forGetter(Race::countdown),
                 Codec.INT.optionalFieldOf("countdown_random", 2000).forGetter(Race::countdownRandom),
                 Codec.INT.listOf().optionalFieldOf("scoring", DEFAULT_SCORING).forGetter(Race::scoring))

@@ -123,11 +123,15 @@ public class QualifyingStageManager {
      * @param player The player.
      */
     public void despawnPlayer(ServerPlayerEntity player) {
-        this.toSpectator(BoatRacePlayer.of(player));
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+        this.toSpectator(bPlayer);
         this.spawnLogic.despawnVehicle(player);
 
         PlayerInventory inventory = player.getInventory();
         inventory.clear();
+
+        Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
+        leaderboard.delete(this.world, this.track, bPlayer);
     }
 
     /**
