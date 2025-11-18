@@ -245,21 +245,13 @@ public class RaceStageManager {
                     this.splits.recordSplit(bPlayer);
 
                     if (this.getLeadingLaps() > this.getMaxLaps()) {
-                        this.participants.remove(bPlayer);
-                        this.splits.stop(bPlayer);
-                        this.positions.stop(bPlayer);
-                        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-                        this.spawnLogic.despawnVehicle(player);
+                        this.toFinisher(player);
                     }
                     break;
                 }
 
                 case FINISH: {
-                    this.participants.remove(bPlayer);
-                    this.splits.stop(bPlayer);
-                    this.positions.stop(bPlayer);
-                    this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
-                    this.spawnLogic.despawnVehicle(player);
+                    this.toFinisher(player);
                     break;
                 }
 
@@ -321,6 +313,27 @@ public class RaceStageManager {
         this.splits.reset(player);
         this.splits.stop(player);
         this.positions.add(player);
+    }
+
+    public void toFinisher(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+        if (this.positions.getPosition(bPlayer) == 0) {
+            for (ServerPlayerEntity player2 : this.gameSpace.getPlayers()) {
+                BoatRacePlayer bPlayer2 = BoatRacePlayer.of(player2);
+                if (this.checkpoints.getLaps(bPlayer2) >= this.config.maxLaps()) {
+                    continue;
+                }
+
+                player2.sendMessage(TextUtils.chatFinalLap());
+            }
+        }
+
+        this.participants.remove(bPlayer);
+        this.splits.stop(bPlayer);
+        this.positions.stop(bPlayer);
+        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+        this.spawnLogic.despawnVehicle(player);
     }
 
     /**

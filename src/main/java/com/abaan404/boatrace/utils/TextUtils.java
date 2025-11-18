@@ -523,4 +523,15 @@ public final class TextUtils {
 
         return lines;
     }
+
+    /**
+     * Announce that players are on their final laps.
+     *
+     * @return The text.
+     */
+    public static Text chatFinalLap() {
+        return Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
+                .append(Text.literal("The leader has finished their race, this is your final lap."));
+    }
 }
