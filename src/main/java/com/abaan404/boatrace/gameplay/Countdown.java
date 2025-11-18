@@ -1,17 +1,15 @@
 package com.abaan404.boatrace.gameplay;
 
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.random.Random;
 
 public class Countdown {
-    public final long COUNTDOWN_DIVISOR = 1000;
+    public final int COUNTDOWN_DIVISOR = 1000;
 
-    private long countdown;
-    private long goCountdown;
+    private final Random random = Random.createLocal();
 
-    public Countdown(long countdown, long goCountdown) {
-        this.countdown = countdown;
-        this.goCountdown = goCountdown;
-    }
+    private int countdown = -1;
+    private int randomCountdown = -1;
 
     /**
      * Tick the countdown.
@@ -20,22 +18,34 @@ public class Countdown {
      * @return The result of this tick.
      */
     public TickResult tick(ServerWorld world) {
-        if (this.countdown + this.goCountdown <= 0) {
+        if (this.countdown + this.randomCountdown <= 0) {
             return TickResult.IDLE;
         }
 
         if (this.countdown > 0) {
             this.countdown -= world.getTickManager().getMillisPerTick();
         } else {
-            this.goCountdown -= world.getTickManager().getMillisPerTick();
+            this.randomCountdown -= world.getTickManager().getMillisPerTick();
+        }
 
-            if (this.countdown + this.goCountdown <= 0) {
-                return TickResult.FINISH;
-            }
-
+        if (this.countdown + this.randomCountdown <= 0) {
+            return TickResult.FINISH;
         }
 
         return TickResult.COUNTDOWN;
+    }
+
+    /**
+     * Set a linear and randomized countdown. Countdown will be held at 1 when the
+     * linear countdown has finished but is still waiting on the randomized
+     * countdown to finish.
+     *
+     * @param countdown       linear countdown in ms.
+     * @param randomCountdown randomized countdown from 0 to this in ms
+     */
+    public void setCountdown(int countdown, int randomCountdown) {
+        this.countdown = countdown;
+        this.randomCountdown = this.random.nextBetween(0, randomCountdown);
     }
 
     /**
@@ -44,8 +54,8 @@ public class Countdown {
      *
      * @return The countdown.
      */
-    public long getCountdown() {
-        if (this.countdown <= 0 && this.goCountdown > 0) {
+    public int getCountdown() {
+        if (this.countdown <= 0 && this.randomCountdown > 0) {
             // goCountdown is not visible outside this class, return a constant non zero
             return 1;
         }
@@ -60,7 +70,7 @@ public class Countdown {
      * @return If the timer has finished counting.
      */
     public boolean isCounting() {
-        return this.countdown + this.goCountdown > 0;
+        return this.countdown + this.randomCountdown > 0;
     }
 
     public enum TickResult {

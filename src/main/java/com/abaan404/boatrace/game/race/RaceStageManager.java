@@ -33,7 +33,6 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
-import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
@@ -71,8 +70,8 @@ public class RaceStageManager {
         this.splits = new Splits();
         this.positions = new Positions();
 
-        Random random = world.getRandom();
-        this.countdown = new Countdown(config.countdown(), random.nextBetween(0, config.countdownRandom()));
+        this.countdown = new Countdown();
+        this.countdown.setCountdown(config.countdown(), config.countdownRandom());
 
         this.spawnLogic = new SpawnLogic(world);
     }
@@ -228,7 +227,7 @@ public class RaceStageManager {
 
             Checkpoints.TickResult result = this.checkpoints.tick(player);
 
-            switch (result) {
+            switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
                     this.splits.run(bPlayer);
                     this.splits.recordSplit(bPlayer);

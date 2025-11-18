@@ -69,7 +69,7 @@ public class RaceWidgets {
             return;
         }
 
-        long countdown = stageManager.countdown.getCountdown();
+        int countdown = stageManager.countdown.getCountdown();
         if (countdown <= 0) {
             this.shownGo = true;
         }
