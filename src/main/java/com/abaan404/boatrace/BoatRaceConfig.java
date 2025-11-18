@@ -23,30 +23,11 @@ public record BoatRaceConfig(
             .apply(instance, BoatRaceConfig::new));
 
     public record Qualifying(
-            long duration,
-            StartFrom startFrom) {
+            long duration) {
 
         public static final Codec<Qualifying> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.LONG.fieldOf("duration").forGetter(Qualifying::duration),
-                StartFrom.CODEC.optionalFieldOf("start_from", StartFrom.SPAWN).forGetter(Qualifying::startFrom))
+                Codec.LONG.fieldOf("duration").forGetter(Qualifying::duration))
                 .apply(instance, Qualifying::new));
-
-        public enum StartFrom implements StringIdentifiable {
-            PIT_BOX("pit_box"), GRID_BOX("grid_box"), SPAWN("spawn");
-
-            private final String name;
-
-            public static final Codec<StartFrom> CODEC = StringIdentifiable.createCodec(StartFrom::values);
-
-            StartFrom(String name) {
-                this.name = name;
-            }
-
-            @Override
-            public String asString() {
-                return name;
-            }
-        }
     }
 
     public record Race(

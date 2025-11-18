@@ -26,9 +26,9 @@ public abstract class AbstractBoatEntityMixin extends VehicleEntity {
         GameSpace gameSpace = GameSpaceManagerImpl.get().byWorld(this.getWorld());
 
         if (gameSpace != null) {
-            EventResult interactBoat = gameSpace.getBehavior().testRule(BoatRaceGameRules.SINGLE_SEAT);
+            EventResult singleSeat = gameSpace.getBehavior().testRule(BoatRaceGameRules.SINGLE_SEAT);
 
-            if (interactBoat == EventResult.ALLOW) {
+            if (singleSeat == EventResult.ALLOW) {
                 cir.setReturnValue(1);
                 cir.cancel();
             }

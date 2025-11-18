@@ -80,31 +80,7 @@ public class QualifyingStageManager {
         }
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
-        BoatRaceTrack.RespawnRegion respawn = regions.checkpoints().getFirst();
-
-        switch (this.config.startFrom()) {
-            case GRID_BOX: {
-                if (!regions.gridBoxes().isEmpty()) {
-                    respawn = regions.gridBoxes().getLast();
-                }
-                break;
-            }
-
-            case PIT_BOX: {
-                if (!regions.pitBoxes().isEmpty()) {
-                    respawn = regions.pitBoxes().getLast();
-                }
-                break;
-            }
-
-            case SPAWN: {
-                if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.DEFAULT)) {
-                    respawn = regions.spawn();
-                }
-            }
-        }
-
-        this.spawnLogic.spawnPlayer(player, respawn);
+        this.spawnLogic.spawnPlayer(player, regions.spawn());
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
     }
 
