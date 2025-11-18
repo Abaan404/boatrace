@@ -1,7 +1,6 @@
 package com.abaan404.boatrace.gameplay;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import com.abaan404.boatrace.BoatRacePlayer;
@@ -11,7 +10,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
 /**
  * Keeps track of checkpoints and verifies if the player crossed the correct
@@ -20,7 +19,7 @@ import net.minecraft.util.math.BlockPos;
 public class Checkpoints {
     private final BoatRaceTrack track;
 
-    private Map<BoatRacePlayer, BlockPos> prevPositions = new Object2ObjectOpenHashMap<>();
+    private Map<BoatRacePlayer, Vec3d> prevPositions = new Object2ObjectOpenHashMap<>();
     private Map<BoatRacePlayer, Integer> checkpoints = new Object2IntOpenHashMap<>();
     private Map<BoatRacePlayer, Integer> laps = new Object2IntOpenHashMap<>();
     private Set<BoatRacePlayer> began = new ObjectOpenHashSet<>();
@@ -42,11 +41,8 @@ public class Checkpoints {
         BoatRaceTrack.Regions regions = track.getRegions();
         BoatRaceTrack.Attributes attributes = track.getAttributes();
 
-        BlockPos pos = Optional.ofNullable(player.getVehicle())
-                .orElse(player)
-                .getBlockPos();
-
-        BlockPos prevPos = this.prevPositions.getOrDefault(bPlayer, pos);
+        Vec3d pos = player.getEyePos();
+        Vec3d prevPos = this.prevPositions.getOrDefault(bPlayer, pos);
         this.prevPositions.put(bPlayer, pos);
 
         // no checkpoints, do nothing
@@ -60,7 +56,7 @@ public class Checkpoints {
         BoatRaceTrack.RespawnRegion start = regions.checkpoints().getFirst();
 
         // player has reached the starting line
-        if (!this.began.contains(bPlayer) && this.intersect(pos, prevPos, start)) {
+        if (!this.began.contains(bPlayer) && start.intersect(pos, prevPos)) {
             this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
             this.began.add(bPlayer);
             this.checkpoints.put(bPlayer, nextCheckpointIdx);
@@ -73,13 +69,13 @@ public class Checkpoints {
         }
 
         // reached the next checkpoint
-        if (this.intersect(pos, prevPos, regions.checkpoints().get(nextCheckpointIdx))) {
+        if (regions.checkpoints().get(nextCheckpointIdx).intersect(pos, prevPos)) {
             this.checkpoints.put(bPlayer, nextCheckpointIdx);
 
             switch (attributes.layout()) {
                 case CIRCULAR: {
                     // checkpoint was looped back to the start
-                    if (this.intersect(pos, prevPos, start)) {
+                    if (start.intersect(pos, prevPos)) {
                         this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
                         return TickResult.LOOP;
                     }
@@ -91,7 +87,7 @@ public class Checkpoints {
                     BoatRaceTrack.RespawnRegion finish = regions.checkpoints().getLast();
 
                     // checkpoint reached the end
-                    if (this.intersect(pos, prevPos, finish)) {
+                    if (finish.intersect(pos, prevPos)) {
                         this.checkpoints.remove(bPlayer);
                         this.began.remove(bPlayer);
                         return TickResult.FINISH;
@@ -108,7 +104,7 @@ public class Checkpoints {
         for (int i = 0; i < regions.checkpoints().size(); i++) {
             BoatRaceTrack.RespawnRegion checkpoint = regions.checkpoints().get(i);
 
-            if (this.intersect(pos, prevPos, checkpoint)) {
+            if (checkpoint.intersect(pos, prevPos)) {
                 if (i != nextCheckpointIdx && i != prevCheckpointIdx) {
                     return TickResult.MISSED;
                 }
@@ -166,20 +162,6 @@ public class Checkpoints {
 
     public int getCheckpointIndex(BoatRacePlayer player) {
         return this.checkpoints.getOrDefault(player, -1);
-    }
-
-    /**
-     * Check if the player's previous and current position had intersected the
-     * region bounds.
-     *
-     * @param playerPos     The player's current position.
-     * @param playerPrevPos The player's previous position.
-     * @param region        The region to check.
-     * @return If it intersected.
-     */
-    private boolean intersect(BlockPos playerPos, BlockPos playerPrevPos, BoatRaceTrack.RespawnRegion region) {
-        return region.bounds().asBox()
-                .intersects(playerPrevPos.toCenterPos(), playerPos.toCenterPos());
     }
 
     public enum TickResult {

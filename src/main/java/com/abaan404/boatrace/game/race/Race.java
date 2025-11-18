@@ -10,7 +10,9 @@ import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
+import com.abaan404.boatrace.events.PlayerPitSuccess;
 import com.abaan404.boatrace.gameplay.Teams;
+import com.abaan404.boatrace.screen.PitBoxGui;
 import com.mojang.authlib.GameProfile;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -95,7 +97,6 @@ public class Race {
         game.setRule(GameRuleType.PVP, EventResult.DENY);
         game.setRule(GameRuleType.HUNGER, EventResult.DENY);
         game.setRule(GameRuleType.FALL_DAMAGE, EventResult.DENY);
-        game.setRule(GameRuleType.MODIFY_INVENTORY, EventResult.DENY);
         game.setRule(GameRuleType.SWAP_OFFHAND, EventResult.DENY);
         game.setRule(GameRuleType.THROW_ITEMS, EventResult.DENY);
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
@@ -103,11 +104,13 @@ public class Race {
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.DISMOUNT_VEHICLE, EventResult.DENY);
         game.setRule(BoatRaceGameRules.SINGLE_SEAT, EventResult.ALLOW);
+        game.setRule(BoatRaceGameRules.MODIFY_INVENTORIES, EventResult.DENY);
 
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, race::onPlayerDeath);
         game.listen(ItemUseEvent.EVENT, race::onItemUse);
         game.listen(PlayerDismountEvent.EVENT, race::onDismount);
+        game.listen(PlayerPitSuccess.EVENT, race::onPitSuccess);
 
         game.listen(GamePlayerEvents.OFFER, race::offerPlayer);
         game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
@@ -211,6 +214,16 @@ public class Race {
         this.stageManager.updatePlayerInventory(player);
 
         return EventResult.DENY;
+    }
+
+    private void onPitSuccess(PitBoxGui gui) {
+        BoatRacePlayer player = BoatRacePlayer.of(gui.getPlayer());
+
+        if (!this.stageManager.isParticipant(player)) {
+            return;
+        }
+
+        this.stageManager.pits.pitFinished(player, gui.getDuration());
     }
 
     private void onTick() {

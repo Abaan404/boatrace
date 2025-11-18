@@ -12,6 +12,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.gameplay.Checkpoints;
 import com.abaan404.boatrace.gameplay.Countdown;
+import com.abaan404.boatrace.gameplay.PitStops;
 import com.abaan404.boatrace.gameplay.Positions;
 import com.abaan404.boatrace.gameplay.SpawnLogic;
 import com.abaan404.boatrace.gameplay.Splits;
@@ -46,6 +47,7 @@ public class RaceStageManager {
     private final BoatRaceConfig.Race config;
     private final BoatRaceTrack track;
 
+    public final PitStops pits;
     public final Checkpoints checkpoints;
     public final Splits splits;
     public final Positions positions;
@@ -66,6 +68,7 @@ public class RaceStageManager {
         this.track = track;
         this.teams = teams;
 
+        this.pits = new PitStops(track);
         this.checkpoints = new Checkpoints(track);
         this.splits = new Splits();
         this.positions = new Positions();
@@ -225,7 +228,7 @@ public class RaceStageManager {
                 continue;
             }
 
-            Checkpoints.TickResult result = this.checkpoints.tick(player);
+            this.pits.tick(player);
 
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {

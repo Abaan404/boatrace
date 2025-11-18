@@ -69,6 +69,7 @@ public class BoatRace implements ModInitializer {
     public void onInitialize() {
         PolymerResourcePackUtils.addModAssets(ID);
         BoatRaceItems.initialize();
+        BoatRaceCommands.initialize();
         Leaderboard.initialize();
     }
 }

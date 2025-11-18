@@ -534,4 +534,16 @@ public final class TextUtils {
                 .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
                 .append(Text.literal("The leader has finished their race, this is your final lap."));
     }
+
+    /**
+     * Show the time taken for a pit stop.
+     *
+     * @return The text.
+     */
+    public static Text chatPitTime(long duration) {
+        return Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
+                .append(Text.literal("PitStop: "))
+                .append(Text.literal(TimeUtils.formatTime(duration)).formatted(Formatting.BOLD));
+    }
 }

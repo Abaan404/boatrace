@@ -14,6 +14,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
@@ -82,32 +83,17 @@ public class BoatRaceTrack {
                 .map(RespawnRegion::of)
                 .toList();
 
-        RespawnRegion pitEntry = template.getMetadata()
-                .getRegions("pit_entry")
+        RespawnRegion pitLane = template.getMetadata()
+                .getRegions("pit_lane")
                 .map(RespawnRegion::of)
                 .findFirst()
                 .orElse(RespawnRegion.DEFAULT);
-
-        RespawnRegion pitExit = template.getMetadata()
-                .getRegions("pit_exit")
-                .map(RespawnRegion::of)
-                .findFirst()
-                .orElse(RespawnRegion.DEFAULT);
-
-        List<RespawnRegion> pitBoxes = template.getMetadata()
-                .getRegions("pit_box")
-                .filter(pb -> pb.getData().getInt("index").isPresent())
-                .sorted(Comparator.comparingInt(pb -> pb.getData().getInt("index").orElseThrow()))
-                .map(RespawnRegion::of)
-                .toList();
 
         this.regions = new Regions(
                 checkpoints,
                 spawn,
                 gridBoxes,
-                pitEntry,
-                pitExit,
-                pitBoxes);
+                pitLane);
     }
 
     /**
@@ -201,12 +187,23 @@ public class BoatRaceTrack {
                     templateRegion.getData().getFloat("yaw", DEFAULT.yaw()),
                     templateRegion.getData().getFloat("pitch", DEFAULT.pitch()));
         }
+
+        /**
+         * Check if an entity's intersected the region bounds.
+         *
+         * @param pos     The entity's current pos.
+         * @param lastPos The entity's pos last tick.
+         * @return If they intersected.
+         */
+        public boolean intersect(Vec3d pos, Vec3d lastPos) {
+            return this.bounds().asBox().intersects(pos, lastPos);
+        }
     }
 
     public record Regions(
             List<RespawnRegion> checkpoints,
             RespawnRegion spawn, List<RespawnRegion> gridBoxes,
-            RespawnRegion pitEntry, RespawnRegion pitExit, List<RespawnRegion> pitBoxes) {
+            RespawnRegion pitLane) {
     }
 
     public record Attributes(
