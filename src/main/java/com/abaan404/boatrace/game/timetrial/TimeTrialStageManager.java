@@ -188,6 +188,8 @@ public class TimeTrialStageManager {
                     break;
                 }
 
+                case PIT_ENTER:
+                case PIT_EXIT:
                 case IDLE: {
                     break;
                 }

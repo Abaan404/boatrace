@@ -12,7 +12,6 @@ import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.events.PlayerPitSuccess;
 import com.abaan404.boatrace.gameplay.Teams;
-import com.abaan404.boatrace.screen.PitBoxGui;
 import com.mojang.authlib.GameProfile;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -216,14 +215,16 @@ public class Race {
         return EventResult.DENY;
     }
 
-    private void onPitSuccess(PitBoxGui gui) {
-        BoatRacePlayer player = BoatRacePlayer.of(gui.getPlayer());
-
-        if (!this.stageManager.isParticipant(player)) {
-            return;
+    private EventResult onPitSuccess(ServerPlayerEntity player) {
+        if (!this.stageManager.isParticipant(BoatRacePlayer.of(player))) {
+            return EventResult.PASS;
         }
 
-        this.stageManager.pits.pitFinished(player, gui.getDuration());
+        if (!this.stageManager.pits.finishPit(player)) {
+            return EventResult.DENY;
+        }
+
+        return EventResult.ALLOW;
     }
 
     private void onTick() {

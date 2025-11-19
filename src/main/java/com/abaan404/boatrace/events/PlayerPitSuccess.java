@@ -1,21 +1,26 @@
 package com.abaan404.boatrace.events;
 
-import com.abaan404.boatrace.screen.PitBoxGui;
-
+import net.minecraft.server.network.ServerPlayerEntity;
+import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.StimulusEvent;
 
 public interface PlayerPitSuccess {
     StimulusEvent<PlayerPitSuccess> EVENT = StimulusEvent.create(PlayerPitSuccess.class, ctx -> {
-        return (gui) -> {
+        return (player) -> {
             try {
                 for (PlayerPitSuccess listener : ctx.getListeners()) {
-                    listener.onPitSuccess(gui);
+                    EventResult result = listener.onPitSuccess(player);
+                    if (result != EventResult.PASS) {
+                        return result;
+                    }
                 }
             } catch (Throwable t) {
                 ctx.handleException(t);
             }
+
+            return EventResult.PASS;
         };
     });
 
-    public void onPitSuccess(PitBoxGui gui);
+    public EventResult onPitSuccess(ServerPlayerEntity player);
 }

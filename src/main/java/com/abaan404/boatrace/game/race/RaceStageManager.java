@@ -68,7 +68,7 @@ public class RaceStageManager {
         this.track = track;
         this.teams = teams;
 
-        this.pits = new PitStops(track);
+        this.pits = new PitStops();
         this.checkpoints = new Checkpoints(track);
         this.splits = new Splits();
         this.positions = new Positions();
@@ -228,8 +228,6 @@ public class RaceStageManager {
                 continue;
             }
 
-            this.pits.tick(player);
-
             switch (this.checkpoints.tick(player)) {
                 case BEGIN: {
                     this.splits.run(bPlayer);
@@ -271,6 +269,19 @@ public class RaceStageManager {
                     this.positions.update(bPlayer);
                     break;
                 }
+
+                case PIT_ENTER: {
+                    if (this.pits.getPitCount(bPlayer) < this.config.maxPits()) {
+                        this.pits.startPit(player);
+                    }
+                    break;
+                }
+
+                case PIT_EXIT: {
+                    this.pits.stopPit(player);
+                    break;
+                }
+
                 case IDLE: {
                     break;
                 }
@@ -294,6 +305,7 @@ public class RaceStageManager {
 
         this.participants.remove(player);
 
+        this.pits.reset(player);
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
@@ -312,6 +324,7 @@ public class RaceStageManager {
 
         this.participants.add(player);
 
+        this.pits.reset(player);
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);

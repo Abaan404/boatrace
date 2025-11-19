@@ -147,6 +147,12 @@ public class RaceWidgets {
                         stageManager.checkpoints.getLaps(bPlayer),
                         stageManager.getMaxLaps()));
 
+                if (stageManager.getConfig().maxPits() > 0) {
+                    content.add(TextUtils.scoreboardPits(
+                            stageManager.pits.getPitCount(bPlayer),
+                            stageManager.getConfig().maxPits()));
+                }
+
                 content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),
                         stageManager.getConfig().maxDuration()));
@@ -203,7 +209,12 @@ public class RaceWidgets {
                     }
 
                     text.append(TextUtils.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted,
-                            position2));
+                            position2)).append(" ");
+
+                    if (stageManager.getConfig().maxPits() > 0 && !bPlayer.equals(player2)) {
+                        text.append(TextUtils.scoreboardLeaderboardPits(stageManager.pits.getPitCount(player2)))
+                                .append(" ");
+                    }
 
                     content.add(text);
                 }

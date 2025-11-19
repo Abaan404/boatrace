@@ -171,6 +171,8 @@ public class QualifyingStageManager {
                     break;
                 }
 
+                case PIT_ENTER:
+                case PIT_EXIT:
                 case IDLE: {
                     break;
                 }

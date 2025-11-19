@@ -2,6 +2,7 @@ package com.abaan404.boatrace.screen;
 
 import com.abaan404.boatrace.events.PlayerPitSuccess;
 import com.abaan404.boatrace.gameplay.Countdown;
+import com.abaan404.boatrace.utils.TextUtils;
 
 import eu.pb4.sgui.api.ClickType;
 import eu.pb4.sgui.api.elements.AnimatedGuiElementBuilder;
@@ -15,6 +16,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import xyz.nucleoid.stimuli.EventInvokers;
 import xyz.nucleoid.stimuli.Stimuli;
+import xyz.nucleoid.stimuli.event.EventResult;
 
 public class PitBoxGui extends SimpleGui {
     private Countdown countdown = new Countdown();
@@ -48,9 +50,13 @@ public class PitBoxGui extends SimpleGui {
         this.fillSlots(state.getElement());
 
         if (state == State.SUCCESS) {
-
-            try (EventInvokers invokers = Stimuli.select().forEntity(this.player)) {
-                invokers.get(PlayerPitSuccess.EVENT).onPitSuccess(this);
+            try (EventInvokers invokers = Stimuli.select().forEntity(player)) {
+                EventResult result = invokers.get(PlayerPitSuccess.EVENT).onPitSuccess(player);
+                if (result == EventResult.ALLOW) {
+                    player.sendMessage(TextUtils.chatPitTime(this.duration, true));
+                } else {
+                    player.sendMessage(TextUtils.chatPitTime(this.duration, false));
+                }
             }
         }
     }

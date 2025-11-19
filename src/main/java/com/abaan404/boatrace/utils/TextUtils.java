@@ -218,7 +218,7 @@ public final class TextUtils {
         return Text.empty()
                 .append(Text.literal(" Duration: ").formatted(Formatting.RED))
                 .append(Text.literal(TimeUtils.formatTime(
-                        duration,
+                        Math.clamp(duration, 0, maxDuration),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.HOURS)),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.MILLISECONDS)))))
                 .append(Text.literal(" / ").formatted(Formatting.ITALIC))
@@ -226,6 +226,34 @@ public final class TextUtils {
                         maxDuration,
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.HOURS)),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.MILLISECONDS)))));
+    }
+
+    /**
+     * Format pits as text.
+     *
+     * @param pits    The player's current pits.
+     * @param maxPits The total pits required.
+     * @return The pits text.
+     */
+    public static Text scoreboardPits(int pits, int maxPits) {
+        return Text.empty()
+                .append(Text.literal(" Pits: ").formatted(Formatting.RED))
+                .append(Text.literal(String.valueOf(Math.clamp(pits, 0, maxPits))))
+                .append(Text.literal(" / ").formatted(Formatting.ITALIC))
+                .append(Text.literal(String.valueOf(maxPits)));
+    }
+
+    /**
+     * Format pits as text for the leaderboard.
+     *
+     * @param pits The player's current pits.
+     * @return The pits text.
+     */
+    public static Text scoreboardLeaderboardPits(int pits) {
+        return Text.empty()
+                .append("| ")
+                .append(Text.literal(String.valueOf(pits)))
+                .formatted(Formatting.GRAY);
     }
 
     /**
@@ -540,10 +568,16 @@ public final class TextUtils {
      *
      * @return The text.
      */
-    public static Text chatPitTime(long duration) {
-        return Text.empty()
-                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
+    public static Text chatPitTime(long duration, boolean valid) {
+        MutableText text = Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.DARK_GRAY, Formatting.BOLD))
                 .append(Text.literal("PitStop: "))
                 .append(Text.literal(TimeUtils.formatTime(duration)).formatted(Formatting.BOLD));
+
+        if (!valid) {
+            text.append(Text.literal(" (invalidated)").formatted(Formatting.GRAY, Formatting.ITALIC));
+        }
+
+        return text;
     }
 }
