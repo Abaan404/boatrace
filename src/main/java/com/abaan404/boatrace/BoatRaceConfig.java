@@ -31,7 +31,7 @@ public record BoatRaceConfig(
     }
 
     public record Race(
-            long maxDuration, int maxLaps, int maxPits,
+            long maxDuration, int maxLaps, int pits,
             GridType gridType,
             boolean noRespawn, boolean acceptUnqualified,
             int countdown, int countdownRandom,
@@ -42,7 +42,7 @@ public record BoatRaceConfig(
         public static final Codec<Race> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.LONG.fieldOf("max_duration").forGetter(Race::maxDuration),
                 Codec.INT.optionalFieldOf("max_laps", 1).forGetter(Race::maxLaps),
-                Codec.INT.optionalFieldOf("max_pits", 0).forGetter(Race::maxPits),
+                Codec.INT.optionalFieldOf("pits", 0).forGetter(Race::pits),
                 GridType.CODEC.optionalFieldOf("grid_type", GridType.NORMAL).forGetter(Race::gridType),
                 Codec.BOOL.optionalFieldOf("no_respawn", false).forGetter(Race::noRespawn),
                 Codec.BOOL.optionalFieldOf("accept_unqualified", false).forGetter(Race::acceptUnqualified),

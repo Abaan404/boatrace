@@ -72,9 +72,9 @@ public class PitStops {
      * Get the number of completed pits for this player.
      *
      * @param player The player.
-     * @return Their pits.
+     * @return Their pit count.
      */
-    public int getPitCount(BoatRacePlayer player) {
+    public int getPits(BoatRacePlayer player) {
         return this.pitCount.getOrDefault(player, 0);
     }
 }

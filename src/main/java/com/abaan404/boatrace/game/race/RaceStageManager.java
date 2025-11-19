@@ -271,7 +271,7 @@ public class RaceStageManager {
                 }
 
                 case PIT_ENTER: {
-                    if (this.pits.getPitCount(bPlayer) < this.config.maxPits()) {
+                    if (this.pits.getPits(bPlayer) < this.config.pits()) {
                         this.pits.startPit(player);
                     }
                     break;
@@ -429,7 +429,27 @@ public class RaceStageManager {
         GameSpacePlayers players = this.gameSpace.getPlayers();
         List<BoatRacePlayer> positions = this.positions.getPositions();
 
-        if (positions.size() == 0) {
+        List<BoatRacePlayer> qualified = new ObjectArrayList<>();
+        List<BoatRacePlayer> dsq = new ObjectArrayList<>();
+        List<BoatRacePlayer> dnf = new ObjectArrayList<>();
+
+        for (BoatRacePlayer player : positions) {
+            // did not finish the race
+            if (this.participants.contains(player)) {
+                dnf.add(player);
+                continue;
+            }
+
+            // did not complete required pits
+            if (this.pits.getPits(player) < this.config.pits()) {
+                dsq.add(player);
+                continue;
+            }
+
+            qualified.add(player);
+        }
+
+        if (qualified.isEmpty()) {
             int points = this.config.scoring().isEmpty() ? 1 : this.config.scoring().getFirst();
 
             MutableText positionsText = Text.empty();
@@ -438,7 +458,7 @@ public class RaceStageManager {
             positionsText.append(TextUtils.scoreboardName(BoatRacePlayer.DEFAULT, GameTeamConfig.DEFAULT, false, 0))
                     .append(" ");
 
-            positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD));
+            positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD)).append(" ");
 
             positionsText.append(TextUtils.actionBarTimer(0)).append("  ");
             positionsText.append(TextUtils.chatPoints(points));
@@ -448,8 +468,8 @@ public class RaceStageManager {
 
         Map<GameTeamKey, Integer> teamPoints = new Object2IntOpenHashMap<>();
 
-        for (int i = 0; i < positions.size(); i++) {
-            BoatRacePlayer player = positions.get(i);
+        for (int i = 0; i < qualified.size(); i++) {
+            BoatRacePlayer player = qualified.get(i);
             GameTeamKey team = this.teams.getTeamFor(player);
 
             int laps = this.checkpoints.getLaps(player);
@@ -470,6 +490,30 @@ public class RaceStageManager {
             }
 
             positionsText.append(TextUtils.chatPoints(points));
+
+            players.sendMessage(positionsText);
+        }
+
+        for (BoatRacePlayer player : dsq) {
+            GameTeamKey team = this.teams.getTeamFor(player);
+
+            MutableText positionsText = Text.empty();
+            positionsText.append(" ");
+            positionsText.append(Text.literal("DSQ").formatted(Formatting.GRAY, Formatting.ITALIC)).append(" ");
+            positionsText.append(TextUtils.scoreboardName(player, this.teams.getConfig(team), false, -1)).append(" ");
+            positionsText.append(TextUtils.chatPoints(0));
+
+            players.sendMessage(positionsText);
+        }
+
+        for (BoatRacePlayer player : dnf) {
+            GameTeamKey team = this.teams.getTeamFor(player);
+
+            MutableText positionsText = Text.empty();
+            positionsText.append(" ");
+            positionsText.append(Text.literal("DNF").formatted(Formatting.GRAY, Formatting.ITALIC)).append(" ");
+            positionsText.append(TextUtils.scoreboardName(player, this.teams.getConfig(team), false, -1)).append(" ");
+            positionsText.append(TextUtils.chatPoints(0));
 
             players.sendMessage(positionsText);
         }
