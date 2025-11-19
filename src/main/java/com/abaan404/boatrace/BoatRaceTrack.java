@@ -3,7 +3,10 @@ package com.abaan404.boatrace;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -17,6 +20,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
@@ -35,7 +39,7 @@ public class BoatRaceTrack {
 
     private final MapTemplate template;
 
-    private static final int CURRENT_TRACK_FORMAT = 1;
+    private static final int CURRENT_TRACK_FORMAT = 2;
 
     private BoatRaceTrack(MapTemplate template) {
         this.template = template;
@@ -72,18 +76,16 @@ public class BoatRaceTrack {
         this.meta = meta;
         this.attributes = attributes;
 
-
-        List<RespawnRegion> checkpoints = template.getMetadata()
+        List<Set<RespawnRegion>> checkpoints = template.getMetadata()
                 .getRegions("checkpoint")
                 .filter(cp -> cp.getData().contains("index", NbtElement.INT_TYPE))
-                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index")))
-                .map(RespawnRegion::of)
+                .collect(Collectors.groupingBy(
+                        cp -> cp.getData().getInt("index"),
+                        Collectors.mapping(RespawnRegion::of, Collectors.toSet())))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
                 .toList();
-
-        // make sure there is atleast one checkpoint in this track
-        if (checkpoints.size() == 0) {
-            checkpoints = List.of(RespawnRegion.DEFAULT);
-        }
 
         RespawnRegion spawn = template.getMetadata()
                 .getRegions("spawn")
@@ -98,32 +100,16 @@ public class BoatRaceTrack {
                 .map(RespawnRegion::of)
                 .toList();
 
-        RespawnRegion pitEntry = template.getMetadata()
-                .getRegions("pit_entry")
+        Optional<RespawnRegion> pitLane = template.getMetadata()
+                .getRegions("pit_lane")
                 .map(RespawnRegion::of)
-                .findFirst()
-                .orElse(RespawnRegion.DEFAULT);
-
-        RespawnRegion pitExit = template.getMetadata()
-                .getRegions("pit_exit")
-                .map(RespawnRegion::of)
-                .findFirst()
-                .orElse(RespawnRegion.DEFAULT);
-
-        List<RespawnRegion> pitBoxes = template.getMetadata()
-                .getRegions("pit_box")
-                .filter(cp -> cp.getData().contains("index", NbtElement.INT_TYPE))
-                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index")))
-                .map(RespawnRegion::of)
-                .toList();
+                .findFirst();
 
         this.regions = new Regions(
                 checkpoints,
                 spawn,
                 gridBoxes,
-                pitEntry,
-                pitExit,
-                pitBoxes);
+                pitLane);
     }
 
     /**
@@ -228,12 +214,23 @@ public class BoatRaceTrack {
                     yaw,
                     pitch);
         }
+
+        /**
+         * Check if an entity's intersected the region bounds.
+         *
+         * @param pos     The entity's current pos.
+         * @param lastPos The entity's pos last tick.
+         * @return If they intersected.
+         */
+        public boolean intersect(Vec3d pos, Vec3d lastPos) {
+            return this.bounds().asBox().intersects(pos, lastPos);
+        }
     }
 
     public record Regions(
-            List<RespawnRegion> checkpoints,
+            List<Set<RespawnRegion>> checkpoints,
             RespawnRegion spawn, List<RespawnRegion> gridBoxes,
-            RespawnRegion pitEntry, RespawnRegion pitExit, List<RespawnRegion> pitBoxes) {
+            Optional<RespawnRegion> pitLane) {
     }
 
     public record Attributes(

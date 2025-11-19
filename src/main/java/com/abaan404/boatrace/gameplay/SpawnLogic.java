@@ -119,6 +119,10 @@ public class SpawnLogic {
             return Optional.empty();
         }
 
+        if (boat.hasVehicle()) {
+            return Optional.of(boat.getVehicle());
+        }
+
         AreaEffectCloudEntity aec = EntityType.AREA_EFFECT_CLOUD.create(this.world, SpawnReason.COMMAND);
         if (aec == null) {
             return Optional.empty();

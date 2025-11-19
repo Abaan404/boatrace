@@ -23,34 +23,15 @@ public record BoatRaceConfig(
             .apply(instance, BoatRaceConfig::new));
 
     public record Qualifying(
-            long duration,
-            StartFrom startFrom) {
+            long duration) {
 
         public static final Codec<Qualifying> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.LONG.fieldOf("duration").forGetter(Qualifying::duration),
-                StartFrom.CODEC.optionalFieldOf("start_from", StartFrom.SPAWN).forGetter(Qualifying::startFrom))
+                Codec.LONG.fieldOf("duration").forGetter(Qualifying::duration))
                 .apply(instance, Qualifying::new));
-
-        public enum StartFrom implements StringIdentifiable {
-            PIT_BOX("pit_box"), GRID_BOX("grid_box"), SPAWN("spawn");
-
-            private final String name;
-
-            public static final Codec<StartFrom> CODEC = StringIdentifiable.createCodec(StartFrom::values);
-
-            StartFrom(String name) {
-                this.name = name;
-            }
-
-            @Override
-            public String asString() {
-                return name;
-            }
-        }
     }
 
     public record Race(
-            int maxDuration, int maxLaps,
+            long maxDuration, int maxLaps, int pits,
             GridType gridType,
             boolean noRespawn, boolean acceptUnqualified,
             int countdown, int countdownRandom,
@@ -59,8 +40,9 @@ public record BoatRaceConfig(
         private static final List<Integer> DEFAULT_SCORING = List.of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
 
         public static final Codec<Race> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.INT.fieldOf("max_duration").forGetter(Race::maxDuration),
+                Codec.LONG.fieldOf("max_duration").forGetter(Race::maxDuration),
                 Codec.INT.optionalFieldOf("max_laps", 1).forGetter(Race::maxLaps),
+                Codec.INT.optionalFieldOf("pits", 0).forGetter(Race::pits),
                 GridType.CODEC.optionalFieldOf("grid_type", GridType.NORMAL).forGetter(Race::gridType),
                 Codec.BOOL.optionalFieldOf("no_respawn", false).forGetter(Race::noRespawn),
                 Codec.BOOL.optionalFieldOf("accept_unqualified", false).forGetter(Race::acceptUnqualified),

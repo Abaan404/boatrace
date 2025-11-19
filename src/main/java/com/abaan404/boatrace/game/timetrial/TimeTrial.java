@@ -55,13 +55,13 @@ public class TimeTrial {
         game.setRule(GameRuleType.PVP, EventResult.DENY);
         game.setRule(GameRuleType.HUNGER, EventResult.DENY);
         game.setRule(GameRuleType.FALL_DAMAGE, EventResult.DENY);
-        game.setRule(GameRuleType.MODIFY_INVENTORY, EventResult.DENY);
         game.setRule(GameRuleType.SWAP_OFFHAND, EventResult.DENY);
         game.setRule(GameRuleType.THROW_ITEMS, EventResult.DENY);
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
         game.setRule(BoatRaceGameRules.SINGLE_SEAT, EventResult.ALLOW);
+        game.setRule(BoatRaceGameRules.MODIFY_INVENTORIES, EventResult.DENY);
 
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, timeTrial::onPlayerDeath);

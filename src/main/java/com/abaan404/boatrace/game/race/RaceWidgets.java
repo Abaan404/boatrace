@@ -69,7 +69,7 @@ public class RaceWidgets {
             return;
         }
 
-        long countdown = stageManager.countdown.getCountdown();
+        int countdown = stageManager.countdown.getCountdown();
         if (countdown <= 0) {
             this.shownGo = true;
         }
@@ -144,8 +144,14 @@ public class RaceWidgets {
                 content.add(Text.empty());
 
                 content.add(TextUtils.scoreboardLaps(
-                        stageManager.getLeadingLaps(),
+                        stageManager.checkpoints.getLaps(bPlayer),
                         stageManager.getMaxLaps()));
+
+                if (stageManager.getRequiredPits() > 0) {
+                    content.add(TextUtils.scoreboardPits(
+                            stageManager.pits.getPits(bPlayer),
+                            stageManager.getRequiredPits()));
+                }
 
                 content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),
@@ -203,7 +209,12 @@ public class RaceWidgets {
                     }
 
                     text.append(TextUtils.scoreboardName(player2, stageManager.teams.getConfig(player2), highlighted,
-                            position2));
+                            position2)).append(" ");
+
+                    if (stageManager.getRequiredPits() > 0 && !bPlayer.equals(player2)) {
+                        text.append(TextUtils.scoreboardLeaderboardPits(stageManager.pits.getPits(player2)))
+                                .append(" ");
+                    }
 
                     content.add(text);
                 }
