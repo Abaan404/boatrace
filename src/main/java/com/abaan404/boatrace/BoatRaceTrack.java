@@ -3,7 +3,10 @@ package com.abaan404.boatrace;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -33,7 +36,7 @@ public class BoatRaceTrack {
 
     private final MapTemplate template;
 
-    private static final int CURRENT_TRACK_FORMAT = 1;
+    private static final int CURRENT_TRACK_FORMAT = 2;
 
     private BoatRaceTrack(MapTemplate template) {
         this.template = template;
@@ -58,17 +61,16 @@ public class BoatRaceTrack {
                 .get("attributes", Attributes.CODEC.codec())
                 .orElse(Attributes.DEFAULT);
 
-        List<RespawnRegion> checkpoints = template.getMetadata()
+        List<Set<RespawnRegion>> checkpoints = template.getMetadata()
                 .getRegions("checkpoint")
                 .filter(cp -> cp.getData().getInt("index").isPresent())
-                .sorted(Comparator.comparingInt(cp -> cp.getData().getInt("index").orElseThrow()))
-                .map(RespawnRegion::of)
+                .collect(Collectors.groupingBy(
+                        cp -> cp.getData().getInt("index").orElseThrow(),
+                        Collectors.mapping(RespawnRegion::of, Collectors.toSet())))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
                 .toList();
-
-        // make sure there is atleast one checkpoint in this track
-        if (checkpoints.size() == 0) {
-            checkpoints = List.of(RespawnRegion.DEFAULT);
-        }
 
         RespawnRegion spawn = template.getMetadata()
                 .getRegions("spawn")
@@ -83,11 +85,10 @@ public class BoatRaceTrack {
                 .map(RespawnRegion::of)
                 .toList();
 
-        RespawnRegion pitLane = template.getMetadata()
+        Optional<RespawnRegion> pitLane = template.getMetadata()
                 .getRegions("pit_lane")
                 .map(RespawnRegion::of)
-                .findFirst()
-                .orElse(RespawnRegion.DEFAULT);
+                .findFirst();
 
         this.regions = new Regions(
                 checkpoints,
@@ -201,9 +202,9 @@ public class BoatRaceTrack {
     }
 
     public record Regions(
-            List<RespawnRegion> checkpoints,
+            List<Set<RespawnRegion>> checkpoints,
             RespawnRegion spawn, List<RespawnRegion> gridBoxes,
-            RespawnRegion pitLane) {
+            Optional<RespawnRegion> pitLane) {
     }
 
     public record Attributes(

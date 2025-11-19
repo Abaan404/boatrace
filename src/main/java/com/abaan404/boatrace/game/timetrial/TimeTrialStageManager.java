@@ -59,7 +59,6 @@ public class TimeTrialStageManager {
     public void spawnPlayer(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         BoatRaceTrack.Regions regions = this.track.getRegions();
-        BoatRaceTrack.Attributes attributes = this.track.getAttributes();
 
         if (!this.participants.contains(bPlayer)) {
             this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
@@ -67,26 +66,8 @@ public class TimeTrialStageManager {
             return;
         }
 
-        BoatRaceTrack.RespawnRegion respawn = regions.checkpoints().getFirst();
-
-        if (!regions.spawn().equals(BoatRaceTrack.RespawnRegion.DEFAULT)) {
-            respawn = regions.spawn();
-        } else if (!regions.gridBoxes().isEmpty()) {
-            respawn = regions.gridBoxes().getFirst();
-        } else if (!regions.checkpoints().isEmpty()) {
-            switch (attributes.layout()) {
-                case CIRCULAR: {
-                    respawn = regions.checkpoints().getLast();
-                    break;
-                }
-                case LINEAR: {
-                    respawn = regions.checkpoints().getFirst();
-                    break;
-                }
-            }
-        }
-
-        this.spawnLogic.spawnPlayer(player, respawn);
+        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
+        this.spawnLogic.spawnPlayer(player, regions.spawn());
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
     }
 
@@ -97,16 +78,15 @@ public class TimeTrialStageManager {
      */
     public void respawnPlayer(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+        BoatRaceTrack.Regions regions = this.track.getRegions();
+
+        if (!this.participants.contains(bPlayer)) {
+            return;
+        }
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
-
-        if (this.checkpoints.getCheckpointIndex(bPlayer) != -1) {
-            this.spawnLogic.spawnPlayer(player, this.checkpoints.getCheckpoint(bPlayer));
-            this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
-
-        } else {
-            this.spawnPlayer(player);
-        }
+        this.spawnLogic.spawnPlayer(player, this.checkpoints.getCheckpoint(bPlayer).orElse(regions.spawn()));
+        this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
     }
 
     /**

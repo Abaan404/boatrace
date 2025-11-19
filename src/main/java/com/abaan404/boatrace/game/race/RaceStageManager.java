@@ -98,26 +98,18 @@ public class RaceStageManager {
 
         this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
 
-        BoatRaceTrack.RespawnRegion respawn;
+        BoatRaceTrack.RespawnRegion respawn = this.checkpoints
+                .getCheckpoint(bPlayer)
+                .orElseGet(() -> {
+                    List<BoatRacePlayer> list = new ObjectArrayList<>(this.participants);
+                    int idx = list.indexOf(bPlayer);
 
-        // this.sparticipants is sequenced by starting grid positions
-        int gridBox = 0;
-        for (BoatRacePlayer participant : this.participants) {
-            if (participant.equals(bPlayer)) {
-                break;
-            }
+                    if (idx >= 0 && idx < regions.gridBoxes().size()) {
+                        return regions.gridBoxes().get(idx);
+                    }
 
-            gridBox++;
-        }
-
-        if (this.checkpoints.getCheckpointIndex(bPlayer) > 0) {
-            respawn = this.checkpoints.getCheckpoint(bPlayer);
-        } else if (gridBox <= regions.gridBoxes().size() - 1) {
-            respawn = regions.gridBoxes().get(gridBox);
-        } else {
-            // not enough grid boxes
-            respawn = regions.spawn();
-        }
+                    return regions.spawn();
+                });
 
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
@@ -139,17 +131,7 @@ public class RaceStageManager {
             return;
         }
 
-        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
-
-        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
-
-        if (this.checkpoints.getCheckpointIndex(bPlayer) != -1) {
-            this.spawnLogic.spawnPlayer(player, this.checkpoints.getCheckpoint(bPlayer));
-            this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
-
-        } else {
-            this.spawnPlayer(player);
-        }
+        this.spawnPlayer(player);
     }
 
     /**
@@ -271,7 +253,7 @@ public class RaceStageManager {
                 }
 
                 case PIT_ENTER: {
-                    if (this.pits.getPits(bPlayer) < this.config.pits()) {
+                    if (this.pits.getPits(bPlayer) < this.getRequiredPits()) {
                         this.pits.startPit(player);
                     }
                     break;
@@ -394,6 +376,18 @@ public class RaceStageManager {
     }
 
     /**
+     * Get the required number of pits for this race.
+     *
+     * @return The number of pits to complete.
+     */
+    public int getRequiredPits() {
+        return switch (this.track.getAttributes().layout()) {
+            case CIRCULAR -> this.track.getRegions().pitLane().isPresent() ? this.config.pits() : 0;
+            case LINEAR -> 0;
+        };
+    }
+
+    /**
      * Get game config for race.
      *
      * @return The loaded race config.
@@ -434,19 +428,16 @@ public class RaceStageManager {
         List<BoatRacePlayer> dnf = new ObjectArrayList<>();
 
         for (BoatRacePlayer player : positions) {
-            // did not finish the race
             if (this.participants.contains(player)) {
+                // did not finish the race
                 dnf.add(player);
-                continue;
-            }
-
-            // did not complete required pits
-            if (this.pits.getPits(player) < this.config.pits()) {
+            } else if (this.pits.getPits(player) < this.getRequiredPits()) {
+                // did not complete required pits
                 dsq.add(player);
-                continue;
+            } else {
+                // yay
+                qualified.add(player);
             }
-
-            qualified.add(player);
         }
 
         if (qualified.isEmpty()) {
