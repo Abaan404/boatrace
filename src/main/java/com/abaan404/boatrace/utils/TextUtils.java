@@ -201,7 +201,7 @@ public final class TextUtils {
     public static Text scoreboardLaps(int laps, int maxLaps) {
         return Text.empty()
                 .append(Text.literal(" Laps: ").formatted(Formatting.RED))
-                .append(Text.literal(String.valueOf(Math.clamp(laps, 0, maxLaps))))
+                .append(Text.literal(String.valueOf(Math.min(laps, maxLaps))))
                 .append(Text.literal(" / ").formatted(Formatting.ITALIC))
                 .append(Text.literal(String.valueOf(maxLaps)));
     }
@@ -217,7 +217,7 @@ public final class TextUtils {
         return Text.empty()
                 .append(Text.literal(" Duration: ").formatted(Formatting.RED))
                 .append(Text.literal(TimeUtils.formatTime(
-                        Math.clamp(duration, 0, maxDuration),
+                        Math.min(duration, maxDuration),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.HOURS)),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.MILLISECONDS)))))
                 .append(Text.literal(" / ").formatted(Formatting.ITALIC))
@@ -237,7 +237,7 @@ public final class TextUtils {
     public static Text scoreboardPits(int pits, int maxPits) {
         return Text.empty()
                 .append(Text.literal(" Pits: ").formatted(Formatting.RED))
-                .append(Text.literal(String.valueOf(Math.clamp(pits, 0, maxPits))))
+                .append(Text.literal(String.valueOf(Math.min(pits, maxPits))))
                 .append(Text.literal(" / ").formatted(Formatting.ITALIC))
                 .append(Text.literal(String.valueOf(maxPits)));
     }

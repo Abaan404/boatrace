@@ -1,15 +1,16 @@
 package com.abaan404.boatrace.gameplay;
 
+import java.util.Random;
+
+import com.abaan404.boatrace.BoatRaceConfig;
+
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.random.Random;
 
 public class Countdown {
-    public final int COUNTDOWN_DIVISOR = 1000;
+    private final Random rand = new Random();
 
-    private final Random random = Random.createLocal();
-
-    private int countdown = -1;
-    private int randomCountdown = -1;
+    private long duration = -1;
+    private long random = -1;
 
     /**
      * Tick the countdown.
@@ -18,17 +19,17 @@ public class Countdown {
      * @return The result of this tick.
      */
     public TickResult tick(ServerWorld world) {
-        if (this.countdown + this.randomCountdown <= 0) {
+        if (this.duration < 0 && this.random < 0) {
             return TickResult.IDLE;
         }
 
-        if (this.countdown > 0) {
-            this.countdown -= world.getTickManager().getMillisPerTick();
+        if (this.duration >= 0) {
+            this.duration -= world.getTickManager().getMillisPerTick();
         } else {
-            this.randomCountdown -= world.getTickManager().getMillisPerTick();
+            this.random -= world.getTickManager().getMillisPerTick();
         }
 
-        if (this.countdown + this.randomCountdown <= 0) {
+        if (this.duration < 0 && this.random < 0) {
             return TickResult.FINISH;
         }
 
@@ -40,28 +41,43 @@ public class Countdown {
      * linear countdown has finished but is still waiting on the randomized
      * countdown to finish.
      *
-     * @param countdown       linear countdown in ms.
-     * @param randomCountdown randomized countdown from 0 to this in ms
+     * @param duration linear countdown in ms.
+     * @param random   randomized countdown from 0 to this in ms
      */
-    public void setCountdown(int countdown, int randomCountdown) {
-        this.countdown = countdown;
-        this.randomCountdown = this.random.nextBetween(0, randomCountdown);
+    public void setCountdown(long duration, long random) {
+        this.duration = duration;
+
+        if (random > 0) {
+            this.random = this.rand.nextLong(0, random);
+        } else {
+            this.random = random;
+        }
     }
 
     /**
-     * Get the current countdown in ms divided by a divisor. Freezes on 1 whenever
-     * its waiting on the go counter.
+     * Set a linear and randomized countdown. Countdown will be held at 1 when the
+     * linear countdown has finished but is still waiting on the randomized
+     * countdown to finish.
+     *
+     * @param config A config with random and linear countdown
+     */
+    public void setCountdown(BoatRaceConfig.Countdown config) {
+        this.setCountdown(config.duration(), config.random());
+    }
+
+    /**
+     * Get the current countdown in ms. Freezes on 1 whenever its waiting on the
+     * random counter.
      *
      * @return The countdown.
      */
-    public int getCountdown() {
-        if (this.countdown <= 0 && this.randomCountdown > 0) {
-            // goCountdown is not visible outside this class, return a constant non zero
+    public long getCountdown() {
+        // If duration finished but random still waiting, freeze at 1
+        if (this.duration <= 0 && this.random > 0) {
             return 1;
         }
 
-        // round to the nearest second
-        return Math.ceilDiv(this.countdown, COUNTDOWN_DIVISOR);
+        return Math.max(this.duration, 0);
     }
 
     /**
@@ -70,7 +86,7 @@ public class Countdown {
      * @return If the timer has finished counting.
      */
     public boolean isCounting() {
-        return this.countdown + this.randomCountdown > 0;
+        return this.duration >= 0 || this.random >= 0;
     }
 
     public enum TickResult {

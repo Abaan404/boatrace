@@ -31,23 +31,19 @@ public record BoatRaceConfig(
     }
 
     public record Race(
-            long maxDuration, int maxLaps, int pits,
-            GridType gridType,
-            boolean noRespawn, boolean acceptUnqualified,
-            int countdown, int countdownRandom,
-            List<Integer> scoring) {
+            long maxDuration, int maxLaps, boolean noRespawn, boolean acceptUnqualified,
+            Pits pits, GridType gridType, Countdown goCountdown, List<Integer> scoring) {
 
         private static final List<Integer> DEFAULT_SCORING = List.of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
 
         public static final Codec<Race> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.LONG.fieldOf("max_duration").forGetter(Race::maxDuration),
                 Codec.INT.optionalFieldOf("max_laps", 1).forGetter(Race::maxLaps),
-                Codec.INT.optionalFieldOf("pits", 0).forGetter(Race::pits),
-                GridType.CODEC.optionalFieldOf("grid_type", GridType.NORMAL).forGetter(Race::gridType),
                 Codec.BOOL.optionalFieldOf("no_respawn", false).forGetter(Race::noRespawn),
                 Codec.BOOL.optionalFieldOf("accept_unqualified", false).forGetter(Race::acceptUnqualified),
-                Codec.INT.optionalFieldOf("countdown", 5000).forGetter(Race::countdown),
-                Codec.INT.optionalFieldOf("countdown_random", 2000).forGetter(Race::countdownRandom),
+                Pits.CODEC.optionalFieldOf("pits", Pits.DEFAULT).forGetter(Race::pits),
+                GridType.CODEC.optionalFieldOf("grid_type", GridType.NORMAL).forGetter(Race::gridType),
+                Countdown.CODEC.optionalFieldOf("go_countdown", new Countdown(5000, 2000)).forGetter(Race::goCountdown),
                 Codec.INT.listOf().optionalFieldOf("scoring", DEFAULT_SCORING).forGetter(Race::scoring))
                 .apply(instance, Race::new));
 
@@ -75,6 +71,24 @@ public record BoatRaceConfig(
         public static final Codec<Team> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.INT.optionalFieldOf("size", DEFAULT.size()).forGetter(Team::size))
                 .apply(instance, Team::new));
+    }
 
+    public record Countdown(long duration, long random) {
+        public static final Countdown DEFAULT = new Countdown(1000, 0);
+
+        public static final Codec<Countdown> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.LONG.optionalFieldOf("duration", DEFAULT.duration()).forGetter(Countdown::duration),
+                Codec.LONG.optionalFieldOf("random", DEFAULT.random()).forGetter(Countdown::random))
+                .apply(instance, Countdown::new));
+    }
+
+    public record Pits(Countdown ready, Countdown failure, int count) {
+        public static final Pits DEFAULT = new Pits(new Countdown(2000, 3000), new Countdown(2000, 0), 0);
+
+        public static final Codec<Pits> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Countdown.CODEC.optionalFieldOf("success", DEFAULT.ready()).forGetter(Pits::ready),
+                Countdown.CODEC.optionalFieldOf("failure", DEFAULT.failure()).forGetter(Pits::failure),
+                Codec.INT.optionalFieldOf("count", DEFAULT.count()).forGetter(Pits::count))
+                .apply(instance, Pits::new));
     }
 }

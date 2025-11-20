@@ -126,7 +126,7 @@ public class Race {
             BoatRacePlayer player = BoatRacePlayer.of(profile);
 
             // race has begun, spectate only unless a participant already
-            if (!this.stageManager.countdown.isCounting() && !this.stageManager.isParticipant(player)) {
+            if (!this.stageManager.goCountdown.isCounting() && !this.stageManager.isParticipant(player)) {
                 this.stageManager.toSpectator(player);
                 this.stageManager.teams.unassign(player);
             }

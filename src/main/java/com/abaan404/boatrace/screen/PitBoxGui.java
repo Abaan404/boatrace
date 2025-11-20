@@ -1,5 +1,7 @@
 package com.abaan404.boatrace.screen;
 
+import com.abaan404.boatrace.BoatRace;
+import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.events.PlayerPitSuccess;
 import com.abaan404.boatrace.gameplay.Countdown;
 import com.abaan404.boatrace.utils.TextUtils;
@@ -14,18 +16,34 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.GameSpaceManager;
+import xyz.nucleoid.plasmid.api.game.config.GameConfig;
 import xyz.nucleoid.stimuli.EventInvokers;
 import xyz.nucleoid.stimuli.Stimuli;
 import xyz.nucleoid.stimuli.event.EventResult;
 
 public class PitBoxGui extends SimpleGui {
-    private Countdown countdown = new Countdown();
+    private final BoatRaceConfig.Pits config;
+    private final Countdown countdown = new Countdown();
+
     private State state = State.IDLE;
     private long duration = 0;
 
     public PitBoxGui(ServerPlayerEntity player) {
         super(ScreenHandlerType.GENERIC_9X3, player, false);
 
+        GameSpace gameSpace = GameSpaceManager.get().byPlayer(player);
+        GameConfig<?> gameConfig = gameSpace.getMetadata().sourceConfig().value();
+
+        BoatRaceConfig.Pits config = BoatRaceConfig.Pits.DEFAULT;
+        if (gameConfig.type().id().equals(BoatRace.TYPE.id())) {
+            config = ((BoatRaceConfig) gameConfig.config()).race()
+                    .map(race -> race.pits())
+                    .orElse(config);
+        }
+
+        this.config = config;
         this.setTitle(Text.of("PitBox"));
         this.setLockPlayerInventory(true);
     }
@@ -75,7 +93,7 @@ public class PitBoxGui extends SimpleGui {
     @Override
     public void beforeOpen() {
         this.setState(State.WAIT);
-        this.countdown.setCountdown(2000, 0);
+        this.countdown.setCountdown(config.ready());
     }
 
     @Override
@@ -90,7 +108,7 @@ public class PitBoxGui extends SimpleGui {
         switch (this.state) {
             case FAIL:
                 this.setState(State.WAIT);
-                this.countdown.setCountdown(2000, 0);
+                this.countdown.setCountdown(config.ready());
                 break;
 
             case WAIT:
@@ -107,7 +125,7 @@ public class PitBoxGui extends SimpleGui {
         switch (this.state) {
             case WAIT:
                 this.setState(State.FAIL);
-                this.countdown.setCountdown(2000, 0);
+                this.countdown.setCountdown(config.failure());
                 break;
 
             case READY:
