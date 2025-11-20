@@ -51,7 +51,7 @@ public class RaceStageManager {
     public final Checkpoints checkpoints;
     public final Splits splits;
     public final Positions positions;
-    public final Countdown countdown;
+    public final Countdown goCountdown;
     public final Teams teams;
 
     private final SpawnLogic spawnLogic;
@@ -73,8 +73,8 @@ public class RaceStageManager {
         this.splits = new Splits();
         this.positions = new Positions();
 
-        this.countdown = new Countdown();
-        this.countdown.setCountdown(config.countdown(), config.countdownRandom());
+        this.goCountdown = new Countdown();
+        this.goCountdown.setCountdown(config.goCountdown());
 
         this.spawnLogic = new SpawnLogic(world);
     }
@@ -114,7 +114,7 @@ public class RaceStageManager {
         this.spawnLogic.spawnPlayer(player, respawn);
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
 
-        if (this.countdown.isCounting()) {
+        if (this.goCountdown.isCounting()) {
             this.spawnLogic.freezeVehicle(player);
         } else {
             this.spawnLogic.unfreezeVehicle(player);
@@ -166,7 +166,7 @@ public class RaceStageManager {
      */
     public void tickPlayers() {
         // check if countdown is ready
-        switch (this.countdown.tick(this.world)) {
+        switch (this.goCountdown.tick(this.world)) {
             case FINISH: {
                 for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
                     if (!this.participants.contains(BoatRacePlayer.of(player))) {
@@ -382,7 +382,7 @@ public class RaceStageManager {
      */
     public int getRequiredPits() {
         return switch (this.track.getAttributes().layout()) {
-            case CIRCULAR -> this.track.getRegions().pitLane().isPresent() ? this.config.pits() : 0;
+            case CIRCULAR -> this.track.getRegions().pitLane().isPresent() ? this.config.pits().count() : 0;
             case LINEAR -> 0;
         };
     }
