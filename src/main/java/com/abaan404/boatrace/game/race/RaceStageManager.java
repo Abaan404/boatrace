@@ -370,7 +370,7 @@ public class RaceStageManager {
      */
     public int getMaxLaps() {
         return switch (this.track.getAttributes().layout()) {
-            case CIRCULAR -> this.config.maxLaps();
+            case CIRCULAR -> Math.max(this.config.maxLaps(), 1);
             case LINEAR -> 1;
         };
     }
@@ -382,7 +382,9 @@ public class RaceStageManager {
      */
     public int getRequiredPits() {
         return switch (this.track.getAttributes().layout()) {
-            case CIRCULAR -> this.track.getRegions().pitLane().isPresent() ? this.config.pits().count() : 0;
+            case CIRCULAR -> this.track.getRegions().pitLane().isPresent()
+                    ? Math.max(this.config.pits().count(), 0)
+                    : 0;
             case LINEAR -> 0;
         };
     }
