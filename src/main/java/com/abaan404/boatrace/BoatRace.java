@@ -3,7 +3,7 @@ package com.abaan404.boatrace;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.abaan404.boatrace.compat.openboatutils.OBUPackets;
+import com.abaan404.boatrace.compat.openboatutils.OBU;
 import com.abaan404.boatrace.game.qualifying.Qualifying;
 import com.abaan404.boatrace.game.race.Race;
 import com.abaan404.boatrace.game.timetrial.TimeTrial;
@@ -69,7 +69,7 @@ public class BoatRace implements ModInitializer {
     @Override
     public void onInitialize() {
         PolymerResourcePackUtils.addModAssets(ID);
-        OBUPackets.initialize();
+        OBU.initialize();
         BoatRaceItems.initialize();
         BoatRaceCommands.initialize();
         Leaderboard.initialize();
