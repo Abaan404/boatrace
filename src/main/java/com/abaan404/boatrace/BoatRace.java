@@ -15,6 +15,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.GameRules;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
@@ -37,6 +38,8 @@ public class BoatRace implements ModInitializer {
         BoatRaceTrack track = BoatRaceTrack.load(context.server(), config.track());
         RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
                 .setGenerator(track.asGenerator(context.server()));
+
+        worldConfig.setGameRule(GameRules.DO_DAYLIGHT_CYCLE, false);
 
         if (config.qualifying().isPresent()) {
             if (!config.race().isPresent()) {

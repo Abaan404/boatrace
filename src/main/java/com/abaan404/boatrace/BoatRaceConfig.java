@@ -3,6 +3,7 @@ package com.abaan404.boatrace;
 import java.util.List;
 import java.util.Optional;
 
+import com.abaan404.boatrace.compat.openboatutils.OBUGameConfig;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -12,14 +13,15 @@ import net.minecraft.util.StringIdentifiable;
 
 public record BoatRaceConfig(
         Identifier track,
-        Team team,
-        Optional<Qualifying> qualifying, Optional<Race> race) {
+        Team team, Optional<Qualifying> qualifying, Optional<Race> race,
+        Optional<OBUGameConfig> openboatutils) {
 
     public static final MapCodec<BoatRaceConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Identifier.CODEC.fieldOf("track").forGetter(BoatRaceConfig::track),
             Team.CODEC.optionalFieldOf("team", Team.DEFAULT).forGetter(BoatRaceConfig::team),
             Qualifying.CODEC.optionalFieldOf("qualifying").forGetter(BoatRaceConfig::qualifying),
-            Race.CODEC.optionalFieldOf("race").forGetter(BoatRaceConfig::race))
+            Race.CODEC.optionalFieldOf("race").forGetter(BoatRaceConfig::race),
+            OBUGameConfig.CODEC.optionalFieldOf("openboatutils").forGetter(BoatRaceConfig::openboatutils))
             .apply(instance, BoatRaceConfig::new));
 
     public record Qualifying(

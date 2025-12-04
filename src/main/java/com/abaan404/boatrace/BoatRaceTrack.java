@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.abaan404.boatrace.compat.openboatutils.OBUTrackConfig;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -234,12 +235,14 @@ public class BoatRaceTrack {
     }
 
     public record Attributes(
+            Optional<OBUTrackConfig> openboatutils,
             int timeOfDay,
             Layout layout) {
 
-        public static final Attributes DEFAULT = new Attributes(6000, Layout.CIRCULAR);
+        public static final Attributes DEFAULT = new Attributes(Optional.empty(), 6000, Layout.CIRCULAR);
 
         public static final MapCodec<Attributes> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                OBUTrackConfig.CODEC.optionalFieldOf("openboatutils").forGetter(Attributes::openboatutils),
                 Codec.INT.optionalFieldOf("time_of_day", DEFAULT.timeOfDay()).forGetter(Attributes::timeOfDay),
                 Layout.CODEC.optionalFieldOf("layout", DEFAULT.layout()).forGetter(Attributes::layout))
                 .apply(instance, Attributes::new));
