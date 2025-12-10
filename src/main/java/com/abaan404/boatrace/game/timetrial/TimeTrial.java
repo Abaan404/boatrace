@@ -7,6 +7,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.compat.openboatutils.OBU;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
+import com.abaan404.boatrace.utils.TextUtils;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.Entity;
@@ -103,7 +104,13 @@ public class TimeTrial {
     }
 
     private void addPlayer(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
         this.widgets.sendTrackMessage(player);
+        if (!this.openboatutils.canPlay(bPlayer)) {
+            player.sendMessage(TextUtils.chatReasonOBUReject());
+        }
+
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
     }

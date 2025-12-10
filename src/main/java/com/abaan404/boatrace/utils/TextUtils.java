@@ -579,4 +579,13 @@ public final class TextUtils {
 
         return text;
     }
+
+    /**
+     * Tell the player they got rejected because of not having OpenBoatUtils.
+     */
+    public static Text chatReasonOBUReject() {
+        return Text.empty()
+                .append(Text.literal(" >> ").formatted(Formatting.YELLOW, Formatting.BOLD))
+                .append(Text.literal("OpenBoatUtils is required to play this game. You are now spectating."));
+    }
 }
