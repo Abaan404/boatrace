@@ -1,9 +1,11 @@
 package com.abaan404.boatrace.game.timetrial;
 
+import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
+import com.abaan404.boatrace.compat.openboatutils.OBU;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.mojang.authlib.GameProfile;
 
@@ -35,16 +37,20 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 public class TimeTrial {
     private final TimeTrialStageManager stageManager;
     private final TimeTrialWidgets widgets;
+    private final OBU openboatutils;
 
-    private TimeTrial(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets) {
+    private TimeTrial(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets,
+            OBU openboatutils) {
         this.stageManager = new TimeTrialStageManager(gameSpace, world, track);
         this.widgets = new TimeTrialWidgets(gameSpace, widgets, track);
+        this.openboatutils = openboatutils;
     }
 
-    public static void open(GameActivity game, ServerWorld world, BoatRaceTrack track) {
+    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
+        OBU openboatutils = OBU.addTo(game, config, track);
 
-        TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets);
+        TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets, openboatutils);
 
         world.setTimeOfDay(track.getAttributes().timeOfDay());
 
@@ -77,6 +83,11 @@ public class TimeTrial {
     private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
         for (GameProfile profile : offer.players()) {
             BoatRacePlayer player = BoatRacePlayer.of(profile);
+
+            if (!this.openboatutils.canPlay(player)) {
+                this.stageManager.toSpectator(player);
+                continue;
+            }
 
             switch (offer.intent()) {
                 case PLAY:

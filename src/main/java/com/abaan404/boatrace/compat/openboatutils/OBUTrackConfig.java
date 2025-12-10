@@ -46,21 +46,22 @@ public record OBUTrackConfig(
 
     public record BlockSettings(
             Map<BlockSettingType, Float> defaults,
-            Map<BlockSettingType, List<BlockSetting>> settings) {
+            Map<BlockSettingType, List<BlockAttribute>> attributes) {
 
         public static final Codec<BlockSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.unboundedMap(BlockSettingType.CODEC, Codec.FLOAT).optionalFieldOf("defaults", Map.of())
+                Codec.unboundedMap(BlockSettingType.CODEC, Codec.FLOAT)
+                        .optionalFieldOf("defaults", Map.of())
                         .forGetter(BlockSettings::defaults),
-                Codec.unboundedMap(BlockSettingType.CODEC, BlockSetting.CODEC.listOf())
-                        .optionalFieldOf("settings", Map.of())
-                        .forGetter(BlockSettings::settings))
+                Codec.unboundedMap(BlockSettingType.CODEC, BlockAttribute.CODEC.listOf())
+                        .optionalFieldOf("attributes", Map.of())
+                        .forGetter(BlockSettings::attributes))
                 .apply(instance, BlockSettings::new));
 
-        public record BlockSetting(List<String> blocks, float value) {
-            public static final Codec<BlockSetting> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                    Codec.STRING.listOf().fieldOf("blocks").forGetter(BlockSetting::blocks),
-                    Codec.FLOAT.fieldOf("value").forGetter(BlockSetting::value))
-                    .apply(instance, BlockSetting::new));
+        public record BlockAttribute(List<String> blocks, float value) {
+            public static final Codec<BlockAttribute> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                    Codec.STRING.listOf().fieldOf("blocks").forGetter(BlockAttribute::blocks),
+                    Codec.FLOAT.fieldOf("value").forGetter(BlockAttribute::value))
+                    .apply(instance, BlockAttribute::new));
         }
     }
 

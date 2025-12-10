@@ -8,6 +8,7 @@ import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
+import com.abaan404.boatrace.compat.openboatutils.OBU;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
@@ -40,18 +41,23 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 public class Qualifying {
     private final QualifyingStageManager stageManager;
     private final QualifyingWidgets widgets;
+    private final OBU openboatutils;
 
-    private Qualifying(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            BoatRaceTrack track, Teams teams, ServerWorld world, GlobalWidgets widgets) {
-        this.stageManager = new QualifyingStageManager(gameSpace, config, configRace, world, track, teams);
+    private Qualifying(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig gameConfig,
+            BoatRaceTrack track, Teams teams, ServerWorld world, GlobalWidgets widgets, OBU openboatutils) {
+        this.stageManager = new QualifyingStageManager(gameSpace, config, gameConfig, world, track, teams);
         this.widgets = new QualifyingWidgets(gameSpace, world, widgets, track);
+        this.openboatutils = openboatutils;
     }
 
-    public static void open(GameActivity game, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            ServerWorld world, BoatRaceTrack track, Teams teams) {
+    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track,
+            Teams teams) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
+        OBU openboatutils = OBU.addTo(game, config, track);
 
-        Qualifying qualifying = new Qualifying(game.getGameSpace(), config, configRace, track, teams, world, widgets);
+        BoatRaceConfig.Qualifying qualifyingConfig = config.qualifying().orElseThrow();
+        Qualifying qualifying = new Qualifying(game.getGameSpace(), qualifyingConfig, config, track, teams, world,
+                widgets, openboatutils);
 
         world.setTimeOfDay(track.getAttributes().timeOfDay());
 
@@ -86,6 +92,12 @@ public class Qualifying {
 
         for (GameProfile profile : offer.players()) {
             BoatRacePlayer player = BoatRacePlayer.of(profile);
+
+            if (!this.openboatutils.canPlay(player)) {
+                this.stageManager.toSpectator(player);
+                this.stageManager.teams.unassign(player);
+                continue;
+            }
 
             switch (offer.intent()) {
                 case PLAY:

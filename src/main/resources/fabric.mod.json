@@ -16,5 +16,8 @@
         "java": ">=21",
         "fabric-api": "*"
     },
+    "breaks": {
+        "openboatutils": "*"
+    },
     "mixins": ["modid.mixins.json"]
 }

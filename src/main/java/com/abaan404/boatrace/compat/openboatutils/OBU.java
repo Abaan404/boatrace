@@ -2,11 +2,14 @@ package com.abaan404.boatrace.compat.openboatutils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.compat.openboatutils.OBUTrackConfig.BlockSettingType;
-import com.abaan404.boatrace.compat.openboatutils.OBUTrackConfig.BlockSettings.BlockSetting;
+import com.abaan404.boatrace.compat.openboatutils.OBUTrackConfig.BlockSettings.BlockAttribute;
 import com.abaan404.boatrace.compat.openboatutils.OBUPackets.AddToCollisionFilterS2CPayload;
 import com.abaan404.boatrace.compat.openboatutils.OBUPackets.AllowAccelerationStackingS2CPayload;
 import com.abaan404.boatrace.compat.openboatutils.OBUPackets.ApplyModeSeriesS2CPayload;
@@ -42,24 +45,39 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.network.ServerPlayerEntity;
+import xyz.nucleoid.plasmid.api.game.GameActivity;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
 
 public final class OBU {
     private static final Set<Integer> REJECTED_VERSIONS = Set.of(12, 8);
+    private static final Set<BoatRacePlayer> PLAYERS = new ObjectOpenHashSet<>();
 
-    private OBU() {
+    private final GameSpace gameSpace;
+    private final Optional<OBUGameConfig> gameConfig;
+    private final Optional<OBUTrackConfig> trackConfig;
+    private final boolean required;
+
+    private OBU(GameSpace gameSpace, BoatRaceConfig config, BoatRaceTrack track) {
+        this.gameSpace = gameSpace;
+        this.gameConfig = config.openboatutils();
+        this.trackConfig = track.getAttributes().openboatutils();
+        this.required = this.gameConfig.isPresent() || this.trackConfig.isPresent();
     }
 
+    /**
+     * Setup events for tracking if the player has openboatutils
+     */
     public static void initialize() {
-        OBUPackets.initialize();
-
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             BoatRacePlayer player = BoatRacePlayer.of(handler.player);
-            OBUPlayers.remove(player);
+            PLAYERS.remove(player);
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             BoatRacePlayer player = BoatRacePlayer.of(handler.player);
-            OBUPlayers.remove(player);
+            PLAYERS.remove(player);
         });
 
         ServerPlayNetworking.registerGlobalReceiver(VersionC2SPayload.ID, (payload, context) -> {
@@ -69,40 +87,50 @@ public final class OBU {
 
             BoatRacePlayer player = BoatRacePlayer.of(context.player());
 
-            OBUPlayers.add(player);
+            PLAYERS.add(player);
         });
     }
 
-    private static final Set<BoatRacePlayer> OBUPlayers = new ObjectOpenHashSet<>();
+    /**
+     * Add OpenBoatUtils support to a game.
+     *
+     * @param activity The game activity.
+     * @param config   The game with OBU config.
+     * @param track    The track with OBU config.
+     * @return The instance to handle OBU settings.
+     */
+    public static OBU addTo(GameActivity activity, BoatRaceConfig config, BoatRaceTrack track) {
+        OBU openboatutils = new OBU(activity.getGameSpace(), config, track);
 
-    public static boolean foundOpenBoatUtils(ServerPlayerEntity player) {
-        return OBUPlayers.contains(BoatRacePlayer.of(player));
+        activity.listen(GamePlayerEvents.ADD, openboatutils::onAddPlayer);
+        activity.listen(GamePlayerEvents.REMOVE, openboatutils::onRemovePlayer);
+        activity.listen(GameActivityEvents.DISABLE, openboatutils::onDisable);
+
+        return openboatutils;
     }
 
-    public static void reset(ServerPlayerEntity player) {
+    /**
+     * Check if the player needs OpenBoatUtils support. The check is done when the
+     * player sends the {@link VersionC2SPayload} packet.
+     *
+     * @param player The player to check.
+     * @return If the player needs OpenBoatUtils.
+     */
+    public boolean canPlay(BoatRacePlayer player) {
+        return !this.required || PLAYERS.contains(player);
+    }
+
+    /**
+     * Apply OBU configs on add.
+     *
+     * @param player The player.
+     */
+    private void onAddPlayer(ServerPlayerEntity player) {
+        // reset to vanilla before applying anything
         ServerPlayNetworking.send(player, new ResetS2CPayload());
-    }
 
-    public static void apply(ServerPlayerEntity player, OBUGameConfig config) {
-        config.collision().ifPresent(collision -> {
-            CollisionMode mode = switch (collision.mode()) {
-                case VANILLA -> CollisionMode.VANILLA;
-                case NO_COLLISION_WITH_BOATS_AND_PLAYERS -> CollisionMode.NO_COLLISION_WITH_BOATS_AND_PLAYERS;
-                case NO_COLLISION_WITH_ANY_ENTITIES -> CollisionMode.NO_COLLISION_WITH_ANY_ENTITIES;
-                case FILTERED_COLLISION -> CollisionMode.FILTERED_COLLISION;
-                case NO_COLLISION_WITH_BOATS_AND_PLAYERS_PLUS_FILTERED_COLLISION ->
-                    CollisionMode.NO_COLLISION_WITH_BOATS_AND_PLAYERS_PLUS_FILTERED_COLLISION;
-            };
-
-            ServerPlayNetworking.send(player, new AddToCollisionFilterS2CPayload(collision.filter()));
-            ServerPlayNetworking.send(player, new SetCollisionModeS2CPayload(mode));
-            ServerPlayNetworking.send(player, new SetCollisionResolutionS2CPayload(collision.resolution()));
-        });
-    }
-
-    public static void apply(ServerPlayerEntity player, OBUTrackConfig config) {
         // apply mode before any other setting to let the player customize the mode
-        config.mode().ifPresent(mode -> {
+        this.trackConfig.flatMap(config -> config.mode()).ifPresent(mode -> {
             List<Mode> mode2 = mode.stream().map(m -> switch (m) {
                 case RALLY -> Mode.RALLY;
                 case RALLY_BLUE -> Mode.RALLY_BLUE;
@@ -118,7 +146,22 @@ public final class OBU {
             ServerPlayNetworking.send(player, payload);
         });
 
-        config.settings().ifPresent(settings -> {
+        this.gameConfig.flatMap(config -> config.collision()).ifPresent(collision -> {
+            CollisionMode mode = switch (collision.mode()) {
+                case VANILLA -> CollisionMode.VANILLA;
+                case NO_COLLISION_WITH_BOATS_AND_PLAYERS -> CollisionMode.NO_COLLISION_WITH_BOATS_AND_PLAYERS;
+                case NO_COLLISION_WITH_ANY_ENTITIES -> CollisionMode.NO_COLLISION_WITH_ANY_ENTITIES;
+                case FILTERED_COLLISION -> CollisionMode.FILTERED_COLLISION;
+                case NO_COLLISION_WITH_BOATS_AND_PLAYERS_PLUS_FILTERED_COLLISION ->
+                    CollisionMode.NO_COLLISION_WITH_BOATS_AND_PLAYERS_PLUS_FILTERED_COLLISION;
+            };
+
+            ServerPlayNetworking.send(player, new AddToCollisionFilterS2CPayload(collision.filter()));
+            ServerPlayNetworking.send(player, new SetCollisionModeS2CPayload(mode));
+            ServerPlayNetworking.send(player, new SetCollisionResolutionS2CPayload(collision.resolution()));
+        });
+
+        this.trackConfig.flatMap(config -> config.settings()).ifPresent(settings -> {
             for (Map.Entry<BlockSettingType, Float> defaults : settings.defaults().entrySet()) {
                 OBUS2CPayload payload = switch (defaults.getKey()) {
                     case SLIPPERINESS -> new SetDefaultSlipperinessS2CPayload(defaults.getValue());
@@ -132,34 +175,34 @@ public final class OBU {
                 ServerPlayNetworking.send(player, payload);
             }
 
-            for (Map.Entry<BlockSettingType, List<BlockSetting>> setting : settings
-                    .settings().entrySet()) {
+            for (Map.Entry<BlockSettingType, List<BlockAttribute>> setting : settings
+                    .attributes().entrySet()) {
 
-                for (BlockSetting blockSetting : setting.getValue()) {
+                for (BlockAttribute blockAttribute : setting.getValue()) {
                     OBUS2CPayload payload = switch (setting.getKey()) {
                         case JUMP_FORCE -> new SetPerBlockSettingS2CPayload(
                                 OBUPackets.BlockSetting.JUMP_FORCE,
-                                blockSetting.value(),
-                                blockSetting.blocks());
+                                blockAttribute.value(),
+                                blockAttribute.blocks());
                         case FORWARDS_ACCELERATION -> new SetPerBlockSettingS2CPayload(
                                 OBUPackets.BlockSetting.FORWARDS_ACCEL,
-                                blockSetting.value(),
-                                blockSetting.blocks());
+                                blockAttribute.value(),
+                                blockAttribute.blocks());
                         case BACKWARDS_ACCELERATION -> new SetPerBlockSettingS2CPayload(
                                 OBUPackets.BlockSetting.BACKWARDS_ACCEL,
-                                blockSetting.value(),
-                                blockSetting.blocks());
+                                blockAttribute.value(),
+                                blockAttribute.blocks());
                         case TURN_FORWARDS_ACCELERATION -> new SetPerBlockSettingS2CPayload(
                                 OBUPackets.BlockSetting.TURN_FORWARDS_ACCEL,
-                                blockSetting.value(),
-                                blockSetting.blocks());
+                                blockAttribute.value(),
+                                blockAttribute.blocks());
                         case YAW_ACCELERATION -> new SetPerBlockSettingS2CPayload(
                                 OBUPackets.BlockSetting.YAW_ACCEL,
-                                blockSetting.value(),
-                                blockSetting.blocks());
+                                blockAttribute.value(),
+                                blockAttribute.blocks());
                         case SLIPPERINESS -> new SetBlocksSlipperinessS2CPayload(
-                                blockSetting.value(),
-                                blockSetting.blocks());
+                                blockAttribute.value(),
+                                blockAttribute.blocks());
                     };
 
                     ServerPlayNetworking.send(player, payload);
@@ -167,56 +210,74 @@ public final class OBU {
             }
         });
 
-        config.swimForce().ifPresent(swimForce -> {
+        this.trackConfig.flatMap(config -> config.swimForce()).ifPresent(swimForce -> {
             ServerPlayNetworking.send(player, new SetSwimForceS2CPayload(swimForce));
         });
 
-        config.stepHeight().ifPresent(stepHeight -> {
+        this.trackConfig.flatMap(config -> config.stepHeight()).ifPresent(stepHeight -> {
             ServerPlayNetworking.send(player, new SetStepHeightS2CPayload(stepHeight));
         });
 
-        config.gravity().ifPresent(gravity -> {
+        this.trackConfig.flatMap(config -> config.gravity()).ifPresent(gravity -> {
             ServerPlayNetworking.send(player, new SetGravityS2CPayload(gravity));
         });
 
-        config.coyoteTime().ifPresent(coyoteTime -> {
+        this.trackConfig.flatMap(config -> config.coyoteTime()).ifPresent(coyoteTime -> {
             ServerPlayNetworking.send(player, new SetCoyoteTimeS2CPayload(coyoteTime));
         });
 
-        config.fallDamage().ifPresent(fallDamage -> {
+        this.trackConfig.flatMap(config -> config.fallDamage()).ifPresent(fallDamage -> {
             ServerPlayNetworking.send(player, new SetBoatFallDamageS2CPayload(fallDamage));
         });
 
-        config.airControl().ifPresent(airControl -> {
+        this.trackConfig.flatMap(config -> config.airControl()).ifPresent(airControl -> {
             ServerPlayNetworking.send(player, new SetBoatAirControlS2CPayload(airControl));
         });
 
-        config.waterElevation().ifPresent(waterElevation -> {
+        this.trackConfig.flatMap(config -> config.waterElevation()).ifPresent(waterElevation -> {
             ServerPlayNetworking.send(player, new SetBoatWaterElevationS2CPayload(waterElevation));
         });
 
-        config.accelerationStacking().ifPresent(accelerationStacking -> {
+        this.trackConfig.flatMap(config -> config.accelerationStacking()).ifPresent(accelerationStacking -> {
             ServerPlayNetworking.send(player, new AllowAccelerationStackingS2CPayload(accelerationStacking));
         });
 
-        config.underwaterControl().ifPresent(underwaterControl -> {
+        this.trackConfig.flatMap(config -> config.underwaterControl()).ifPresent(underwaterControl -> {
             ServerPlayNetworking.send(player, new SetUnderwaterControlS2CPayload(underwaterControl));
         });
 
-        config.surfaceWaterControl().ifPresent(surfaceWaterControl -> {
+        this.trackConfig.flatMap(config -> config.surfaceWaterControl()).ifPresent(surfaceWaterControl -> {
             ServerPlayNetworking.send(player, new SetSurfaceWaterControlS2CPayload(surfaceWaterControl));
         });
 
-        config.waterJumping().ifPresent(waterJumping -> {
+        this.trackConfig.flatMap(config -> config.waterJumping()).ifPresent(waterJumping -> {
             ServerPlayNetworking.send(player, new SetWaterJumpingS2CPayload(waterJumping));
         });
 
-        config.airStepping().ifPresent(airStepping -> {
+        this.trackConfig.flatMap(config -> config.airStepping()).ifPresent(airStepping -> {
             ServerPlayNetworking.send(player, new SetAirSteppingS2CPayload(airStepping));
         });
 
-        config.tenStepInterpolation().ifPresent(tenStepInterpolation -> {
+        this.trackConfig.flatMap(config -> config.tenStepInterpolation()).ifPresent(tenStepInterpolation -> {
             ServerPlayNetworking.send(player, new SetTenStepInterpolationS2CPayload(tenStepInterpolation));
         });
+    }
+
+    /**
+     * Reset to vanilla on remove.
+     *
+     * @param player The player.
+     */
+    private void onRemovePlayer(ServerPlayerEntity player) {
+        ServerPlayNetworking.send(player, new ResetS2CPayload());
+    }
+
+    /**
+     * Reset everyone to vanilla on disable.
+     */
+    private void onDisable() {
+        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+            ServerPlayNetworking.send(player, new ResetS2CPayload());
+        }
     }
 }

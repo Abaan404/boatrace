@@ -83,7 +83,7 @@ public final class OBUPackets {
         NO_COLLISION_WITH_BOATS_AND_PLAYERS(1),
         NO_COLLISION_WITH_ANY_ENTITIES(2),
         FILTERED_COLLISION(3),
-        NO_COLLISION_WITH_BOATS_AND_PLAYERS_PLUS_FILTERED_COLLISION(3);
+        NO_COLLISION_WITH_BOATS_AND_PLAYERS_PLUS_FILTERED_COLLISION(4);
 
         private final short value;
 
@@ -118,7 +118,13 @@ public final class OBUPackets {
         public static final PacketCodec<PacketByteBuf, OBUS2CPayload> CODEC = PacketCodec.of(
                 (payload, buf) -> payload.write(buf),
                 buf -> {
-                    throw new IllegalStateException("Tried decoding OBU clientbound packets.");
+                    buf.readBytes(buf.readableBytes()); // read everything so mc doesnt complain.
+                    return new OBUS2CPayload() {
+                        @Override
+                        public short packetId() {
+                            throw new UnsupportedOperationException("Unimplemented method 'packetId'");
+                        }
+                    };
                 });
 
         public default void write(PacketByteBuf buffer) {

@@ -35,7 +35,7 @@ public class QualifyingStageManager {
     private final GameSpace gameSpace;
     private final ServerWorld world;
     private final BoatRaceConfig.Qualifying config;
-    private final BoatRaceConfig.Race configRace;
+    private final BoatRaceConfig gameConfig;
     private final BoatRaceTrack track;
 
     public final Checkpoints checkpoints;
@@ -47,12 +47,12 @@ public class QualifyingStageManager {
 
     private long duration = 0;
 
-    public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
+    public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig gameConfig,
             ServerWorld world, BoatRaceTrack track, Teams teams) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
-        this.configRace = configRace;
+        this.gameConfig = gameConfig;
         this.track = track;
         this.teams = teams;
 
@@ -258,7 +258,7 @@ public class QualifyingStageManager {
 
         this.gameSpace.setActivity(game -> {
             Teams teams = new Teams(this.teams, TeamManager.addTo(game));
-            Race.open(game, this.configRace, this.world, this.track, teams, records);
+            Race.open(game, this.gameConfig, this.world, this.track, teams, records);
         });
     }
 

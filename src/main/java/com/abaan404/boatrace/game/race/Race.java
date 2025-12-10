@@ -9,6 +9,7 @@ import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
+import com.abaan404.boatrace.compat.openboatutils.OBU;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.events.PlayerPitSuccess;
 import com.abaan404.boatrace.gameplay.Teams;
@@ -44,13 +45,15 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 public class Race {
     private final RaceStageManager stageManager;
     private final RaceWidgets widgets;
+    private final OBU openboatutils;
     private final Set<BoatRacePlayer> qualified;
     private final boolean acceptUnqualified;
 
     private Race(GameSpace gameSpace, BoatRaceConfig.Race config, BoatRaceTrack track, Teams teams,
-            ServerWorld world, GlobalWidgets widgets, List<BoatRacePlayer> gridOrder) {
+            ServerWorld world, GlobalWidgets widgets, OBU openboatutils, List<BoatRacePlayer> gridOrder) {
         this.stageManager = new RaceStageManager(gameSpace, config, world, track, teams);
         this.widgets = new RaceWidgets(gameSpace, widgets, track);
+        this.openboatutils = openboatutils;
         this.qualified = Set.copyOf(gridOrder);
         this.acceptUnqualified = config.acceptUnqualified() || this.qualified.isEmpty();
 
@@ -81,11 +84,13 @@ public class Race {
         }
     }
 
-    public static void open(GameActivity game, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
+    public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track,
             Teams teams, List<BoatRacePlayer> gridOrder) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
+        OBU openboatutils = OBU.addTo(game, config, track);
 
-        Race race = new Race(game.getGameSpace(), config, track, teams, world, widgets, gridOrder);
+        BoatRaceConfig.Race raceConfig = config.race().orElseThrow();
+        Race race = new Race(game.getGameSpace(), raceConfig, track, teams, world, widgets, openboatutils, gridOrder);
 
         world.setTimeOfDay(track.getAttributes().timeOfDay());
 
@@ -125,6 +130,12 @@ public class Race {
 
             // race has begun, spectate only unless a participant already
             if (!this.stageManager.goCountdown.isCounting() && !this.stageManager.isParticipant(player)) {
+                this.stageManager.toSpectator(player);
+                this.stageManager.teams.unassign(player);
+            }
+
+            // openboatutils was required
+            else if (!this.openboatutils.canPlay(player)) {
                 this.stageManager.toSpectator(player);
                 this.stageManager.teams.unassign(player);
             }
