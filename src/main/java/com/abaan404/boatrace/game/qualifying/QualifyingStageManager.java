@@ -116,11 +116,18 @@ public class QualifyingStageManager {
     }
 
     /**
-     * Tick the player, update leaderboards and splits and also check the duration
-     * of this game.
+     * Tick the player, update leaderboards and splits and also check the
+     * duration/lap count of this game.
      */
     public void tickPlayers() {
         if (this.duration > this.config.duration()) {
+            this.startRace();
+            return;
+        }
+
+        // there is a rare chance tick() is called before any players are handled
+        // workaround this issue by checking if duration has incremented
+        if (this.duration > 0 && this.participants.isEmpty()) {
             this.startRace();
             return;
         }
@@ -142,6 +149,13 @@ public class QualifyingStageManager {
                 case LOOP: {
                     this.splits.recordSplit(bPlayer);
                     this.submit(player);
+
+                    this.config.laps().ifPresent(laps -> {
+                        if (this.checkpoints.getLaps(bPlayer) > laps) {
+                            this.toFinisher(player);
+                            this.splits.reset(bPlayer);
+                        }
+                    });
 
                     // start a new run
                     this.splits.reset(bPlayer);
@@ -215,6 +229,22 @@ public class QualifyingStageManager {
         this.checkpoints.reset(player);
         this.splits.reset(player);
         this.splits.stop(player);
+    }
+
+    /**
+     * Transition a player to spectator but without resetting
+     * their state.
+     *
+     * @param player The player.
+     */
+    public void toFinisher(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+        this.participants.remove(bPlayer);
+
+        this.splits.stop(bPlayer);
+        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+        this.spawnLogic.despawnVehicle(player);
     }
 
     /**

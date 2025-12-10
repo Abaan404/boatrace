@@ -131,6 +131,12 @@ public class QualifyingWidgets {
                 TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
                 content.add(Text.empty());
 
+                stageManager.getConfig().laps().ifPresent(laps -> {
+                    content.add(TextUtils.scoreboardLaps(
+                            stageManager.checkpoints.getLaps(bPlayer),
+                            laps));
+                });
+
                 content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),
                         stageManager.getConfig().duration()));

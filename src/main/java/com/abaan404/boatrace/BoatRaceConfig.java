@@ -23,10 +23,12 @@ public record BoatRaceConfig(
             .apply(instance, BoatRaceConfig::new));
 
     public record Qualifying(
-            long duration) {
+            long duration,
+            Optional<Integer> laps) {
 
         public static final Codec<Qualifying> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.LONG.fieldOf("duration").forGetter(Qualifying::duration))
+                Codec.LONG.fieldOf("duration").forGetter(Qualifying::duration),
+                Codec.INT.optionalFieldOf("laps").forGetter(Qualifying::laps))
                 .apply(instance, Qualifying::new));
     }
 

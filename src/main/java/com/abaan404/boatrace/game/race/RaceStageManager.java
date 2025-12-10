@@ -313,6 +313,12 @@ public class RaceStageManager {
         this.positions.add(player);
     }
 
+    /**
+     * Transition a player to spectator but without resetting
+     * their state.
+     *
+     * @param player The player.
+     */
     public void toFinisher(ServerPlayerEntity player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
