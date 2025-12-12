@@ -1,5 +1,7 @@
 package com.abaan404.boatrace.screen;
 
+import java.util.Optional;
+
 import com.abaan404.boatrace.BoatRace;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.events.PlayerPitSuccess;
@@ -11,10 +13,13 @@ import eu.pb4.sgui.api.elements.AnimatedGuiElementBuilder;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.elements.GuiElementInterface;
 import eu.pb4.sgui.api.gui.SimpleGui;
+import net.minecraft.block.NoteBlock;
 import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpaceManager;
@@ -33,15 +38,18 @@ public class PitBoxGui extends SimpleGui {
     public PitBoxGui(ServerPlayerEntity player) {
         super(ScreenHandlerType.GENERIC_9X3, player, false);
 
-        GameSpace gameSpace = GameSpaceManager.get().byPlayer(player);
-        GameConfig<?> gameConfig = gameSpace.getMetadata().sourceConfig().value();
+        Optional<GameSpace> gameSpace = Optional.ofNullable(GameSpaceManager.get().byPlayer(player));
 
-        BoatRaceConfig.Pits config = BoatRaceConfig.Pits.DEFAULT;
-        if (gameConfig.type().id().equals(BoatRace.TYPE.id())) {
-            config = ((BoatRaceConfig) gameConfig.config()).race()
-                    .map(race -> race.pits())
-                    .orElse(config);
-        }
+        BoatRaceConfig.Pits config = gameSpace.flatMap(gs -> {
+            GameConfig<?> gameConfig = gs.getMetadata().sourceConfig().value();
+
+            if (gameConfig.type().id().equals(BoatRace.TYPE.id())) {
+                return ((BoatRaceConfig) gameConfig.config()).race()
+                        .map(race -> race.pits());
+            }
+
+            return Optional.empty();
+        }).orElse(BoatRaceConfig.Pits.DEFAULT);
 
         this.config = config;
         this.setTitle(Text.of("PitBox"));
@@ -66,6 +74,16 @@ public class PitBoxGui extends SimpleGui {
     private void setState(State state) {
         this.state = state;
         this.fillSlots(state.getElement());
+
+        if (state == State.READY) {
+            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BIT.value(), SoundCategory.UI, 1.0f,
+                    NoteBlock.getNotePitch(12));
+        }
+
+        if (state == State.FAIL) {
+            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), SoundCategory.UI, 1.0f,
+                    NoteBlock.getNotePitch(12));
+        }
 
         if (state == State.SUCCESS) {
             try (EventInvokers invokers = Stimuli.select().forEntity(player)) {

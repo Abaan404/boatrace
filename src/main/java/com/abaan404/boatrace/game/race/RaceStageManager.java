@@ -24,12 +24,15 @@ import com.abaan404.boatrace.utils.TextUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import net.minecraft.block.NoteBlock;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -59,6 +62,7 @@ public class RaceStageManager {
 
     private PersonalBest fastestLap = PersonalBest.DEFAULT;
     private long duration = 0;
+    private long lastCountdown = Long.MAX_VALUE;
 
     public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
             Teams teams) {
@@ -174,6 +178,8 @@ public class RaceStageManager {
                     }
 
                     this.spawnLogic.unfreezeVehicle(player);
+                    player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.UI, 1.0f,
+                            NoteBlock.getNotePitch(24));
                 }
 
                 // start positions timer for non server players
@@ -184,6 +190,12 @@ public class RaceStageManager {
             }
 
             case COUNTDOWN: {
+                if (this.lastCountdown / 1000 != this.goCountdown.getCountdown() / 1000) {
+                    this.gameSpace.getPlayers().playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.UI,
+                            1.0f, NoteBlock.getNotePitch(12));
+                }
+
+                this.lastCountdown = this.goCountdown.getCountdown();
                 return;
             }
 
@@ -415,9 +427,11 @@ public class RaceStageManager {
 
         if (Leaderboard.validate(this.track, pb) && pb.timer() < this.fastestLap.timer()) {
             this.fastestLap = pb;
-
             GameSpacePlayers players = this.gameSpace.getPlayers();
+
             players.sendMessage(TextUtils.chatNewFastestLap(pb));
+            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.UI, 1.0f,
+                    NoteBlock.getNotePitch(18));
         } else {
             player.sendMessage(TextUtils.chatNewTime(pb.timer()));
         }
