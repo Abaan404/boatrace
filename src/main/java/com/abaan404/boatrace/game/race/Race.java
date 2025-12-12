@@ -12,6 +12,7 @@ import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.compat.openboatutils.OBU;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.events.PlayerPitSuccess;
+import com.abaan404.boatrace.gameplay.DesyncIndicator;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.abaan404.boatrace.utils.TextUtils;
 import com.mojang.authlib.GameProfile;
@@ -89,6 +90,7 @@ public class Race {
             Teams teams, List<BoatRacePlayer> gridOrder) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
         OBU openboatutils = OBU.addTo(game, config, track);
+        DesyncIndicator.addTo(game, world);
 
         BoatRaceConfig.Race raceConfig = config.race().orElseThrow();
         Race race = new Race(game.getGameSpace(), raceConfig, track, teams, world, widgets, openboatutils, gridOrder);

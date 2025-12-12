@@ -7,6 +7,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.compat.openboatutils.OBU;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
+import com.abaan404.boatrace.gameplay.DesyncIndicator;
 import com.abaan404.boatrace.utils.TextUtils;
 import com.mojang.authlib.GameProfile;
 
@@ -50,6 +51,7 @@ public class TimeTrial {
     public static void open(GameActivity game, BoatRaceConfig config, ServerWorld world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
         OBU openboatutils = OBU.addTo(game, config, track);
+        DesyncIndicator.addTo(game, world);
 
         TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets, openboatutils);
 
@@ -139,11 +141,14 @@ public class TimeTrial {
 
         // turn them into a participant and spawn them as if they just started
         if (item.getItem().equals(BoatRaceItems.RESET)) {
-            this.stageManager.toSpectator(BoatRacePlayer.of(player));
-            this.stageManager.toParticipant(BoatRacePlayer.of(player));
+            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             this.stageManager.spawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
+            this.stageManager.checkpoints.reset(bPlayer);
+            this.stageManager.splits.reset(bPlayer);
+            this.stageManager.splits.stop(bPlayer);
+
             return ActionResult.CONSUME;
         }
 

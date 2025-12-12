@@ -18,12 +18,15 @@ import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import net.minecraft.block.NoteBlock;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Pair;
 import net.minecraft.world.GameMode;
@@ -116,11 +119,18 @@ public class QualifyingStageManager {
     }
 
     /**
-     * Tick the player, update leaderboards and splits and also check the duration
-     * of this game.
+     * Tick the player, update leaderboards and splits and also check the
+     * duration/lap count of this game.
      */
     public void tickPlayers() {
         if (this.duration > this.config.duration()) {
+            this.startRace();
+            return;
+        }
+
+        // there is a rare chance tick() is called before any players are handled
+        // workaround this issue by checking if duration has incremented
+        if (this.duration > 0 && this.participants.isEmpty()) {
             this.startRace();
             return;
         }
@@ -142,6 +152,12 @@ public class QualifyingStageManager {
                 case LOOP: {
                     this.splits.recordSplit(bPlayer);
                     this.submit(player);
+
+                    this.config.laps().ifPresent(laps -> {
+                        if (this.checkpoints.getLaps(bPlayer) > laps) {
+                            this.toFinisher(player);
+                        }
+                    });
 
                     // start a new run
                     this.splits.reset(bPlayer);
@@ -218,6 +234,23 @@ public class QualifyingStageManager {
     }
 
     /**
+     * Transition a player to spectator but without resetting
+     * their state.
+     *
+     * @param player The player.
+     */
+    public void toFinisher(ServerPlayerEntity player) {
+        BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
+
+        this.participants.remove(bPlayer);
+
+        this.splits.stop(bPlayer);
+        this.splits.reset(bPlayer);
+        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+        this.spawnLogic.despawnVehicle(player);
+    }
+
+    /**
      * Check if the player is a participant.
      *
      * @param player The player.
@@ -280,6 +313,8 @@ public class QualifyingStageManager {
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
             players.sendMessage(TextUtils.chatNewPersonalBest(pb, position));
+            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.RECORDS, 1.0f,
+                    NoteBlock.getNotePitch(18));
         } else {
             player.sendMessage(TextUtils.chatNewTime(pb.timer()));
         }

@@ -99,7 +99,7 @@ public final class OBUPackets {
     public record VersionC2SPayload(int version) implements CustomPayload {
         public static final CustomPayload.Id<VersionC2SPayload> ID = new CustomPayload.Id<>(CHANNEL);
         public static final PacketCodec<RegistryByteBuf, VersionC2SPayload> CODEC = PacketCodec.tuple(
-                PacketCodecs.SHORT, id -> 0,
+                PacketCodecs.SHORT, id -> (short) 0,
                 PacketCodecs.INTEGER, VersionC2SPayload::version,
                 VersionC2SPayload::new);
 

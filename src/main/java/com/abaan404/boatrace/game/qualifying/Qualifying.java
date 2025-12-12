@@ -10,6 +10,7 @@ import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.compat.openboatutils.OBU;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
+import com.abaan404.boatrace.gameplay.DesyncIndicator;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.abaan404.boatrace.utils.TextUtils;
 import com.mojang.authlib.GameProfile;
@@ -55,6 +56,7 @@ public class Qualifying {
             Teams teams) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
         OBU openboatutils = OBU.addTo(game, config, track);
+        DesyncIndicator.addTo(game, world);
 
         BoatRaceConfig.Qualifying qualifyingConfig = config.qualifying().orElseThrow();
         Qualifying qualifying = new Qualifying(game.getGameSpace(), qualifyingConfig, config, track, teams, world,
@@ -148,11 +150,14 @@ public class Qualifying {
 
         // turn them into a participant and spawn them as if they just started
         if (item.getItem().equals(BoatRaceItems.RESET)) {
-            this.stageManager.toSpectator(BoatRacePlayer.of(player));
-            this.stageManager.toParticipant(BoatRacePlayer.of(player));
+            BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             this.stageManager.spawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
+            this.stageManager.checkpoints.restart(bPlayer);
+            this.stageManager.splits.reset(bPlayer);
+            this.stageManager.splits.stop(bPlayer);
+
             return ActionResult.CONSUME;
         }
 
