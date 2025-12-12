@@ -25,6 +25,7 @@ public class Checkpoints {
     private Map<BoatRacePlayer, Vec3d> prevPositions = new Object2ObjectOpenHashMap<>();
     private Map<BoatRacePlayer, Pair<Integer, RespawnRegion>> checkpoints = new Object2ObjectOpenHashMap<>();
     private Map<BoatRacePlayer, Integer> laps = new Object2IntOpenHashMap<>();
+    private Set<BoatRacePlayer> inRestart = new ObjectOpenHashSet<>();
     private Set<BoatRacePlayer> began = new ObjectOpenHashSet<>();
     private Set<BoatRacePlayer> canPit = new ObjectOpenHashSet<>();
     private Set<BoatRacePlayer> inPit = new ObjectOpenHashSet<>();
@@ -62,7 +63,10 @@ public class Checkpoints {
 
         // player has reached the starting line
         if (!this.began.contains(bPlayer) && start.isPresent()) {
-            this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
+            if (!this.inRestart.contains(bPlayer)) {
+                this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
+            }
+
             this.began.add(bPlayer);
             this.checkpoints.put(bPlayer, new Pair<>(nextCheckpointIdx, start.orElseThrow()));
             this.canPit.add(bPlayer);
@@ -86,6 +90,7 @@ public class Checkpoints {
                     if (nextCheckpointIdx == 0) {
                         this.laps.put(bPlayer, this.laps.getOrDefault(bPlayer, 0) + 1);
                         this.canPit.add(bPlayer);
+                        this.inRestart.remove(bPlayer);
                         return TickResult.LOOP;
                     }
 
@@ -97,6 +102,7 @@ public class Checkpoints {
                     if (nextCheckpointIdx == regions.checkpoints().size() - 1) {
                         this.checkpoints.remove(bPlayer);
                         this.began.remove(bPlayer);
+                        this.inRestart.remove(bPlayer);
                         return TickResult.FINISH;
                     }
 
@@ -150,6 +156,20 @@ public class Checkpoints {
         this.prevPositions.remove(player);
         this.checkpoints.remove(player);
         this.laps.remove(player);
+        this.began.remove(player);
+    }
+
+    /**
+     * Restart a lap for a player.
+     *
+     * @param player The player to restart.
+     */
+    public void restart(BoatRacePlayer player) {
+        this.inPit.remove(player);
+        this.canPit.remove(player);
+        this.prevPositions.remove(player);
+        this.checkpoints.remove(player);
+        this.inRestart.add(player);
         this.began.remove(player);
     }
 

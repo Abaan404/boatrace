@@ -156,7 +156,6 @@ public class QualifyingStageManager {
                     this.config.laps().ifPresent(laps -> {
                         if (this.checkpoints.getLaps(bPlayer) > laps) {
                             this.toFinisher(player);
-                            this.splits.reset(bPlayer);
                         }
                     });
 
@@ -246,6 +245,7 @@ public class QualifyingStageManager {
         this.participants.remove(bPlayer);
 
         this.splits.stop(bPlayer);
+        this.splits.reset(bPlayer);
         this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
         this.spawnLogic.despawnVehicle(player);
     }
