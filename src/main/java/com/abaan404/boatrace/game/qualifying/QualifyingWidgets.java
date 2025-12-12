@@ -132,6 +132,10 @@ public class QualifyingWidgets {
                 content.add(Text.empty());
 
                 stageManager.getConfig().laps().ifPresent(laps -> {
+                    if (this.track.getAttributes().layout() != BoatRaceTrack.Layout.CIRCULAR) {
+                        return;
+                    }
+
                     content.add(TextUtils.scoreboardLaps(
                             stageManager.checkpoints.getLaps(bPlayer),
                             laps));

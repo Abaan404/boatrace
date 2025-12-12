@@ -9,6 +9,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
+import xyz.nucleoid.plasmid.api.game.common.team.GameTeam;
 
 public record BoatRaceConfig(
         Identifier track,
@@ -67,12 +68,20 @@ public record BoatRaceConfig(
         }
     }
 
-    public record Team(int size) {
-        public static final Team DEFAULT = new Team(1);
+    public record Team(int size, List<Fixed> fixed) {
+        public static final Team DEFAULT = new Team(1, List.of());
 
         public static final Codec<Team> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.INT.optionalFieldOf("size", DEFAULT.size()).forGetter(Team::size))
+                Codec.INT.optionalFieldOf("size", DEFAULT.size()).forGetter(Team::size),
+                Fixed.CODEC.listOf().optionalFieldOf("fixed", DEFAULT.fixed()).forGetter(Team::fixed))
                 .apply(instance, Team::new));
+
+        public record Fixed(GameTeam team, List<BoatRacePlayer> players) {
+            public static final Codec<Fixed> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                    GameTeam.CODEC.fieldOf("team").forGetter(Fixed::team),
+                    BoatRacePlayer.CODEC.listOf().fieldOf("players").forGetter(Fixed::players))
+                    .apply(instance, Fixed::new));
+        }
     }
 
     public record Countdown(long duration, long random) {

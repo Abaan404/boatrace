@@ -2,6 +2,7 @@ package com.abaan404.boatrace.gameplay;
 
 import java.util.Set;
 
+import com.abaan404.boatrace.BoatRace;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 
@@ -25,6 +26,27 @@ public class Teams {
     public Teams(BoatRaceConfig.Team config, TeamManager teams) {
         this.config = config;
         this.teams = teams;
+
+        // assign fixed team to players if defined
+        for (BoatRaceConfig.Team.Fixed fixed : config.fixed()) {
+            if (!this.teams.addTeam(fixed.team())) {
+                BoatRace.LOGGER.warn("Failed to create team '{}'", fixed.team().key().id());
+                continue;
+            }
+
+            for (BoatRacePlayer player : fixed.players()) {
+                if (this.teams.teamFor(player.ref()) != null) {
+                    BoatRace.LOGGER.warn("player '{}' already in a team", player.offlineName(),
+                            fixed.team().key().id());
+                    continue;
+                }
+
+                if (!this.teams.addPlayerTo(player.ref(), fixed.team().key())) {
+                    BoatRace.LOGGER.warn("Failed to add player '{}' to team '{}'", player.offlineName(),
+                            fixed.team().key().id());
+                }
+            }
+        }
     }
 
     public Teams(Teams other, TeamManager teams) {
