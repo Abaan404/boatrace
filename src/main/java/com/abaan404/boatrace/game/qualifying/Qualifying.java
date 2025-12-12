@@ -9,6 +9,7 @@ import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
+import com.abaan404.boatrace.gameplay.DesyncIndicator;
 import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
 
@@ -51,6 +52,7 @@ public class Qualifying {
     public static void open(GameActivity game, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
             ServerWorld world, BoatRaceTrack track, Teams teams) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
+        DesyncIndicator.addTo(game, world);
 
         Qualifying qualifying = new Qualifying(game.getGameSpace(), config, configRace, track, teams, world, widgets);
 

@@ -5,6 +5,7 @@ import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
+import com.abaan404.boatrace.gameplay.DesyncIndicator;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.entity.Entity;
@@ -44,6 +45,7 @@ public class TimeTrial {
 
     public static void open(GameActivity game, ServerWorld world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
+        DesyncIndicator.addTo(game, world);
 
         TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets);
 
