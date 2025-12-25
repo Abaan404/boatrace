@@ -143,6 +143,7 @@ public class TimeTrial {
         if (item.getItem().equals(BoatRaceItems.RESET)) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
+            this.stageManager.toParticipant(bPlayer);
             this.stageManager.spawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
             this.stageManager.checkpoints.reset(bPlayer);
