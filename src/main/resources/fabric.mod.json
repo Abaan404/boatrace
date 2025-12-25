@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "id": "boatrace",
-    "version": "1.0.1-beta+1.21.7",
+    "version": "1.0.1-beta+1.21.8",
     "name": "BoatRace",
     "description": "A Boat Racing Minigame!",
     "authors": ["abaan404"],
@@ -12,7 +12,7 @@
     },
     "depends": {
         "fabricloader": ">=0.17.3",
-        "minecraft": "~1.21.7",
+        "minecraft": "~1.21.8",
         "java": ">=21",
         "fabric-api": "*"
     },

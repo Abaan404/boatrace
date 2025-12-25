@@ -19,13 +19,14 @@ import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
 import xyz.nucleoid.plasmid.api.game.GameType;
+import xyz.nucleoid.plasmid.api.game.GameTypes;
 import xyz.nucleoid.plasmid.api.game.common.team.TeamManager;
 
 public class BoatRace implements ModInitializer {
     public static final String ID = "boatrace";
     public static final Logger LOGGER = LogManager.getLogger(ID);
 
-    public static final GameType<BoatRaceConfig> TYPE = GameType.register(
+    public static final GameType<BoatRaceConfig> TYPE = GameTypes.register(
             Identifier.of(ID, "game"),
             BoatRaceConfig.CODEC,
             BoatRace::open);
