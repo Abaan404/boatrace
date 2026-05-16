@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "id": "boatrace",
-    "version": "1.0.1-beta+1.21.4",
+    "version": "${version}",
     "name": "BoatRace",
     "description": "A Boat Racing Minigame!",
     "authors": ["abaan404"],
@@ -19,5 +19,5 @@
     "breaks": {
         "openboatutils": "*"
     },
-    "mixins": ["modid.mixins.json"]
+    "mixins": ["boatrace.mixins.json"]
 }
