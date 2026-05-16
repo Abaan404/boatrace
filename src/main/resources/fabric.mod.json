@@ -16,5 +16,5 @@
         "java": ">=21",
         "fabric-api": "*"
     },
-    "mixins": ["modid.mixins.json"]
+    "mixins": ["boatrace.mixins.json"]
 }
