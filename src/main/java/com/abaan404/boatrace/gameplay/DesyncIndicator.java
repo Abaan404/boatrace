@@ -52,7 +52,7 @@ public class DesyncIndicator {
             }
 
             Entity entity = this.indicator.get(bPlayer);
-            entity.snapTo(vehicle.blockPosition(), 0.0f, 0.0f);
+            entity.snapTo(vehicle.position(), 0.0f, 0.0f);
         }
     }
 

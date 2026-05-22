@@ -49,7 +49,7 @@ public class SpawnLogic {
             return Optional.empty();
         }
 
-        boat.snapTo(entity.blockPosition(), entity.getYRot(), entity.getXRot());
+        boat.snapTo(entity.position(), entity.getYRot(), entity.getXRot());
         this.world.addFreshEntity(boat);
         entity.startRiding(boat);
         return Optional.of(boat);
@@ -128,7 +128,7 @@ public class SpawnLogic {
 
         aec.setCustomParticle(ParticleTypes.DUST_PLUME); // why not
         aec.setRadius(1.0f);
-        aec.snapTo(player.blockPosition(), player.getYRot(), player.getXRot());
+        aec.snapTo(player.position(), player.getYRot(), player.getXRot());
         this.world.addFreshEntity(aec);
         boat.startRiding(aec);
         return Optional.of(aec);
