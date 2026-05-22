@@ -4,6 +4,7 @@ import java.util.Optional;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
@@ -22,6 +23,7 @@ import eu.pb4.sgui.api.gui.SimpleGui;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpaceManager;
 import xyz.nucleoid.plasmid.api.game.config.GameConfig;
+import xyz.nucleoid.plasmid.api.util.PlayerUtil;
 import xyz.nucleoid.stimuli.EventInvokers;
 import xyz.nucleoid.stimuli.Stimuli;
 import xyz.nucleoid.stimuli.event.EventResult;
@@ -74,11 +76,13 @@ public class PitBoxGui extends SimpleGui {
         this.fillSlots(state.getElement());
 
         if (state == State.READY) {
-            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value(), 1.0f, NoteBlock.getPitchFromNote(12));
+            PlayerUtil.playSoundToPlayer(this.player, SoundEvents.NOTE_BLOCK_BIT.value(), SoundSource.UI, 1.0f,
+                    NoteBlock.getPitchFromNote(12));
         }
 
         if (state == State.FAIL) {
-            player.playSound(SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), 1.0f, NoteBlock.getPitchFromNote(12));
+            PlayerUtil.playSoundToPlayer(this.player, SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), SoundSource.UI, 1.0f,
+                    NoteBlock.getPitchFromNote(12));
         }
 
         if (state == State.SUCCESS) {

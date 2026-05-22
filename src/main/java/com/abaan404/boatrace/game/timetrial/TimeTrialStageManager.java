@@ -8,6 +8,7 @@ import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.GameType;
@@ -26,6 +27,7 @@ import com.abaan404.boatrace.utils.TextUtils;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
+import xyz.nucleoid.plasmid.api.util.PlayerUtil;
 
 /**
  * Handles time trial state.
@@ -244,7 +246,8 @@ public class TimeTrialStageManager {
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
             players.sendMessage(TextUtils.chatNewPersonalBest(pb, position));
-            player.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getPitchFromNote(18));
+            PlayerUtil.playSoundToPlayer(player, SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.UI, 1.0f,
+                    NoteBlock.getPitchFromNote(18));
         } else {
             player.sendSystemMessage(TextUtils.chatNewTime(pb.timer()));
         }

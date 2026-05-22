@@ -42,6 +42,7 @@ import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamKey;
+import xyz.nucleoid.plasmid.api.util.PlayerUtil;
 
 public class RaceStageManager {
     private final GameSpace gameSpace;
@@ -177,7 +178,8 @@ public class RaceStageManager {
                     }
 
                     this.spawnLogic.unfreezeVehicle(player);
-                    player.playSound(SoundEvents.NOTE_BLOCK_PLING.value(), 1.0f, NoteBlock.getPitchFromNote(24));
+                    PlayerUtil.playSoundToPlayer(player, SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.UI, 1.0f,
+                            NoteBlock.getPitchFromNote(24));
                 }
 
                 // start positions timer for non server players
@@ -428,7 +430,8 @@ public class RaceStageManager {
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
             players.sendMessage(TextUtils.chatNewFastestLap(pb));
-            player.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getPitchFromNote(18));
+            PlayerUtil.playSoundToPlayer(player, SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.UI, 1.0f,
+                    NoteBlock.getPitchFromNote(18));
         } else {
             player.sendSystemMessage(TextUtils.chatNewTime(pb.timer()));
         }
