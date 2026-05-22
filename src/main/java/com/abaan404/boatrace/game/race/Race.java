@@ -3,6 +3,18 @@ package com.abaan404.boatrace.game.race;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import com.abaan404.boatrace.BoatRaceConfig;
+import com.abaan404.boatrace.BoatRaceGameRules;
+import com.abaan404.boatrace.BoatRaceItems;
+import com.abaan404.boatrace.BoatRacePlayer;
+import com.abaan404.boatrace.BoatRaceTrack;
+import com.abaan404.boatrace.events.PlayerPitSuccess;
+import com.abaan404.boatrace.gameplay.DesyncIndicator;
+import com.abaan404.boatrace.gameplay.Teams;
+import com.mojang.authlib.GameProfile;
+
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,23 +22,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.clock.WorldClocks;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.phys.Vec3;
-import com.abaan404.boatrace.BoatRaceConfig;
-import com.abaan404.boatrace.BoatRaceGameRules;
-import com.abaan404.boatrace.BoatRaceItems;
-import com.abaan404.boatrace.BoatRacePlayer;
-import com.abaan404.boatrace.BoatRaceTrack;
-import com.abaan404.boatrace.events.PlayerDismountEvent;
-import com.abaan404.boatrace.events.PlayerPitSuccess;
-import com.abaan404.boatrace.gameplay.DesyncIndicator;
-import com.abaan404.boatrace.gameplay.Teams;
-import com.mojang.authlib.GameProfile;
-
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
@@ -105,13 +104,13 @@ public class Race {
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
+        game.setRule(GameRuleType.DISMOUNT_VEHICLE, EventResult.DENY);
         game.setRule(BoatRaceGameRules.SINGLE_SEAT, EventResult.ALLOW);
         game.setRule(BoatRaceGameRules.MODIFY_INVENTORIES, EventResult.DENY);
 
         game.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> EventResult.DENY);
         game.listen(PlayerDeathEvent.EVENT, race::onPlayerDeath);
         game.listen(ItemUseEvent.EVENT, race::onItemUse);
-        game.listen(PlayerDismountEvent.EVENT, race::onDismount);
         game.listen(PlayerPitSuccess.EVENT, race::onPitSuccess);
 
         game.listen(GamePlayerEvents.OFFER, race::offerPlayer);
@@ -209,13 +208,6 @@ public class Race {
         }
 
         return InteractionResult.PASS;
-    }
-
-    private EventResult onDismount(ServerPlayer player, Entity vehicle) {
-        this.stageManager.respawnPlayer(player);
-        this.stageManager.updatePlayerInventory(player);
-
-        return EventResult.DENY;
     }
 
     private EventResult onPitSuccess(ServerPlayer player) {
