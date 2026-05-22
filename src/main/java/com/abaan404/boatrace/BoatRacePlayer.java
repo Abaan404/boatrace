@@ -23,7 +23,7 @@ public record BoatRacePlayer(PlayerRef ref, String offlineName) {
     }
 
     public static BoatRacePlayer of(GameProfile profile) {
-        return new BoatRacePlayer(PlayerRef.of(profile), profile.getName());
+        return new BoatRacePlayer(PlayerRef.of(profile), profile.name());
     }
 
     @Override

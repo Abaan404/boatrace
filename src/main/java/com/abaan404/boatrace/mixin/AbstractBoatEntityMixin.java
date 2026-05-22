@@ -23,7 +23,7 @@ public abstract class AbstractBoatEntityMixin extends VehicleEntity {
 
     @Inject(method = "getMaxPassengers", at = @At("HEAD"), cancellable = true)
     private void getMaxPassengers(CallbackInfoReturnable<Integer> cir) {
-        GameSpace gameSpace = GameSpaceManagerImpl.get().byWorld(this.getWorld());
+        GameSpace gameSpace = GameSpaceManagerImpl.get().byWorld(this.getEntityWorld());
 
         if (gameSpace != null) {
             EventResult singleSeat = gameSpace.getBehavior().testRule(BoatRaceGameRules.SINGLE_SEAT);

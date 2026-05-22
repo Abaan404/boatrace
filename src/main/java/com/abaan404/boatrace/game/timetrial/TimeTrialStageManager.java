@@ -20,7 +20,6 @@ import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Pair;
@@ -246,8 +245,7 @@ public class TimeTrialStageManager {
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
             players.sendMessage(TextUtils.chatNewPersonalBest(pb, position));
-            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.UI, 1.0f,
-                    NoteBlock.getNotePitch(18));
+            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getNotePitch(18));
         } else {
             player.sendMessage(TextUtils.chatNewTime(pb.timer()));
         }

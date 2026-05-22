@@ -54,7 +54,7 @@ public class DesyncIndicator {
             }
 
             Entity entity = this.indicator.get(bPlayer);
-            entity.refreshPositionAndAngles(vehicle.getPos(), 0.0f, 0.0f);
+            entity.refreshPositionAndAngles(vehicle.getBlockPos(), 0.0f, 0.0f);
         }
     }
 

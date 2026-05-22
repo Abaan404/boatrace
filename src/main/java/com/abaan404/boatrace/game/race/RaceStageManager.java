@@ -178,8 +178,7 @@ public class RaceStageManager {
                     }
 
                     this.spawnLogic.unfreezeVehicle(player);
-                    player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.UI, 1.0f,
-                            NoteBlock.getNotePitch(24));
+                    player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 1.0f, NoteBlock.getNotePitch(24));
                 }
 
                 // start positions timer for non server players
@@ -430,8 +429,7 @@ public class RaceStageManager {
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
             players.sendMessage(TextUtils.chatNewFastestLap(pb));
-            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), SoundCategory.UI, 1.0f,
-                    NoteBlock.getNotePitch(18));
+            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getNotePitch(18));
         } else {
             player.sendMessage(TextUtils.chatNewTime(pb.timer()));
         }

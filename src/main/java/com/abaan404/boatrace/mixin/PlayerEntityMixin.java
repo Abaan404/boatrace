@@ -31,7 +31,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
             return;
         }
 
-        if (!this.getWorld().isClient()) {
+        if (!this.getEntityWorld().isClient()) {
             ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
 
             try (EventInvokers invokers = Stimuli.select().forEntity(player)) {

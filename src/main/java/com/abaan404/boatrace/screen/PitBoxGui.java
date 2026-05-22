@@ -18,7 +18,6 @@ import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
@@ -76,13 +75,11 @@ public class PitBoxGui extends SimpleGui {
         this.fillSlots(state.getElement());
 
         if (state == State.READY) {
-            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BIT.value(), SoundCategory.UI, 1.0f,
-                    NoteBlock.getNotePitch(12));
+            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BIT.value(), 1.0f, NoteBlock.getNotePitch(12));
         }
 
         if (state == State.FAIL) {
-            player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), SoundCategory.UI, 1.0f,
-                    NoteBlock.getNotePitch(12));
+            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), 1.0f, NoteBlock.getNotePitch(12));
         }
 
         if (state == State.SUCCESS) {
@@ -116,9 +113,9 @@ public class PitBoxGui extends SimpleGui {
 
     @Override
     public void onTick() {
-        this.duration += this.player.getWorld().getTickManager().getMillisPerTick();
+        this.duration += this.player.getEntityWorld().getTickManager().getMillisPerTick();
 
-        Countdown.TickResult result = this.countdown.tick(this.player.getWorld());
+        Countdown.TickResult result = this.countdown.tick(this.player.getEntityWorld());
         if (result != Countdown.TickResult.FINISH) {
             return;
         }

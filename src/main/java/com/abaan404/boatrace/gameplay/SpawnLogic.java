@@ -7,9 +7,9 @@ import com.abaan404.boatrace.BoatRaceTrack;
 
 import net.minecraft.entity.AreaEffectCloudEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityPosition;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.player.PlayerPosition;
 import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -51,9 +51,9 @@ public class SpawnLogic {
             return Optional.empty();
         }
 
-        boat.refreshPositionAndAngles(entity.getPos(), entity.getYaw(), entity.getPitch());
+        boat.refreshPositionAndAngles(entity.getBlockPos(), entity.getYaw(), entity.getPitch());
         this.world.spawnEntity(boat);
-        entity.startRiding(boat, true);
+        entity.startRiding(boat);
         return Optional.of(boat);
     }
 
@@ -100,7 +100,7 @@ public class SpawnLogic {
         // avoid accidental stray boats
         this.despawnVehicle(player);
 
-        player.networkHandler.requestTeleport(new PlayerPosition(
+        player.networkHandler.requestTeleport(new EntityPosition(
                 spawn.toBottomCenterPos(),
                 Vec3d.ZERO,
                 respawn.yaw(),
@@ -130,7 +130,7 @@ public class SpawnLogic {
 
         aec.setParticleType(ParticleTypes.DUST_PLUME); // why not
         aec.setRadius(1.0f);
-        aec.refreshPositionAndAngles(player.getPos(), player.getYaw(), player.getPitch());
+        aec.refreshPositionAndAngles(player.getBlockPos(), player.getYaw(), player.getPitch());
         this.world.spawnEntity(aec);
         boat.startRiding(aec);
         return Optional.of(aec);
