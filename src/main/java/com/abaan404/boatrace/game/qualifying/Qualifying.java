@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.clock.WorldClocks;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.gamerules.GameRules;
@@ -56,7 +57,9 @@ public class Qualifying {
         Qualifying qualifying = new Qualifying(game.getGameSpace(), config, configRace, track, teams, world, widgets);
 
         world.getGameRules().set(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
-        world.setDayTime(track.getAttributes().timeOfDay());
+        world.clockManager().setTotalTicks(
+                game.getGameSpace().getServer().registryAccess().getOrThrow(WorldClocks.OVERWORLD),
+                track.getAttributes().timeOfDay());
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
         game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);

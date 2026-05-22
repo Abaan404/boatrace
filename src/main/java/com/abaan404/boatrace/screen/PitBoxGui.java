@@ -4,6 +4,7 @@ import java.util.Optional;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.NoteBlock;
@@ -16,7 +17,7 @@ import com.abaan404.boatrace.utils.TextUtils;
 import eu.pb4.sgui.api.ClickType;
 import eu.pb4.sgui.api.elements.AnimatedGuiElementBuilder;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
-import eu.pb4.sgui.api.elements.GuiElementInterface;
+import eu.pb4.sgui.api.elements.GuiElement;
 import eu.pb4.sgui.api.gui.SimpleGui;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpaceManager;
@@ -97,7 +98,7 @@ public class PitBoxGui extends SimpleGui {
      *
      * @param element The new element.
      */
-    private void fillSlots(GuiElementInterface element) {
+    private void fillSlots(GuiElement element) {
         for (int i = 0; i < this.size; i++) {
             this.setSlot(i, element);
         }
@@ -134,7 +135,7 @@ public class PitBoxGui extends SimpleGui {
     }
 
     @Override
-    public boolean onClick(int index, ClickType type, net.minecraft.world.inventory.ClickType action, GuiElementInterface element) {
+    public boolean onClick(int index, ClickType type, ContainerInput action, GuiElement element) {
         switch (this.state) {
             case WAIT:
                 this.setState(State.FAIL);
@@ -154,7 +155,7 @@ public class PitBoxGui extends SimpleGui {
     }
 
     @Override
-    public void onClose() {
+    public void onManualClose() {
         if (this.state == State.READY) {
             this.setState(State.SUCCESS);
         }
@@ -204,9 +205,9 @@ public class PitBoxGui extends SimpleGui {
                 .setItem(Items.AIR)
                 .build());
 
-        GuiElementInterface element;
+        GuiElement element;
 
-        private State(GuiElementInterface element) {
+        private State(GuiElement element) {
             this.element = element;
         }
 
@@ -215,8 +216,8 @@ public class PitBoxGui extends SimpleGui {
          *
          * @return The elements.
          */
-        public GuiElementInterface getElement() {
+        public GuiElement getElement() {
             return this.element;
         }
-    };
+    }
 }

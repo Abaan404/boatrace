@@ -5,9 +5,9 @@ import java.util.function.Function;
 
 import com.abaan404.boatrace.game.race.RaceWidgets;
 
-import eu.pb4.polymer.core.api.item.PolymerItemGroupUtils;
+import eu.pb4.polymer.core.api.item.PolymerCreativeModeTabUtils;
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -26,7 +26,7 @@ public class BoatRaceItems {
             BuiltInRegistries.CREATIVE_MODE_TAB.key(),
             Identifier.fromNamespaceAndPath(BoatRace.ID, "item_group"));
 
-    public static final CreativeModeTab ITEM_GROUP = PolymerItemGroupUtils.builder()
+    public static final CreativeModeTab ITEM_GROUP = PolymerCreativeModeTabUtils.builder()
             .icon(() -> new ItemStack(Items.OAK_BOAT))
             .title(Component.translatable("itemGroup.boatrace"))
             .build();
@@ -47,7 +47,7 @@ public class BoatRaceItems {
 
     public static void initialize() {
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, ITEM_GROUP_KEY, ITEM_GROUP);
-        ItemGroupEvents.modifyEntriesEvent(ITEM_GROUP_KEY).register(itemGroup -> {
+        CreativeModeTabEvents.modifyOutputEvent(ITEM_GROUP_KEY).register(itemGroup -> {
             itemGroup.accept(RESET);
             itemGroup.accept(RESPAWN);
             itemGroup.accept(CYCLE_LEADERBOARD);
@@ -56,7 +56,9 @@ public class BoatRaceItems {
 
     public static SimplePolymerItem register(String name,
             Function<SimplePolymerItem.Properties, SimplePolymerItem> itemFactory, Item.Properties settings) {
-        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(BoatRace.ID, name));
+        ResourceKey<Item> itemKey = ResourceKey.create(
+                Registries.ITEM,
+                Identifier.fromNamespaceAndPath(BoatRace.ID, name));
         SimplePolymerItem item = itemFactory.apply(settings.setId(itemKey));
         Registry.register(BuiltInRegistries.ITEM, itemKey, item);
 

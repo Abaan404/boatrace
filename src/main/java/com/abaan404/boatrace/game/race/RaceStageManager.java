@@ -509,7 +509,8 @@ public class RaceStageManager {
 
             MutableComponent positionsText = Component.empty();
             positionsText.append(" ");
-            positionsText.append(Component.literal("DSQ").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)).append(" ");
+            positionsText.append(Component.literal("DSQ").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC))
+                    .append(" ");
             positionsText.append(TextUtils.scoreboardName(player, this.teams.getConfig(team), false, -1)).append(" ");
             positionsText.append(TextUtils.chatPoints(0));
 
@@ -521,7 +522,8 @@ public class RaceStageManager {
 
             MutableComponent positionsText = Component.empty();
             positionsText.append(" ");
-            positionsText.append(Component.literal("DNF").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)).append(" ");
+            positionsText.append(Component.literal("DNF").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC))
+                    .append(" ");
             positionsText.append(TextUtils.scoreboardName(player, this.teams.getConfig(team), false, -1)).append(" ");
             positionsText.append(TextUtils.chatPoints(0));
 

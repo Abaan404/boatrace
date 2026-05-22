@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.abaan404.boatrace.BoatRaceGameRules;
+
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
@@ -15,14 +16,14 @@ import xyz.nucleoid.plasmid.impl.game.manager.GameSpaceManagerImpl;
 import xyz.nucleoid.stimuli.event.EventResult;
 
 @Mixin(AbstractBoat.class)
-public abstract class AbstractBoatEntityMixin extends VehicleEntity {
-    public AbstractBoatEntityMixin(EntityType<?> entityType, Level world) {
+public abstract class AbstractBoatMixin extends VehicleEntity {
+    public AbstractBoatMixin(EntityType<?> entityType, Level world) {
         super(entityType, world);
     }
 
     @Inject(method = "getMaxPassengers", at = @At("HEAD"), cancellable = true)
     private void getMaxPassengers(CallbackInfoReturnable<Integer> cir) {
-        GameSpace gameSpace = GameSpaceManagerImpl.get().byWorld(this.level());
+        GameSpace gameSpace = GameSpaceManagerImpl.get().byLevel(this.level());
 
         if (gameSpace != null) {
             EventResult singleSeat = gameSpace.getBehavior().testRule(BoatRaceGameRules.SINGLE_SEAT);

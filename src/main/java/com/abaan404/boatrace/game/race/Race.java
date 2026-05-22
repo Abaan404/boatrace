@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.clock.WorldClocks;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -90,7 +91,9 @@ public class Race {
         Race race = new Race(game.getGameSpace(), config, track, teams, world, widgets, gridOrder);
 
         world.getGameRules().set(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
-        world.setDayTime(track.getAttributes().timeOfDay());
+        world.clockManager().setTotalTicks(
+                game.getGameSpace().getServer().registryAccess().getOrThrow(WorldClocks.OVERWORLD),
+                track.getAttributes().timeOfDay());
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
         game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);
@@ -102,7 +105,6 @@ public class Race {
         game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
         game.setRule(GameRuleType.PLACE_BLOCKS, EventResult.DENY);
         game.setRule(GameRuleType.BREAK_BLOCKS, EventResult.DENY);
-        game.setRule(GameRuleType.DISMOUNT_VEHICLE, EventResult.DENY);
         game.setRule(BoatRaceGameRules.SINGLE_SEAT, EventResult.ALLOW);
         game.setRule(BoatRaceGameRules.MODIFY_INVENTORIES, EventResult.DENY);
 
@@ -117,7 +119,7 @@ public class Race {
         game.listen(GamePlayerEvents.ADD, race::addPlayer);
         game.listen(GamePlayerEvents.REMOVE, race::removePlayer);
 
-        game.listen(GameActivityEvents.TICK, race::onTick);
+        game.listen(GameActivityEvents.TICK, race::tick);
     }
 
     private JoinOfferResult.Accept offerPlayer(JoinOffer offer) {
@@ -228,7 +230,7 @@ public class Race {
         return EventResult.ALLOW;
     }
 
-    private void onTick() {
+    private void tick() {
         this.stageManager.tickPlayers();
         this.widgets.tick(this.stageManager);
     }

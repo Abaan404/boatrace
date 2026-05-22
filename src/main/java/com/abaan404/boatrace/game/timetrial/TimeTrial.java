@@ -7,10 +7,12 @@ import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.gameplay.DesyncIndicator;
 import com.mojang.authlib.GameProfile;
+
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.clock.WorldClocks;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -49,7 +51,9 @@ public class TimeTrial {
         TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets);
 
         world.getGameRules().set(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
-        world.setDayTime(track.getAttributes().timeOfDay());
+        world.clockManager().setTotalTicks(
+                game.getGameSpace().getServer().registryAccess().getOrThrow(WorldClocks.OVERWORLD),
+                track.getAttributes().timeOfDay());
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
         game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);

@@ -14,7 +14,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
@@ -35,34 +35,34 @@ public class BoatRace implements ModInitializer {
         BoatRaceConfig config = context.config();
 
         BoatRaceTrack track = BoatRaceTrack.load(context.server(), config.track());
-        RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
+        RuntimeLevelConfig levelConfig = new RuntimeLevelConfig()
                 .setGenerator(track.asGenerator(context.server()));
 
         if (config.qualifying().isPresent()) {
             if (!config.race().isPresent()) {
-                throw new GameOpenException(Component.nullToEmpty("A race config is required to begin qualifying for."));
+                throw new GameOpenException(Component.literal("A race config is required to begin qualifying for."));
             }
 
-            return context.openWithWorld(worldConfig, (game, world) -> {
+            return context.openWithLevel(levelConfig, (game, level) -> {
                 Teams teams = new Teams(config.team(), TeamManager.addTo(game));
                 BoatRaceConfig.Qualifying qualifying = config.qualifying().orElseThrow();
                 BoatRaceConfig.Race race = config.race().orElseThrow();
 
-                Qualifying.open(game, qualifying, race, world, track, teams);
+                Qualifying.open(game, qualifying, race, level, track, teams);
             });
         }
 
         if (config.race().isPresent()) {
-            return context.openWithWorld(worldConfig, (game, world) -> {
+            return context.openWithLevel(levelConfig, (game, level) -> {
                 Teams teams = new Teams(config.team(), TeamManager.addTo(game));
                 BoatRaceConfig.Race race = config.race().orElseThrow();
 
-                Race.open(game, race, world, track, teams, ObjectArrayList.of());
+                Race.open(game, race, level, track, teams, ObjectArrayList.of());
             });
         }
 
-        return context.openWithWorld(worldConfig, (game, world) -> {
-            TimeTrial.open(game, world, track);
+        return context.openWithLevel(levelConfig, (game, level) -> {
+            TimeTrial.open(game, level, track);
         });
     }
 

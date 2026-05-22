@@ -19,14 +19,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.abaan404.boatrace.BoatRaceGameRules;
 
-import eu.pb4.sgui.virtual.inventory.VirtualScreenHandler;
+import eu.pb4.sgui.api.containerwrappers.AbstractWrapperMenu;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.impl.game.manager.GameSpaceManagerImpl;
 import xyz.nucleoid.stimuli.event.EventResult;
 
 @Mixin(ServerGamePacketListenerImpl.class)
-public abstract class ServerPlayNetworkHandlerMixin extends ServerCommonPacketListenerImpl {
-    public ServerPlayNetworkHandlerMixin(MinecraftServer server, Connection connection,
+public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPacketListenerImpl {
+    public ServerGamePacketListenerImplMixin(MinecraftServer server, Connection connection,
             CommonListenerCookie clientData) {
         super(server, connection, clientData);
     }
@@ -39,24 +39,24 @@ public abstract class ServerPlayNetworkHandlerMixin extends ServerCommonPacketLi
         GameSpace gameSpace = GameSpaceManagerImpl.get().byPlayer(this.player);
 
         if (gameSpace != null) {
-            AbstractContainerMenu screenHandler = this.player.containerMenu;
+            AbstractContainerMenu containerMenu = this.player.containerMenu;
 
             // dont do anything if sgui has a window open
-            if (screenHandler instanceof VirtualScreenHandler) {
+            if (containerMenu instanceof AbstractWrapperMenu) {
                 return;
             }
 
             EventResult modifyInventory = gameSpace.getBehavior().testRule(BoatRaceGameRules.MODIFY_INVENTORIES);
             if (modifyInventory == EventResult.DENY) {
-                ItemStack stack = screenHandler.getSlot(packet.slotNum()).getItem();
+                ItemStack stack = containerMenu.getSlot(packet.slotNum()).getItem();
 
                 this.send(new ClientboundContainerSetSlotPacket(
                         packet.containerId(),
-                        screenHandler.incrementStateId(),
+                        containerMenu.incrementStateId(),
                         packet.slotNum(),
                         stack));
 
-                this.send(new ClientboundSetCursorItemPacket(screenHandler.getCarried()));
+                this.send(new ClientboundSetCursorItemPacket(containerMenu.getCarried()));
 
                 ci.cancel();
             }
