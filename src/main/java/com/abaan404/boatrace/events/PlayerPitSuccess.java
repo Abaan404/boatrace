@@ -1,6 +1,6 @@
 package com.abaan404.boatrace.events;
 
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.StimulusEvent;
 
@@ -22,5 +22,5 @@ public interface PlayerPitSuccess {
         };
     });
 
-    public EventResult onPitSuccess(ServerPlayerEntity player);
+    public EventResult onPitSuccess(ServerPlayer player);
 }

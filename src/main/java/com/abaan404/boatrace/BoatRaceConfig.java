@@ -2,13 +2,11 @@ package com.abaan404.boatrace;
 
 import java.util.List;
 import java.util.Optional;
-
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.StringRepresentable;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import net.minecraft.util.Identifier;
-import net.minecraft.util.StringIdentifiable;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeam;
 
 public record BoatRaceConfig(
@@ -50,19 +48,19 @@ public record BoatRaceConfig(
                 Codec.INT.listOf().optionalFieldOf("scoring", DEFAULT_SCORING).forGetter(Race::scoring))
                 .apply(instance, Race::new));
 
-        public enum GridType implements StringIdentifiable {
+        public enum GridType implements StringRepresentable {
             NORMAL("normal"), REVERSED("reversed"), RANDOM("random");
 
             private final String name;
 
-            public static final Codec<GridType> CODEC = StringIdentifiable.createCodec(GridType::values);
+            public static final Codec<GridType> CODEC = StringRepresentable.fromEnum(GridType::values);
 
             GridType(String name) {
                 this.name = name;
             }
 
             @Override
-            public String asString() {
+            public String getSerializedName() {
                 return name;
             }
         }

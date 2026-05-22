@@ -11,14 +11,13 @@ import java.util.stream.Collectors;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.StringIdentifiable;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.phys.Vec3;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
 import xyz.nucleoid.map_templates.MapTemplateSerializer;
@@ -43,22 +42,22 @@ public class BoatRaceTrack {
 
         int trackFormat = template.getMetadata()
                 .getData()
-                .getInt("track_format", 0);
+                .getIntOr("track_format", 0);
 
         if (trackFormat < CURRENT_TRACK_FORMAT) {
-            throw new GameOpenException(Text.of("This track was built for an earlier version of boatrace."));
+            throw new GameOpenException(Component.nullToEmpty("This track was built for an earlier version of boatrace."));
         } else if (trackFormat > CURRENT_TRACK_FORMAT) {
-            throw new GameOpenException(Text.of("This track was built for a future version of boatrace."));
+            throw new GameOpenException(Component.nullToEmpty("This track was built for a future version of boatrace."));
         }
 
         this.meta = template.getMetadata()
                 .getData()
-                .get("meta", Meta.CODEC.codec())
+                .read("meta", Meta.CODEC.codec())
                 .orElse(Meta.DEFAULT);
 
         this.attributes = template.getMetadata()
                 .getData()
-                .get("attributes", Attributes.CODEC.codec())
+                .read("attributes", Attributes.CODEC.codec())
                 .orElse(Attributes.DEFAULT);
 
         List<Set<RespawnRegion>> checkpoints = template.getMetadata()
@@ -110,7 +109,7 @@ public class BoatRaceTrack {
         try {
             template = MapTemplateSerializer.loadFromResource(server, identifier);
         } catch (IOException e) {
-            throw new GameOpenException(Text.of(String.format("Couldn't load track {}", identifier.toString())));
+            throw new GameOpenException(Component.nullToEmpty(String.format("Couldn't load track {}", identifier.toString())));
         }
 
         return new BoatRaceTrack(template);
@@ -180,13 +179,13 @@ public class BoatRaceTrack {
 
     public record RespawnRegion(BlockBounds bounds, float yaw, float pitch) {
 
-        public static RespawnRegion DEFAULT = new RespawnRegion(BlockBounds.ofBlock(BlockPos.ORIGIN), 0.0f, 0.0f);
+        public static RespawnRegion DEFAULT = new RespawnRegion(BlockBounds.ofBlock(BlockPos.ZERO), 0.0f, 0.0f);
 
         private static RespawnRegion of(TemplateRegion templateRegion) {
             return new RespawnRegion(
                     templateRegion.getBounds(),
-                    templateRegion.getData().getFloat("yaw", DEFAULT.yaw()),
-                    templateRegion.getData().getFloat("pitch", DEFAULT.pitch()));
+                    templateRegion.getData().getFloatOr("yaw", DEFAULT.yaw()),
+                    templateRegion.getData().getFloatOr("pitch", DEFAULT.pitch()));
         }
 
         /**
@@ -196,7 +195,7 @@ public class BoatRaceTrack {
          * @param lastPos The entity's pos last tick.
          * @return If they intersected.
          */
-        public boolean intersect(Vec3d pos, Vec3d lastPos) {
+        public boolean intersect(Vec3 pos, Vec3 lastPos) {
             return this.bounds().asBox().intersects(pos, lastPos);
         }
     }
@@ -258,20 +257,20 @@ public class BoatRaceTrack {
         }
     }
 
-    public enum Layout implements StringIdentifiable {
+    public enum Layout implements StringRepresentable {
         CIRCULAR("circular"),
         LINEAR("linear");
 
         private final String name;
 
-        public static final Codec<Layout> CODEC = StringIdentifiable.createCodec(Layout::values);
+        public static final Codec<Layout> CODEC = StringRepresentable.fromEnum(Layout::values);
 
         Layout(String name) {
             this.name = name;
         }
 
         @Override
-        public String asString() {
+        public String getSerializedName() {
             return this.name;
         }
     }

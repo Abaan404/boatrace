@@ -8,57 +8,57 @@ import com.abaan404.boatrace.game.race.RaceWidgets;
 import eu.pb4.polymer.core.api.item.PolymerItemGroupUtils;
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.CustomModelDataComponent;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomModelData;
 
 public class BoatRaceItems {
-    public static final RegistryKey<ItemGroup> ITEM_GROUP_KEY = RegistryKey.of(
-            Registries.ITEM_GROUP.getKey(),
-            Identifier.of(BoatRace.ID, "item_group"));
+    public static final ResourceKey<CreativeModeTab> ITEM_GROUP_KEY = ResourceKey.create(
+            BuiltInRegistries.CREATIVE_MODE_TAB.key(),
+            Identifier.fromNamespaceAndPath(BoatRace.ID, "item_group"));
 
-    public static final ItemGroup ITEM_GROUP = PolymerItemGroupUtils.builder()
+    public static final CreativeModeTab ITEM_GROUP = PolymerItemGroupUtils.builder()
             .icon(() -> new ItemStack(Items.OAK_BOAT))
-            .displayName(Text.translatable("itemGroup.boatrace"))
+            .title(Component.translatable("itemGroup.boatrace"))
             .build();
 
     public static final SimplePolymerItem RESET = register("reset", SimplePolymerItem::new,
-            new SimplePolymerItem.Settings());
+            new Item.Properties());
 
     public static final SimplePolymerItem RESPAWN = register("respawn", SimplePolymerItem::new,
-            new SimplePolymerItem.Settings());
+            new Item.Properties());
 
     public static final SimplePolymerItem CYCLE_LEADERBOARD = register("cycle_leaderboard", SimplePolymerItem::new,
-            new SimplePolymerItem.Settings()
-                    .component(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(
+            new Item.Properties()
+                    .component(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(
                             List.of(),
                             List.of(),
                             List.of(RaceWidgets.LeaderboardType.PLAYER.toString()),
                             List.of())));
 
     public static void initialize() {
-        Registry.register(Registries.ITEM_GROUP, ITEM_GROUP_KEY, ITEM_GROUP);
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, ITEM_GROUP_KEY, ITEM_GROUP);
         ItemGroupEvents.modifyEntriesEvent(ITEM_GROUP_KEY).register(itemGroup -> {
-            itemGroup.add(RESET);
-            itemGroup.add(RESPAWN);
-            itemGroup.add(CYCLE_LEADERBOARD);
+            itemGroup.accept(RESET);
+            itemGroup.accept(RESPAWN);
+            itemGroup.accept(CYCLE_LEADERBOARD);
         });
     }
 
     public static SimplePolymerItem register(String name,
-            Function<SimplePolymerItem.Settings, SimplePolymerItem> itemFactory, SimplePolymerItem.Settings settings) {
-        RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(BoatRace.ID, name));
-        SimplePolymerItem item = itemFactory.apply(settings.registryKey(itemKey));
-        Registry.register(Registries.ITEM, itemKey, item);
+            Function<SimplePolymerItem.Properties, SimplePolymerItem> itemFactory, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(BoatRace.ID, name));
+        SimplePolymerItem item = itemFactory.apply(settings.setId(itemKey));
+        Registry.register(BuiltInRegistries.ITEM, itemKey, item);
 
         return item;
     }

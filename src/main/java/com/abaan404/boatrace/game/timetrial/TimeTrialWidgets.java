@@ -2,7 +2,14 @@ package com.abaan404.boatrace.game.timetrial;
 
 import java.util.List;
 import java.util.Map;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.level.Level;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
@@ -10,14 +17,6 @@ import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Pair;
-import net.minecraft.world.World;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
@@ -44,8 +43,8 @@ public final class TimeTrialWidgets {
      *
      * @param player The player to send the message to.
      */
-    public void sendTrackMessage(ServerPlayerEntity player) {
-        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+    public void sendTrackMessage(ServerPlayer player) {
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendSystemMessage);
     }
 
     /**
@@ -64,7 +63,7 @@ public final class TimeTrialWidgets {
      * @param stageManager The stage manager.
      */
     private void tickActionBar(TimeTrialStageManager stageManager) {
-        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
+        ServerLevel overworld = this.gameSpace.getServer().getLevel(Level.OVERWORLD);
         Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
         int maxCheckpoints = switch (this.track.getAttributes().layout()) {
@@ -74,12 +73,12 @@ public final class TimeTrialWidgets {
             case LINEAR -> this.track.getRegions().checkpoints().size() - 2;
         };
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
             if (!stageManager.isParticipant(bPlayer)) {
-                Text freeRoamText = Text.literal("Free Roaming").formatted(Formatting.GRAY, Formatting.ITALIC,
-                        Formatting.BOLD);
-                player.networkHandler.sendPacket(new OverlayMessageS2CPacket(freeRoamText));
+                Component freeRoamText = Component.literal("Free Roaming").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC,
+                        ChatFormatting.BOLD);
+                player.connection.send(new ClientboundSetActionBarTextPacket(freeRoamText));
                 continue;
             }
 
@@ -91,7 +90,7 @@ public final class TimeTrialWidgets {
             int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
             int checkpoint = stageManager.checkpoints.getCheckpointIndex(bPlayer);
 
-            MutableText actionBarText = Text.empty();
+            MutableComponent actionBarText = Component.empty();
 
             // player has a position
             if (position >= 0) {
@@ -107,7 +106,7 @@ public final class TimeTrialWidgets {
             }
 
             actionBarText.append(TextUtils.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
-            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
+            player.connection.send(new ClientboundSetActionBarTextPacket(actionBarText));
         }
     }
 
@@ -115,10 +114,10 @@ public final class TimeTrialWidgets {
      * Displays track meta and track leaderboard.
      */
     private void tickSidebar() {
-        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
+        ServerLevel overworld = this.gameSpace.getServer().getLevel(Level.OVERWORLD);
         Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             if (!this.sidebars.containsKey(bPlayer)) {
@@ -133,21 +132,21 @@ public final class TimeTrialWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
-                content.add(Text.empty());
+                content.add(Component.empty());
                 TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
-                content.add(Text.empty());
+                content.add(Component.empty());
 
                 List<PersonalBest> records = leaderboard.getLeaderboard(this.track);
 
                 if (records.isEmpty()) {
-                    content.add(Text.literal(" No records submitted.")
-                            .formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
+                    content.add(Component.literal(" No records submitted.")
+                            .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
                     return;
                 }
 
                 int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
 
-                for (Pair<Integer, PersonalBest> pair : TextUtils.scoreboardAroundAndTop(
+                for (Tuple<Integer, PersonalBest> pair : TextUtils.scoreboardAroundAndTop(
                         records,
                         position,
                         SIDEBAR_RANKING_TOP,
@@ -157,14 +156,14 @@ public final class TimeTrialWidgets {
                         continue;
                     }
 
-                    MutableText text = Text.empty();
-                    PersonalBest pb = pair.getRight();
+                    MutableComponent text = Component.empty();
+                    PersonalBest pb = pair.getB();
                     boolean highlighted = bPlayer.equals(pb.player());
 
                     text.append(" ");
-                    text.append(TextUtils.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
-                    text.append(TextUtils.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
-                    text.append(TextUtils.scoreboardName(pb.player(), GameTeamConfig.DEFAULT, highlighted, pair.getLeft()));
+                    text.append(TextUtils.scoreboardPosition(highlighted, pair.getA())).append(" ");
+                    text.append(TextUtils.scoreboardAbsolute(pb.timer(), pair.getA())).append(" ");
+                    text.append(TextUtils.scoreboardName(pb.player(), GameTeamConfig.DEFAULT, highlighted, pair.getA()));
 
                     content.add(text);
                 }

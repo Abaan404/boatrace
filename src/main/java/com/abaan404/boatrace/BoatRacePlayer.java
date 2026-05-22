@@ -1,24 +1,22 @@
 package com.abaan404.boatrace;
 
 import java.util.UUID;
-
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.entity.player.Player;
 import com.mojang.authlib.GameProfile;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Uuids;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 public record BoatRacePlayer(PlayerRef ref, String offlineName) {
     public static final BoatRacePlayer DEFAULT = new BoatRacePlayer(PlayerRef.ofUnchecked(UUID.randomUUID()), "Mumbo");
 
     public static final Codec<BoatRacePlayer> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Uuids.CODEC.fieldOf("uuid").xmap(PlayerRef::new, PlayerRef::id).forGetter(BoatRacePlayer::ref),
+            UUIDUtil.AUTHLIB_CODEC.fieldOf("uuid").xmap(PlayerRef::new, PlayerRef::id).forGetter(BoatRacePlayer::ref),
             Codec.STRING.fieldOf("offline_name").forGetter(BoatRacePlayer::offlineName))
             .apply(instance, BoatRacePlayer::new));
 
-    public static BoatRacePlayer of(PlayerEntity player) {
+    public static BoatRacePlayer of(Player player) {
         return BoatRacePlayer.of(player.getGameProfile());
     }
 

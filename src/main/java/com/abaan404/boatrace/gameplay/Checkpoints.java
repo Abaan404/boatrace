@@ -3,7 +3,9 @@ package com.abaan404.boatrace.gameplay;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.phys.Vec3;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.BoatRaceTrack.RespawnRegion;
@@ -11,9 +13,6 @@ import com.abaan404.boatrace.BoatRaceTrack.RespawnRegion;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Pair;
-import net.minecraft.util.math.Vec3d;
 
 /**
  * Keeps track of checkpoints and verifies if the player crossed the correct
@@ -22,8 +21,8 @@ import net.minecraft.util.math.Vec3d;
 public class Checkpoints {
     private final BoatRaceTrack track;
 
-    private Map<BoatRacePlayer, Vec3d> prevPositions = new Object2ObjectOpenHashMap<>();
-    private Map<BoatRacePlayer, Pair<Integer, RespawnRegion>> checkpoints = new Object2ObjectOpenHashMap<>();
+    private Map<BoatRacePlayer, Vec3> prevPositions = new Object2ObjectOpenHashMap<>();
+    private Map<BoatRacePlayer, Tuple<Integer, RespawnRegion>> checkpoints = new Object2ObjectOpenHashMap<>();
     private Map<BoatRacePlayer, Integer> laps = new Object2IntOpenHashMap<>();
     private Set<BoatRacePlayer> inRestart = new ObjectOpenHashSet<>();
     private Set<BoatRacePlayer> began = new ObjectOpenHashSet<>();
@@ -41,14 +40,14 @@ public class Checkpoints {
      * @param player The player to tick.
      * @return The resulting tick event.
      */
-    public TickResult tick(ServerPlayerEntity player) {
+    public TickResult tick(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         BoatRaceTrack.Regions regions = track.getRegions();
         BoatRaceTrack.Attributes attributes = track.getAttributes();
 
-        Vec3d pos = player.getEyePos();
-        Vec3d prevPos = this.prevPositions.getOrDefault(bPlayer, pos);
+        Vec3 pos = player.getEyePosition();
+        Vec3 prevPos = this.prevPositions.getOrDefault(bPlayer, pos);
         this.prevPositions.put(bPlayer, pos);
 
         // no checkpoints, do nothing
@@ -68,7 +67,7 @@ public class Checkpoints {
             }
 
             this.began.add(bPlayer);
-            this.checkpoints.put(bPlayer, new Pair<>(nextCheckpointIdx, start.orElseThrow()));
+            this.checkpoints.put(bPlayer, new Tuple<>(nextCheckpointIdx, start.orElseThrow()));
             this.canPit.add(bPlayer);
             return TickResult.BEGIN;
         }
@@ -82,7 +81,7 @@ public class Checkpoints {
 
         // reached the next checkpoint
         if (next.isPresent()) {
-            this.checkpoints.put(bPlayer, new Pair<>(nextCheckpointIdx, next.orElseThrow()));
+            this.checkpoints.put(bPlayer, new Tuple<>(nextCheckpointIdx, next.orElseThrow()));
 
             switch (attributes.layout()) {
                 case CIRCULAR: {
@@ -181,7 +180,7 @@ public class Checkpoints {
      */
     public Optional<RespawnRegion> getCheckpoint(BoatRacePlayer player) {
         return Optional.ofNullable(this.checkpoints.get(player))
-                .map(p -> p.getRight());
+                .map(p -> p.getB());
     }
 
     /**
@@ -192,7 +191,7 @@ public class Checkpoints {
      */
     public int getCheckpointIndex(BoatRacePlayer player) {
         return Optional.ofNullable(this.checkpoints.get(player))
-                .map(p -> p.getLeft())
+                .map(p -> p.getA())
                 .orElse(-1);
     }
 
@@ -214,7 +213,7 @@ public class Checkpoints {
      * @param lastPos The entity's pos last tick.
      * @return The region it intersected.
      */
-    private Optional<RespawnRegion> intersectAny(Set<RespawnRegion> regions, Vec3d pos, Vec3d lastPos) {
+    private Optional<RespawnRegion> intersectAny(Set<RespawnRegion> regions, Vec3 pos, Vec3 lastPos) {
         for (RespawnRegion region : regions) {
             if (region.intersect(pos, lastPos)) {
                 return Optional.of(region);

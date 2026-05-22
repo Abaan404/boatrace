@@ -6,24 +6,23 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.abaan404.boatrace.events.PlayerDismountEvent;
-
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import xyz.nucleoid.stimuli.EventInvokers;
 import xyz.nucleoid.stimuli.Stimuli;
 import xyz.nucleoid.stimuli.event.EventResult;
 
-@Mixin(PlayerEntity.class)
+@Mixin(Player.class)
 public abstract class PlayerEntityMixin extends LivingEntity {
-    protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
+    protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, Level world) {
         super(entityType, world);
     }
 
-    @Inject(method = "dismountVehicle", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "removeVehicle", at = @At("HEAD"), cancellable = true)
     private void dismountVehicle(CallbackInfo ci) {
         Entity vehicle = this.getVehicle();
         if (vehicle == null || vehicle.isRemoved()) {
@@ -31,8 +30,8 @@ public abstract class PlayerEntityMixin extends LivingEntity {
             return;
         }
 
-        if (!this.getEntityWorld().isClient()) {
-            ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
+        if (!this.level().isClientSide()) {
+            ServerPlayer player = (ServerPlayer) (Object) this;
 
             try (EventInvokers invokers = Stimuli.select().forEntity(player)) {
                 EventResult result = invokers.get(PlayerDismountEvent.EVENT).onDismount(player, vehicle);

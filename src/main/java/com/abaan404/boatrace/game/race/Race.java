@@ -3,7 +3,17 @@ package com.abaan404.boatrace.game.race;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomModelData;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.phys.Vec3;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
@@ -16,17 +26,6 @@ import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.CustomModelDataComponent;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.rule.GameRules;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
@@ -50,7 +49,7 @@ public class Race {
     private final boolean acceptUnqualified;
 
     private Race(GameSpace gameSpace, BoatRaceConfig.Race config, BoatRaceTrack track, Teams teams,
-            ServerWorld world, GlobalWidgets widgets, List<BoatRacePlayer> gridOrder) {
+            ServerLevel world, GlobalWidgets widgets, List<BoatRacePlayer> gridOrder) {
         this.stageManager = new RaceStageManager(gameSpace, config, world, track, teams);
         this.widgets = new RaceWidgets(gameSpace, widgets, track);
         this.qualified = Set.copyOf(gridOrder);
@@ -77,21 +76,21 @@ public class Race {
         }
 
         if (this.acceptUnqualified) {
-            for (ServerPlayerEntity player : gameSpace.getPlayers().participants()) {
+            for (ServerPlayer player : gameSpace.getPlayers().participants()) {
                 this.stageManager.toParticipant(BoatRacePlayer.of(player));
             }
         }
     }
 
-    public static void open(GameActivity game, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
+    public static void open(GameActivity game, BoatRaceConfig.Race config, ServerLevel world, BoatRaceTrack track,
             Teams teams, List<BoatRacePlayer> gridOrder) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
         DesyncIndicator.addTo(game, world);
 
         Race race = new Race(game.getGameSpace(), config, track, teams, world, widgets, gridOrder);
 
-        world.getGameRules().setValue(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
-        world.setTimeOfDay(track.getAttributes().timeOfDay());
+        world.getGameRules().set(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
+        world.setDayTime(track.getAttributes().timeOfDay());
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
         game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);
@@ -114,7 +113,7 @@ public class Race {
         game.listen(PlayerPitSuccess.EVENT, race::onPitSuccess);
 
         game.listen(GamePlayerEvents.OFFER, race::offerPlayer);
-        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
+        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3.ZERO));
         game.listen(GamePlayerEvents.ADD, race::addPlayer);
         game.listen(GamePlayerEvents.REMOVE, race::removePlayer);
 
@@ -168,56 +167,56 @@ public class Race {
         return offer.accept();
     }
 
-    private void addPlayer(ServerPlayerEntity player) {
+    private void addPlayer(ServerPlayer player) {
         this.widgets.sendTrackMessage(player);
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
     }
 
-    private void removePlayer(ServerPlayerEntity player) {
+    private void removePlayer(ServerPlayer player) {
         this.stageManager.despawnPlayer(player);
     }
 
-    private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+    private EventResult onPlayerDeath(ServerPlayer player, DamageSource source) {
         player.setHealth(20.0f);
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
         return EventResult.DENY;
     }
 
-    private ActionResult onItemUse(ServerPlayerEntity player, Hand hand) {
-        ItemStack stack = player.getStackInHand(hand);
+    private InteractionResult onItemUse(ServerPlayer player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
 
         // only respawn the player at their last checkpoint
         if (stack.getItem().equals(BoatRaceItems.RESPAWN)) {
             this.stageManager.respawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
         // cycle leaderboard type
         else if (stack.getItem().equals(BoatRaceItems.CYCLE_LEADERBOARD)) {
             RaceWidgets.LeaderboardType nextType = this.widgets.cycleLeaderboard(player);
-            stack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(
+            stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(
                     List.of(),
                     List.of(),
                     List.of(nextType.toString()),
                     List.of()));
 
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
-    private EventResult onDismount(ServerPlayerEntity player, Entity vehicle) {
+    private EventResult onDismount(ServerPlayer player, Entity vehicle) {
         this.stageManager.respawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
 
         return EventResult.DENY;
     }
 
-    private EventResult onPitSuccess(ServerPlayerEntity player) {
+    private EventResult onPitSuccess(ServerPlayer player) {
         if (!this.stageManager.isParticipant(BoatRacePlayer.of(player))) {
             return EventResult.PASS;
         }

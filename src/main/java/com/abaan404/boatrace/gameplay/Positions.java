@@ -4,13 +4,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import net.minecraft.server.level.ServerLevel;
 import com.abaan404.boatrace.BoatRacePlayer;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.server.world.ServerWorld;
 
 /**
  * Keeps track of positions and delta times on track.
@@ -108,7 +107,7 @@ public class Positions {
     /**
      * Tick the internal splits.
      */
-    public void tick(ServerWorld world) {
+    public void tick(ServerLevel world) {
         this.splits.tick(world);
     }
 

@@ -2,13 +2,12 @@ package com.abaan404.boatrace.gameplay;
 
 import java.util.Map;
 import java.util.Set;
-
+import net.minecraft.server.level.ServerPlayer;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.screen.PitBoxGui;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.server.network.ServerPlayerEntity;
 
 public class PitStops {
     private Set<BoatRacePlayer> inPit = new ObjectOpenHashSet<>();
@@ -19,7 +18,7 @@ public class PitStops {
      *
      * @param player The player.
      */
-    public void startPit(ServerPlayerEntity player) {
+    public void startPit(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         if (!this.inPit.contains(bPlayer)) {
@@ -35,7 +34,7 @@ public class PitStops {
      *
      * @param player The player.
      */
-    public void stopPit(ServerPlayerEntity player) {
+    public void stopPit(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         this.inPit.remove(bPlayer);
     }
@@ -45,7 +44,7 @@ public class PitStops {
      *
      * @param player The player.
      */
-    public boolean finishPit(ServerPlayerEntity player) {
+    public boolean finishPit(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         if (!this.inPit.contains(bPlayer)) {

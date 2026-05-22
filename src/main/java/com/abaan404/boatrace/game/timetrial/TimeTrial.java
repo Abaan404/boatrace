@@ -7,16 +7,15 @@ import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.events.PlayerDismountEvent;
 import com.abaan404.boatrace.gameplay.DesyncIndicator;
 import com.mojang.authlib.GameProfile;
-
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.rule.GameRules;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.phys.Vec3;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
@@ -38,19 +37,19 @@ public class TimeTrial {
     private final TimeTrialStageManager stageManager;
     private final TimeTrialWidgets widgets;
 
-    private TimeTrial(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track, GlobalWidgets widgets) {
+    private TimeTrial(GameSpace gameSpace, ServerLevel world, BoatRaceTrack track, GlobalWidgets widgets) {
         this.stageManager = new TimeTrialStageManager(gameSpace, world, track);
         this.widgets = new TimeTrialWidgets(gameSpace, widgets, track);
     }
 
-    public static void open(GameActivity game, ServerWorld world, BoatRaceTrack track) {
+    public static void open(GameActivity game, ServerLevel world, BoatRaceTrack track) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
         DesyncIndicator.addTo(game, world);
 
         TimeTrial timeTrial = new TimeTrial(game.getGameSpace(), world, track, widgets);
 
-        world.getGameRules().setValue(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
-        world.setTimeOfDay(track.getAttributes().timeOfDay());
+        world.getGameRules().set(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
+        world.setDayTime(track.getAttributes().timeOfDay());
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
         game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);
@@ -71,7 +70,7 @@ public class TimeTrial {
         game.listen(PlayerDismountEvent.EVENT, timeTrial::onDismount);
 
         game.listen(GamePlayerEvents.OFFER, timeTrial::offerPlayer);
-        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
+        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3.ZERO));
         game.listen(GamePlayerEvents.ADD, timeTrial::addPlayer);
         game.listen(GamePlayerEvents.REMOVE, timeTrial::removePlayer);
 
@@ -95,24 +94,24 @@ public class TimeTrial {
         return offer.accept();
     }
 
-    private void addPlayer(ServerPlayerEntity player) {
+    private void addPlayer(ServerPlayer player) {
         this.widgets.sendTrackMessage(player);
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
     }
 
-    private void removePlayer(ServerPlayerEntity player) {
+    private void removePlayer(ServerPlayer player) {
         this.stageManager.despawnPlayer(player);
     }
 
-    private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+    private EventResult onPlayerDeath(ServerPlayer player, DamageSource source) {
         player.setHealth(20.0f);
         this.stageManager.respawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
         return EventResult.DENY;
     }
 
-    private EventResult onDismount(ServerPlayerEntity player, Entity vehicle) {
+    private EventResult onDismount(ServerPlayer player, Entity vehicle) {
         vehicle.discard();
         this.stageManager.toSpectator(BoatRacePlayer.of(player));
         this.stageManager.updatePlayerInventory(player);
@@ -120,8 +119,8 @@ public class TimeTrial {
         return EventResult.DENY;
     }
 
-    private ActionResult onItemUse(ServerPlayerEntity player, Hand hand) {
-        ItemStack item = player.getStackInHand(hand);
+    private InteractionResult onItemUse(ServerPlayer player, InteractionHand hand) {
+        ItemStack item = player.getItemInHand(hand);
 
         // turn them into a participant and spawn them as if they just started
         if (item.getItem().equals(BoatRaceItems.RESET)) {
@@ -134,17 +133,17 @@ public class TimeTrial {
             this.stageManager.splits.reset(bPlayer);
             this.stageManager.splits.stop(bPlayer);
 
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
         // only respawn the player at their last checkpoint
         else if (item.getItem().equals(BoatRaceItems.RESPAWN)) {
             this.stageManager.respawnPlayer(player);
             this.stageManager.updatePlayerInventory(player);
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
     private void tick() {

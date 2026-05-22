@@ -4,19 +4,19 @@ import com.abaan404.boatrace.screen.PitBoxGui;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerPlayer;
 
 public class BoatRaceCommands {
     static void initialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            dispatcher.register(CommandManager.literal("pit").executes(BoatRaceCommands::pit));
+            dispatcher.register(Commands.literal("pit").executes(BoatRaceCommands::pit));
         });
     }
 
-    private static int pit(CommandContext<ServerCommandSource> ctx) {
-        ServerPlayerEntity player = ctx.getSource().getPlayer();
+    private static int pit(CommandContext<CommandSourceStack> ctx) {
+        ServerPlayer player = ctx.getSource().getPlayer();
 
         try {
             PitBoxGui gui = new PitBoxGui(player);

@@ -12,8 +12,8 @@ import com.abaan404.boatrace.leaderboard.Leaderboard;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
@@ -27,7 +27,7 @@ public class BoatRace implements ModInitializer {
     public static final Logger LOGGER = LogManager.getLogger(ID);
 
     public static final GameType<BoatRaceConfig> TYPE = GameTypes.register(
-            Identifier.of(ID, "game"),
+            Identifier.fromNamespaceAndPath(ID, "game"),
             BoatRaceConfig.CODEC,
             BoatRace::open);
 
@@ -40,7 +40,7 @@ public class BoatRace implements ModInitializer {
 
         if (config.qualifying().isPresent()) {
             if (!config.race().isPresent()) {
-                throw new GameOpenException(Text.of("A race config is required to begin qualifying for."));
+                throw new GameOpenException(Component.nullToEmpty("A race config is required to begin qualifying for."));
             }
 
             return context.openWithWorld(worldConfig, (game, world) -> {

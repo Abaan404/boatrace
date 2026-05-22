@@ -2,7 +2,17 @@ package com.abaan404.boatrace.game.qualifying;
 
 import java.util.List;
 import java.util.Set;
-
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.NoteBlock;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
@@ -18,24 +28,13 @@ import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Pair;
-import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
 import xyz.nucleoid.plasmid.api.game.common.team.TeamManager;
 
 public class QualifyingStageManager {
     private final GameSpace gameSpace;
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final BoatRaceConfig.Qualifying config;
     private final BoatRaceConfig.Race configRace;
     private final BoatRaceTrack track;
@@ -50,7 +49,7 @@ public class QualifyingStageManager {
     private long duration = 0;
 
     public QualifyingStageManager(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            ServerWorld world, BoatRaceTrack track, Teams teams) {
+            ServerLevel world, BoatRaceTrack track, Teams teams) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.config = config;
@@ -70,18 +69,18 @@ public class QualifyingStageManager {
      *
      * @param player The player.
      */
-    public void spawnPlayer(ServerPlayerEntity player) {
+    public void spawnPlayer(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         BoatRaceTrack.Regions regions = this.track.getRegions();
 
         // spawn spectators at spawn without boats
         if (!this.participants.contains(bPlayer)) {
-            this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+            this.spawnLogic.resetPlayer(player, GameType.SPECTATOR);
             this.spawnLogic.spawnPlayer(player, regions.spawn());
             return;
         }
 
-        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
+        this.spawnLogic.resetPlayer(player, GameType.ADVENTURE);
         this.spawnLogic.spawnPlayer(player, regions.spawn());
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
     }
@@ -91,12 +90,12 @@ public class QualifyingStageManager {
      *
      * @param player The player
      */
-    public void updatePlayerInventory(ServerPlayerEntity player) {
-        PlayerInventory inventory = player.getInventory();
-        inventory.clear();
+    public void updatePlayerInventory(ServerPlayer player) {
+        Inventory inventory = player.getInventory();
+        inventory.clearContent();
 
         if (this.participants.contains(BoatRacePlayer.of(player))) {
-            inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+            inventory.setItem(8, BoatRaceItems.RESET.getDefaultInstance());
         }
     }
 
@@ -105,13 +104,13 @@ public class QualifyingStageManager {
      *
      * @param player The player.
      */
-    public void despawnPlayer(ServerPlayerEntity player) {
+    public void despawnPlayer(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         this.toSpectator(bPlayer);
         this.spawnLogic.despawnVehicle(player);
 
-        PlayerInventory inventory = player.getInventory();
-        inventory.clear();
+        Inventory inventory = player.getInventory();
+        inventory.clearContent();
 
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
         leaderboard.delete(this.world, this.track, bPlayer);
@@ -134,7 +133,7 @@ public class QualifyingStageManager {
             return;
         }
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             if (!this.participants.contains(bPlayer)) {
@@ -179,10 +178,10 @@ public class QualifyingStageManager {
                 }
 
                 case MISSED: {
-                    Pair<Text, Text> titles = TextUtils.titleAlertCheckpoint();
-                    player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 30, 20));
-                    player.networkHandler.sendPacket(new SubtitleS2CPacket(titles.getRight()));
-                    player.networkHandler.sendPacket(new TitleS2CPacket(titles.getLeft()));
+                    Tuple<Component, Component> titles = TextUtils.titleAlertCheckpoint();
+                    player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 30, 20));
+                    player.connection.send(new ClientboundSetSubtitleTextPacket(titles.getB()));
+                    player.connection.send(new ClientboundSetTitleTextPacket(titles.getA()));
                     break;
                 }
 
@@ -194,7 +193,7 @@ public class QualifyingStageManager {
             }
         }
 
-        this.duration += this.world.getTickManager().getMillisPerTick();
+        this.duration += this.world.tickRateManager().millisecondsPerTick();
         this.splits.tick(this.world);
     }
 
@@ -238,14 +237,14 @@ public class QualifyingStageManager {
      *
      * @param player The player.
      */
-    public void toFinisher(ServerPlayerEntity player) {
+    public void toFinisher(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         this.participants.remove(bPlayer);
 
         this.splits.stop(bPlayer);
         this.splits.reset(bPlayer);
-        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+        this.spawnLogic.resetPlayer(player, GameType.SPECTATOR);
         this.spawnLogic.despawnVehicle(player);
     }
 
@@ -299,7 +298,7 @@ public class QualifyingStageManager {
      *
      * @param player The player to create a new pb for.
      */
-    private void submit(ServerPlayerEntity player) {
+    private void submit(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
@@ -312,9 +311,9 @@ public class QualifyingStageManager {
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
             players.sendMessage(TextUtils.chatNewPersonalBest(pb, position));
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getNotePitch(18));
+            player.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getPitchFromNote(18));
         } else {
-            player.sendMessage(TextUtils.chatNewTime(pb.timer()));
+            player.sendSystemMessage(TextUtils.chatNewTime(pb.timer()));
         }
     }
 }

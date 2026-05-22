@@ -1,15 +1,14 @@
 package com.abaan404.boatrace.gameplay;
 
 import java.util.Set;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.DyeColor;
 import com.abaan404.boatrace.BoatRace;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRacePlayer;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.text.Text;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.Formatting;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeam;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamKey;
@@ -168,9 +167,9 @@ public class Teams {
 
         GameTeamKey key = new GameTeamKey(String.valueOf(this.nextTeamId));
 
-        Text prefix = Text.empty()
-                .append(Text.literal("›").formatted(this.indexToColor(color1), Formatting.BOLD))
-                .append(Text.literal("›").formatted(this.indexToColor(color2), Formatting.BOLD))
+        Component prefix = Component.empty()
+                .append(Component.literal("›").withStyle(this.indexToColor(color1), ChatFormatting.BOLD))
+                .append(Component.literal("›").withStyle(this.indexToColor(color2), ChatFormatting.BOLD))
                 .append(" ");
 
         this.teams.addTeam(key, GameTeamConfig.builder()
@@ -189,24 +188,24 @@ public class Teams {
      * @param index The dye index.
      * @return A text formatting color.
      */
-    private Formatting indexToColor(int index) {
-        return switch (DyeColor.byIndex(index)) {
-            case WHITE -> Formatting.WHITE;
-            case ORANGE -> Formatting.GOLD;
-            case MAGENTA -> Formatting.DARK_RED;
-            case LIGHT_BLUE -> Formatting.AQUA;
-            case YELLOW -> Formatting.YELLOW;
-            case LIME -> Formatting.GREEN;
-            case PINK -> Formatting.LIGHT_PURPLE;
-            case GRAY -> Formatting.DARK_GRAY;
-            case LIGHT_GRAY -> Formatting.GRAY;
-            case CYAN -> Formatting.DARK_AQUA;
-            case PURPLE -> Formatting.DARK_PURPLE;
-            case BLUE -> Formatting.BLUE;
-            case BROWN -> Formatting.DARK_BLUE;
-            case GREEN -> Formatting.DARK_GREEN;
-            case RED -> Formatting.RED;
-            case BLACK -> Formatting.BLACK;
+    private ChatFormatting indexToColor(int index) {
+        return switch (DyeColor.byId(index)) {
+            case WHITE -> ChatFormatting.WHITE;
+            case ORANGE -> ChatFormatting.GOLD;
+            case MAGENTA -> ChatFormatting.DARK_RED;
+            case LIGHT_BLUE -> ChatFormatting.AQUA;
+            case YELLOW -> ChatFormatting.YELLOW;
+            case LIME -> ChatFormatting.GREEN;
+            case PINK -> ChatFormatting.LIGHT_PURPLE;
+            case GRAY -> ChatFormatting.DARK_GRAY;
+            case LIGHT_GRAY -> ChatFormatting.GRAY;
+            case CYAN -> ChatFormatting.DARK_AQUA;
+            case PURPLE -> ChatFormatting.DARK_PURPLE;
+            case BLUE -> ChatFormatting.BLUE;
+            case BROWN -> ChatFormatting.DARK_BLUE;
+            case GREEN -> ChatFormatting.DARK_GREEN;
+            case RED -> ChatFormatting.RED;
+            case BLACK -> ChatFormatting.BLACK;
         };
     }
 }

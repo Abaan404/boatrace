@@ -1,10 +1,8 @@
 package com.abaan404.boatrace.gameplay;
 
 import java.util.Random;
-
+import net.minecraft.server.level.ServerLevel;
 import com.abaan404.boatrace.BoatRaceConfig;
-
-import net.minecraft.server.world.ServerWorld;
 
 public class Countdown {
     private final Random rand = new Random();
@@ -18,15 +16,15 @@ public class Countdown {
      * @param world The world to get tick info.
      * @return The result of this tick.
      */
-    public TickResult tick(ServerWorld world) {
+    public TickResult tick(ServerLevel world) {
         if (this.duration < 0 && this.random < 0) {
             return TickResult.IDLE;
         }
 
         if (this.duration >= 0) {
-            this.duration -= world.getTickManager().getMillisPerTick();
+            this.duration -= world.tickRateManager().millisecondsPerTick();
         } else {
-            this.random -= world.getTickManager().getMillisPerTick();
+            this.random -= world.tickRateManager().millisecondsPerTick();
         }
 
         if (this.duration < 0 && this.random < 0) {

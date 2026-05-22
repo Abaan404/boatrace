@@ -5,7 +5,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SequencedSet;
 import java.util.Set;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.NoteBlock;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
@@ -24,20 +37,6 @@ import com.abaan404.boatrace.utils.TextUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Pair;
-import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
@@ -46,7 +45,7 @@ import xyz.nucleoid.plasmid.api.game.common.team.GameTeamKey;
 
 public class RaceStageManager {
     private final GameSpace gameSpace;
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final BoatRaceConfig.Race config;
     private final BoatRaceTrack track;
 
@@ -64,7 +63,7 @@ public class RaceStageManager {
     private long duration = 0;
     private long lastCountdown = Long.MAX_VALUE;
 
-    public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerWorld world, BoatRaceTrack track,
+    public RaceStageManager(GameSpace gameSpace, BoatRaceConfig.Race config, ServerLevel world, BoatRaceTrack track,
             Teams teams) {
         this.gameSpace = gameSpace;
         this.world = world;
@@ -89,18 +88,18 @@ public class RaceStageManager {
      *
      * @param player The player.
      */
-    public void spawnPlayer(ServerPlayerEntity player) {
+    public void spawnPlayer(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         BoatRaceTrack.Regions regions = this.track.getRegions();
 
         // spawn spectators or non qualified at spawn without boats
         if (!this.participants.contains(bPlayer)) {
-            this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+            this.spawnLogic.resetPlayer(player, GameType.SPECTATOR);
             this.spawnLogic.spawnPlayer(player, regions.spawn());
             return;
         }
 
-        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
+        this.spawnLogic.resetPlayer(player, GameType.ADVENTURE);
 
         BoatRaceTrack.RespawnRegion respawn = this.checkpoints
                 .getCheckpoint(bPlayer)
@@ -130,7 +129,7 @@ public class RaceStageManager {
      *
      * @param player The player.
      */
-    public void respawnPlayer(ServerPlayerEntity player) {
+    public void respawnPlayer(ServerPlayer player) {
         if (this.config.noRespawn()) {
             return;
         }
@@ -143,15 +142,15 @@ public class RaceStageManager {
      *
      * @param player The player
      */
-    public void updatePlayerInventory(ServerPlayerEntity player) {
-        PlayerInventory inventory = player.getInventory();
-        inventory.clear();
+    public void updatePlayerInventory(ServerPlayer player) {
+        Inventory inventory = player.getInventory();
+        inventory.clearContent();
 
         if (this.participants.contains(BoatRacePlayer.of(player))) {
-            inventory.setStack(8, BoatRaceItems.CYCLE_LEADERBOARD.getDefaultStack());
+            inventory.setItem(8, BoatRaceItems.CYCLE_LEADERBOARD.getDefaultInstance());
 
             if (!this.config.noRespawn()) {
-                inventory.setStack(7, BoatRaceItems.RESPAWN.getDefaultStack());
+                inventory.setItem(7, BoatRaceItems.RESPAWN.getDefaultInstance());
             }
         }
     }
@@ -161,7 +160,7 @@ public class RaceStageManager {
      *
      * @param player The player.
      */
-    public void despawnPlayer(ServerPlayerEntity player) {
+    public void despawnPlayer(ServerPlayer player) {
         this.spawnLogic.despawnVehicle(player);
     }
 
@@ -172,13 +171,13 @@ public class RaceStageManager {
         // check if countdown is ready
         switch (this.goCountdown.tick(this.world)) {
             case FINISH: {
-                for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+                for (ServerPlayer player : this.gameSpace.getPlayers()) {
                     if (!this.participants.contains(BoatRacePlayer.of(player))) {
                         continue;
                     }
 
                     this.spawnLogic.unfreezeVehicle(player);
-                    player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 1.0f, NoteBlock.getNotePitch(24));
+                    player.playSound(SoundEvents.NOTE_BLOCK_PLING.value(), 1.0f, NoteBlock.getPitchFromNote(24));
                 }
 
                 // start positions timer for non server players
@@ -190,8 +189,8 @@ public class RaceStageManager {
 
             case COUNTDOWN: {
                 if (this.lastCountdown / 1000 != this.goCountdown.getCountdown() / 1000) {
-                    this.gameSpace.getPlayers().playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), SoundCategory.UI,
-                            1.0f, NoteBlock.getNotePitch(12));
+                    this.gameSpace.getPlayers().playSound(SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.UI,
+                            1.0f, NoteBlock.getPitchFromNote(12));
                 }
 
                 this.lastCountdown = this.goCountdown.getCountdown();
@@ -214,7 +213,7 @@ public class RaceStageManager {
             this.endGame();
         }
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             if (!this.participants.contains(bPlayer)) {
@@ -250,10 +249,10 @@ public class RaceStageManager {
                 }
 
                 case MISSED: {
-                    Pair<Text, Text> titles = TextUtils.titleAlertCheckpoint();
-                    player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 30, 20));
-                    player.networkHandler.sendPacket(new SubtitleS2CPacket(titles.getRight()));
-                    player.networkHandler.sendPacket(new TitleS2CPacket(titles.getLeft()));
+                    Tuple<Component, Component> titles = TextUtils.titleAlertCheckpoint();
+                    player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 30, 20));
+                    player.connection.send(new ClientboundSetSubtitleTextPacket(titles.getB()));
+                    player.connection.send(new ClientboundSetTitleTextPacket(titles.getA()));
                     break;
                 }
 
@@ -283,7 +282,7 @@ public class RaceStageManager {
 
         this.positions.tick(this.world);
         this.splits.tick(this.world);
-        this.duration += this.world.getTickManager().getMillisPerTick();
+        this.duration += this.world.tickRateManager().millisecondsPerTick();
     }
 
     /**
@@ -330,24 +329,24 @@ public class RaceStageManager {
      *
      * @param player The player.
      */
-    public void toFinisher(ServerPlayerEntity player) {
+    public void toFinisher(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         if (this.positions.getPosition(bPlayer) == 0) {
-            for (ServerPlayerEntity player2 : this.gameSpace.getPlayers()) {
+            for (ServerPlayer player2 : this.gameSpace.getPlayers()) {
                 BoatRacePlayer bPlayer2 = BoatRacePlayer.of(player2);
                 if (this.checkpoints.getLaps(bPlayer2) >= this.config.maxLaps()) {
                     continue;
                 }
 
-                player2.sendMessage(TextUtils.chatFinalLap());
+                player2.sendSystemMessage(TextUtils.chatFinalLap());
             }
         }
 
         this.participants.remove(bPlayer);
         this.splits.stop(bPlayer);
         this.positions.stop(bPlayer);
-        this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+        this.spawnLogic.resetPlayer(player, GameType.SPECTATOR);
         this.spawnLogic.despawnVehicle(player);
     }
 
@@ -420,7 +419,7 @@ public class RaceStageManager {
      *
      * @param player The player to create a new pb for.
      */
-    private void submit(ServerPlayerEntity player) {
+    private void submit(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         PersonalBest pb = new PersonalBest(bPlayer, this.splits.getSplits(bPlayer));
 
@@ -429,9 +428,9 @@ public class RaceStageManager {
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
             players.sendMessage(TextUtils.chatNewFastestLap(pb));
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getNotePitch(18));
+            player.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getPitchFromNote(18));
         } else {
-            player.sendMessage(TextUtils.chatNewTime(pb.timer()));
+            player.sendSystemMessage(TextUtils.chatNewTime(pb.timer()));
         }
 
     }
@@ -463,13 +462,13 @@ public class RaceStageManager {
         if (qualified.isEmpty()) {
             int points = this.config.scoring().isEmpty() ? 1 : this.config.scoring().getFirst();
 
-            MutableText positionsText = Text.empty();
+            MutableComponent positionsText = Component.empty();
             positionsText.append(" ");
             positionsText.append(TextUtils.scoreboardPosition(true, 0)).append(" ");
             positionsText.append(TextUtils.scoreboardName(BoatRacePlayer.DEFAULT, GameTeamConfig.DEFAULT, false, 0))
                     .append(" ");
 
-            positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD)).append(" ");
+            positionsText.append(Component.literal("/").withStyle(ChatFormatting.RED, ChatFormatting.BOLD)).append(" ");
 
             positionsText.append(TextUtils.actionBarTimer(0)).append("  ");
             positionsText.append(TextUtils.chatPoints(points));
@@ -487,11 +486,11 @@ public class RaceStageManager {
             int points = i < this.config.scoring().size() ? this.config.scoring().get(i) : 0;
             teamPoints.put(team, teamPoints.getOrDefault(team, 0) + points);
 
-            MutableText positionsText = Text.empty();
+            MutableComponent positionsText = Component.empty();
             positionsText.append(" ");
             positionsText.append(TextUtils.scoreboardPosition(true, i)).append(" ");
             positionsText.append(TextUtils.scoreboardName(player, this.teams.getConfig(team), false, i)).append(" ");
-            positionsText.append(Text.literal("/").formatted(Formatting.RED, Formatting.BOLD)).append(" ");
+            positionsText.append(Component.literal("/").withStyle(ChatFormatting.RED, ChatFormatting.BOLD)).append(" ");
 
             if (laps < this.getLeadingLaps()) {
                 positionsText.append(TextUtils.chatLapsDelta(this.getLeadingLaps(), this.checkpoints.getLaps(player)))
@@ -508,9 +507,9 @@ public class RaceStageManager {
         for (BoatRacePlayer player : dsq) {
             GameTeamKey team = this.teams.getTeamFor(player);
 
-            MutableText positionsText = Text.empty();
+            MutableComponent positionsText = Component.empty();
             positionsText.append(" ");
-            positionsText.append(Text.literal("DSQ").formatted(Formatting.GRAY, Formatting.ITALIC)).append(" ");
+            positionsText.append(Component.literal("DSQ").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)).append(" ");
             positionsText.append(TextUtils.scoreboardName(player, this.teams.getConfig(team), false, -1)).append(" ");
             positionsText.append(TextUtils.chatPoints(0));
 
@@ -520,9 +519,9 @@ public class RaceStageManager {
         for (BoatRacePlayer player : dnf) {
             GameTeamKey team = this.teams.getTeamFor(player);
 
-            MutableText positionsText = Text.empty();
+            MutableComponent positionsText = Component.empty();
             positionsText.append(" ");
-            positionsText.append(Text.literal("DNF").formatted(Formatting.GRAY, Formatting.ITALIC)).append(" ");
+            positionsText.append(Component.literal("DNF").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)).append(" ");
             positionsText.append(TextUtils.scoreboardName(player, this.teams.getConfig(team), false, -1)).append(" ");
             positionsText.append(TextUtils.chatPoints(0));
 
@@ -555,7 +554,7 @@ public class RaceStageManager {
         }
 
         if (winner.isPresent()) {
-            MutableText teamsText = Text.empty();
+            MutableComponent teamsText = Component.empty();
 
             List<String> playerNames = new ObjectArrayList<>();
             for (BoatRacePlayer winners : this.teams.getPlayersIn(winner.get(), positions)) {
@@ -566,8 +565,8 @@ public class RaceStageManager {
             teamsText.append(String.join(", ", playerNames));
             teamsText.append(String.format(" won the game with %d point(s).", winnerPoints));
 
-            players.sendMessage(Text.empty());
-            players.sendMessage(teamsText.formatted(Formatting.GOLD));
+            players.sendMessage(Component.empty());
+            players.sendMessage(teamsText.withStyle(ChatFormatting.GOLD));
         }
 
         this.gameSpace.close(GameCloseReason.FINISHED);

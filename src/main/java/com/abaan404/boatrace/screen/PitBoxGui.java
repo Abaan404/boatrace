@@ -1,7 +1,12 @@
 package com.abaan404.boatrace.screen;
 
 import java.util.Optional;
-
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.NoteBlock;
 import com.abaan404.boatrace.BoatRace;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.events.PlayerPitSuccess;
@@ -13,13 +18,6 @@ import eu.pb4.sgui.api.elements.AnimatedGuiElementBuilder;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.elements.GuiElementInterface;
 import eu.pb4.sgui.api.gui.SimpleGui;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.item.Items;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpaceManager;
 import xyz.nucleoid.plasmid.api.game.config.GameConfig;
@@ -34,8 +32,8 @@ public class PitBoxGui extends SimpleGui {
     private State state = State.IDLE;
     private long duration = 0;
 
-    public PitBoxGui(ServerPlayerEntity player) {
-        super(ScreenHandlerType.GENERIC_9X3, player, false);
+    public PitBoxGui(ServerPlayer player) {
+        super(MenuType.GENERIC_9x3, player, false);
 
         Optional<GameSpace> gameSpace = Optional.ofNullable(GameSpaceManager.get().byPlayer(player));
 
@@ -51,7 +49,7 @@ public class PitBoxGui extends SimpleGui {
         }).orElse(BoatRaceConfig.Pits.DEFAULT);
 
         this.config = config;
-        this.setTitle(Text.of("PitBox"));
+        this.setTitle(Component.nullToEmpty("PitBox"));
         this.setLockPlayerInventory(true);
     }
 
@@ -75,20 +73,20 @@ public class PitBoxGui extends SimpleGui {
         this.fillSlots(state.getElement());
 
         if (state == State.READY) {
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BIT.value(), 1.0f, NoteBlock.getNotePitch(12));
+            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value(), 1.0f, NoteBlock.getPitchFromNote(12));
         }
 
         if (state == State.FAIL) {
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), 1.0f, NoteBlock.getNotePitch(12));
+            player.playSound(SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), 1.0f, NoteBlock.getPitchFromNote(12));
         }
 
         if (state == State.SUCCESS) {
             try (EventInvokers invokers = Stimuli.select().forEntity(player)) {
                 EventResult result = invokers.get(PlayerPitSuccess.EVENT).onPitSuccess(player);
                 if (result == EventResult.ALLOW) {
-                    player.sendMessage(TextUtils.chatPitTime(this.duration, true));
+                    player.sendSystemMessage(TextUtils.chatPitTime(this.duration, true));
                 } else {
-                    player.sendMessage(TextUtils.chatPitTime(this.duration, false));
+                    player.sendSystemMessage(TextUtils.chatPitTime(this.duration, false));
                 }
             }
         }
@@ -113,9 +111,9 @@ public class PitBoxGui extends SimpleGui {
 
     @Override
     public void onTick() {
-        this.duration += this.player.getEntityWorld().getTickManager().getMillisPerTick();
+        this.duration += this.player.level().tickRateManager().millisecondsPerTick();
 
-        Countdown.TickResult result = this.countdown.tick(this.player.getEntityWorld());
+        Countdown.TickResult result = this.countdown.tick(this.player.level());
         if (result != Countdown.TickResult.FINISH) {
             return;
         }
@@ -136,7 +134,7 @@ public class PitBoxGui extends SimpleGui {
     }
 
     @Override
-    public boolean onClick(int index, ClickType type, SlotActionType action, GuiElementInterface element) {
+    public boolean onClick(int index, ClickType type, net.minecraft.world.inventory.ClickType action, GuiElementInterface element) {
         switch (this.state) {
             case WAIT:
                 this.setState(State.FAIL);
@@ -168,7 +166,7 @@ public class PitBoxGui extends SimpleGui {
          */
         WAIT(new GuiElementBuilder()
                 .setItem(Items.RED_STAINED_GLASS_PANE)
-                .setItemName(Text.literal("Wait for go..."))
+                .setItemName(Component.literal("Wait for go..."))
                 .build()),
 
         /**
@@ -176,7 +174,7 @@ public class PitBoxGui extends SimpleGui {
          */
         READY(new GuiElementBuilder()
                 .setItem(Items.LIME_STAINED_GLASS_PANE)
-                .setItemName(Text.literal("GO!"))
+                .setItemName(Component.literal("GO!"))
                 .build()),
 
         /**
@@ -184,10 +182,10 @@ public class PitBoxGui extends SimpleGui {
          */
         FAIL(new AnimatedGuiElementBuilder()
                 .setItem(Items.ORANGE_STAINED_GLASS_PANE)
-                .setItemName(Text.literal("Too Early"))
+                .setItemName(Component.literal("Too Early"))
                 .saveItemStack()
                 .setItem(Items.YELLOW_STAINED_GLASS_PANE)
-                .setItemName(Text.literal("Too Early"))
+                .setItemName(Component.literal("Too Early"))
                 .saveItemStack()
                 .setInterval(10)
                 .build()),

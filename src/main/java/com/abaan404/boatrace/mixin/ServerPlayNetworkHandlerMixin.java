@@ -1,16 +1,16 @@
 package com.abaan404.boatrace.mixin;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.packet.c2s.play.ClickSlotC2SPacket;
-import net.minecraft.network.packet.s2c.play.ScreenHandlerSlotUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.SetCursorItemS2CPacket;
-import net.minecraft.screen.ScreenHandler;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ConnectedClientData;
-import net.minecraft.server.network.ServerCommonNetworkHandler;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerCommonPacketListenerImpl;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,22 +24,22 @@ import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.impl.game.manager.GameSpaceManagerImpl;
 import xyz.nucleoid.stimuli.event.EventResult;
 
-@Mixin(ServerPlayNetworkHandler.class)
-public abstract class ServerPlayNetworkHandlerMixin extends ServerCommonNetworkHandler {
-    public ServerPlayNetworkHandlerMixin(MinecraftServer server, ClientConnection connection,
-            ConnectedClientData clientData) {
+@Mixin(ServerGamePacketListenerImpl.class)
+public abstract class ServerPlayNetworkHandlerMixin extends ServerCommonPacketListenerImpl {
+    public ServerPlayNetworkHandlerMixin(MinecraftServer server, Connection connection,
+            CommonListenerCookie clientData) {
         super(server, connection, clientData);
     }
 
     @Shadow
-    public ServerPlayerEntity player;
+    public ServerPlayer player;
 
-    @Inject(method = "onClickSlot", cancellable = true, at = @At(value = "INVOKE", target = "Lnet/minecraft/network/NetworkThreadUtils;forceMainThread(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/listener/PacketListener;Lnet/minecraft/server/world/ServerWorld;)V", shift = At.Shift.AFTER))
-    private void onClickSlot(ClickSlotC2SPacket packet, CallbackInfo ci) {
+    @Inject(method = "handleContainerClick", cancellable = true, at = @At(value = "INVOKE", target = "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V", shift = At.Shift.AFTER))
+    private void onClickSlot(ServerboundContainerClickPacket packet, CallbackInfo ci) {
         GameSpace gameSpace = GameSpaceManagerImpl.get().byPlayer(this.player);
 
         if (gameSpace != null) {
-            ScreenHandler screenHandler = this.player.currentScreenHandler;
+            AbstractContainerMenu screenHandler = this.player.containerMenu;
 
             // dont do anything if sgui has a window open
             if (screenHandler instanceof VirtualScreenHandler) {
@@ -48,15 +48,15 @@ public abstract class ServerPlayNetworkHandlerMixin extends ServerCommonNetworkH
 
             EventResult modifyInventory = gameSpace.getBehavior().testRule(BoatRaceGameRules.MODIFY_INVENTORIES);
             if (modifyInventory == EventResult.DENY) {
-                ItemStack stack = screenHandler.getSlot(packet.slot()).getStack();
+                ItemStack stack = screenHandler.getSlot(packet.slotNum()).getItem();
 
-                this.sendPacket(new ScreenHandlerSlotUpdateS2CPacket(
-                        packet.syncId(),
-                        screenHandler.nextRevision(),
-                        packet.slot(),
+                this.send(new ClientboundContainerSetSlotPacket(
+                        packet.containerId(),
+                        screenHandler.incrementStateId(),
+                        packet.slotNum(),
                         stack));
 
-                this.sendPacket(new SetCursorItemS2CPacket(screenHandler.getCursorStack()));
+                this.send(new ClientboundSetCursorItemPacket(screenHandler.getCarried()));
 
                 ci.cancel();
             }

@@ -1,7 +1,18 @@
 package com.abaan404.boatrace.game.timetrial;
 
 import java.util.Set;
-
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.NoteBlock;
 import com.abaan404.boatrace.BoatRaceItems;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
@@ -13,18 +24,6 @@ import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Pair;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.World;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
 
@@ -33,7 +32,7 @@ import xyz.nucleoid.plasmid.api.game.GameSpacePlayers;
  */
 public class TimeTrialStageManager {
     private final GameSpace gameSpace;
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final BoatRaceTrack track;
 
     public final Checkpoints checkpoints;
@@ -42,7 +41,7 @@ public class TimeTrialStageManager {
     private final SpawnLogic spawnLogic;
     private final Set<BoatRacePlayer> participants = new ObjectOpenHashSet<>();
 
-    public TimeTrialStageManager(GameSpace gameSpace, ServerWorld world, BoatRaceTrack track) {
+    public TimeTrialStageManager(GameSpace gameSpace, ServerLevel world, BoatRaceTrack track) {
         this.gameSpace = gameSpace;
         this.track = track;
         this.world = world;
@@ -58,17 +57,17 @@ public class TimeTrialStageManager {
      * 
      * @param player The player.
      */
-    public void spawnPlayer(ServerPlayerEntity player) {
+    public void spawnPlayer(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         BoatRaceTrack.Regions regions = this.track.getRegions();
 
         if (!this.participants.contains(bPlayer)) {
-            this.spawnLogic.resetPlayer(player, GameMode.SPECTATOR);
+            this.spawnLogic.resetPlayer(player, GameType.SPECTATOR);
             this.spawnLogic.spawnPlayer(player, regions.spawn());
             return;
         }
 
-        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
+        this.spawnLogic.resetPlayer(player, GameType.ADVENTURE);
         this.spawnLogic.spawnPlayer(player, regions.spawn());
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
     }
@@ -78,7 +77,7 @@ public class TimeTrialStageManager {
      *
      * @param player The player.
      */
-    public void respawnPlayer(ServerPlayerEntity player) {
+    public void respawnPlayer(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
         BoatRaceTrack.Regions regions = this.track.getRegions();
 
@@ -86,7 +85,7 @@ public class TimeTrialStageManager {
             return;
         }
 
-        this.spawnLogic.resetPlayer(player, GameMode.ADVENTURE);
+        this.spawnLogic.resetPlayer(player, GameType.ADVENTURE);
         this.spawnLogic.spawnPlayer(player, this.checkpoints.getCheckpoint(bPlayer).orElse(regions.spawn()));
         this.spawnLogic.spawnVehicleAndRide(player).orElseThrow();
     }
@@ -96,15 +95,15 @@ public class TimeTrialStageManager {
      *
      * @param player The player
      */
-    public void updatePlayerInventory(ServerPlayerEntity player) {
-        PlayerInventory inventory = player.getInventory();
-        inventory.clear();
+    public void updatePlayerInventory(ServerPlayer player) {
+        Inventory inventory = player.getInventory();
+        inventory.clearContent();
 
         if (this.participants.contains(BoatRacePlayer.of(player))) {
-            inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
-            inventory.setStack(7, BoatRaceItems.RESPAWN.getDefaultStack());
+            inventory.setItem(8, BoatRaceItems.RESET.getDefaultInstance());
+            inventory.setItem(7, BoatRaceItems.RESPAWN.getDefaultInstance());
         } else {
-            inventory.setStack(8, BoatRaceItems.RESET.getDefaultStack());
+            inventory.setItem(8, BoatRaceItems.RESET.getDefaultInstance());
         }
     }
 
@@ -113,18 +112,18 @@ public class TimeTrialStageManager {
      *
      * @param player The player.
      */
-    public void despawnPlayer(ServerPlayerEntity player) {
+    public void despawnPlayer(ServerPlayer player) {
         this.toSpectator(BoatRacePlayer.of(player));
 
-        PlayerInventory inventory = player.getInventory();
-        inventory.clear();
+        Inventory inventory = player.getInventory();
+        inventory.clearContent();
     }
 
     /**
      * Tick the player and act on events from checkpoints and/or splits.
      */
     public void tickPlayers() {
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             if (!this.participants.contains(bPlayer)) {
@@ -163,10 +162,10 @@ public class TimeTrialStageManager {
                 }
 
                 case MISSED: {
-                    Pair<Text, Text> titles = TextUtils.titleAlertCheckpoint();
-                    player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 30, 20));
-                    player.networkHandler.sendPacket(new SubtitleS2CPacket(titles.getRight()));
-                    player.networkHandler.sendPacket(new TitleS2CPacket(titles.getLeft()));
+                    Tuple<Component, Component> titles = TextUtils.titleAlertCheckpoint();
+                    player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 30, 20));
+                    player.connection.send(new ClientboundSetSubtitleTextPacket(titles.getB()));
+                    player.connection.send(new ClientboundSetTitleTextPacket(titles.getA()));
                     break;
                 }
 
@@ -230,11 +229,11 @@ public class TimeTrialStageManager {
      *
      * @param player The player to create a new pb for.
      */
-    private void submit(ServerPlayerEntity player) {
+    private void submit(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         // use the overworld for persistent storage
-        ServerWorld overworld = this.gameSpace.getServer().getWorld(World.OVERWORLD);
+        ServerLevel overworld = this.gameSpace.getServer().getLevel(Level.OVERWORLD);
         Leaderboard leaderboard = overworld.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
         PersonalBest pb = new PersonalBest(bPlayer, this.splits.getSplits(bPlayer));
@@ -245,9 +244,9 @@ public class TimeTrialStageManager {
             GameSpacePlayers players = this.gameSpace.getPlayers();
 
             players.sendMessage(TextUtils.chatNewPersonalBest(pb, position));
-            player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getNotePitch(18));
+            player.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0f, NoteBlock.getPitchFromNote(18));
         } else {
-            player.sendMessage(TextUtils.chatNewTime(pb.timer()));
+            player.sendSystemMessage(TextUtils.chatNewTime(pb.timer()));
         }
     }
 }

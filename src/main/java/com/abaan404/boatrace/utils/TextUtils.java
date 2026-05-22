@@ -3,7 +3,13 @@ package com.abaan404.boatrace.utils;
 import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.Tuple;
 import org.jetbrains.annotations.Nullable;
 
 import com.abaan404.boatrace.BoatRacePlayer;
@@ -12,13 +18,6 @@ import com.abaan404.boatrace.game.race.RaceWidgets;
 import com.abaan404.boatrace.leaderboard.PersonalBest;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Pair;
 import xyz.nucleoid.plasmid.api.game.common.team.GameTeamConfig;
 
 /**
@@ -28,7 +27,7 @@ public final class TextUtils {
     private TextUtils() {
     }
 
-    public static final Text PAD_SCOREBOARD_POSITION = Text.literal("   ○ ○ ○").formatted(Formatting.DARK_GRAY);
+    public static final Component PAD_SCOREBOARD_POSITION = Component.literal("   ○ ○ ○").withStyle(ChatFormatting.DARK_GRAY);
 
     /**
      * Create a text for a countdown.
@@ -36,19 +35,19 @@ public final class TextUtils {
      * @param countdown the current countdown in seconds.
      * @return A text to be displayed as a title.
      */
-    public static Text titleCountdown(long countdown) {
-        MutableText countdownText = Text.empty();
+    public static Component titleCountdown(long countdown) {
+        MutableComponent countdownText = Component.empty();
 
         if (countdown <= 0) {
-            countdownText = Text.literal("Go!").formatted(Formatting.RED, Formatting.BOLD);
+            countdownText = Component.literal("Go!").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
         } else {
-            countdownText = Text.literal(String.valueOf(countdown)).formatted(Formatting.WHITE, Formatting.ITALIC);
+            countdownText = Component.literal(String.valueOf(countdown)).withStyle(ChatFormatting.WHITE, ChatFormatting.ITALIC);
         }
 
-        return Text.empty()
-                .append(Text.literal(">> ").formatted(Formatting.GRAY))
+        return Component.empty()
+                .append(Component.literal(">> ").withStyle(ChatFormatting.GRAY))
                 .append(countdownText)
-                .append(Text.literal(" <<").formatted(Formatting.GRAY));
+                .append(Component.literal(" <<").withStyle(ChatFormatting.GRAY));
     }
 
     /**
@@ -57,10 +56,10 @@ public final class TextUtils {
      * @param reverse Is the direction reversed or not.
      * @return A pair of texts for a title and subtitle.
      */
-    public static Pair<Text, Text> titleAlertCheckpoint() {
-        return new Pair<>(
-                Text.literal("⚠ Missed Checkpoint ⚠").formatted(Formatting.YELLOW),
-                Text.literal("Respawn or go back!").formatted(Formatting.RED, Formatting.BOLD));
+    public static Tuple<Component, Component> titleAlertCheckpoint() {
+        return new Tuple<>(
+                Component.literal("⚠ Missed Checkpoint ⚠").withStyle(ChatFormatting.YELLOW),
+                Component.literal("Respawn or go back!").withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
     }
 
     /**
@@ -69,7 +68,7 @@ public final class TextUtils {
      * @param position The player's position to display.
      * @return A text if the position was valid otherwise an empty text.
      */
-    public static Text actionBarPosition(int position) {
+    public static Component actionBarPosition(int position) {
         return TextUtils.scoreboardPosition(false, position);
     }
 
@@ -80,9 +79,9 @@ public final class TextUtils {
      * @param maxCheckpoints The total number of checkpoints
      * @return The text showing checkpoints.
      */
-    public static Text actionBarCheckpoint(int checkpoint, int maxCheckpoints) {
-        return Text.literal(String.format("(%d/%d)", checkpoint, maxCheckpoints))
-                .formatted(Formatting.DARK_GRAY, Formatting.BOLD);
+    public static Component actionBarCheckpoint(int checkpoint, int maxCheckpoints) {
+        return Component.literal(String.format("(%d/%d)", checkpoint, maxCheckpoints))
+                .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.BOLD);
     }
 
     /**
@@ -91,8 +90,8 @@ public final class TextUtils {
      * @param timer The time in ms.
      * @return The timer text.
      */
-    public static Text actionBarTimer(long timer) {
-        return Text.literal(TimeUtils.formatTime(timer)).formatted(Formatting.BOLD);
+    public static Component actionBarTimer(long timer) {
+        return Component.literal(TimeUtils.formatTime(timer)).withStyle(ChatFormatting.BOLD);
     }
 
     /**
@@ -102,7 +101,7 @@ public final class TextUtils {
      * @param delta The delta for this split.
      * @return The timer and splits text seperated by a symbol.
      */
-    public static Text actionBarDelta(long delta) {
+    public static Component actionBarDelta(long delta) {
         String deltaString = TimeUtils.formatTime(
                 delta,
                 EnumSet.of(TimeUtils.Selector.SECONDS, TimeUtils.Selector.MILLISECONDS),
@@ -110,24 +109,24 @@ public final class TextUtils {
 
         // faster
         if (delta < 0) {
-            return Text.empty()
-                    .append(Text.literal("▲ ").formatted(Formatting.BLUE))
-                    .append(Text.literal(deltaString).formatted(Formatting.BLUE))
-                    .formatted(Formatting.BOLD);
+            return Component.empty()
+                    .append(Component.literal("▲ ").withStyle(ChatFormatting.BLUE))
+                    .append(Component.literal(deltaString).withStyle(ChatFormatting.BLUE))
+                    .withStyle(ChatFormatting.BOLD);
         }
         // slower
         else if (delta > 0) {
-            return Text.empty()
-                    .append(Text.literal("▼ ").formatted(Formatting.RED))
-                    .append(Text.literal(deltaString).formatted(Formatting.RED))
-                    .formatted(Formatting.BOLD);
+            return Component.empty()
+                    .append(Component.literal("▼ ").withStyle(ChatFormatting.RED))
+                    .append(Component.literal(deltaString).withStyle(ChatFormatting.RED))
+                    .withStyle(ChatFormatting.BOLD);
         }
         // equal
         else {
-            return Text.empty()
-                    .append(Text.literal("◇ ").formatted(Formatting.GRAY))
-                    .append(Text.literal(deltaString).formatted(Formatting.GRAY))
-                    .formatted(Formatting.BOLD);
+            return Component.empty()
+                    .append(Component.literal("◇ ").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal(deltaString).withStyle(ChatFormatting.GRAY))
+                    .withStyle(ChatFormatting.BOLD);
         }
     }
 
@@ -137,14 +136,14 @@ public final class TextUtils {
      * @param mode The current mode.
      * @return The title text.
      */
-    public static Text scoreboardTitleText(String mode) {
-        return Text.literal("    ")
-                .append(Text.literal("Boat").formatted(Formatting.RED))
-                .append(Text.literal("Race").formatted(Formatting.WHITE, Formatting.ITALIC))
-                .append(Text.literal(" ◇ ").formatted(Formatting.GRAY))
-                .append(Text.literal(mode).formatted(Formatting.DARK_GRAY))
-                .append(Text.literal("    "))
-                .formatted(Formatting.BOLD);
+    public static Component scoreboardTitleText(String mode) {
+        return Component.literal("    ")
+                .append(Component.literal("Boat").withStyle(ChatFormatting.RED))
+                .append(Component.literal("Race").withStyle(ChatFormatting.WHITE, ChatFormatting.ITALIC))
+                .append(Component.literal(" ◇ ").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(mode).withStyle(ChatFormatting.DARK_GRAY))
+                .append(Component.literal("    "))
+                .withStyle(ChatFormatting.BOLD);
     }
 
     /**
@@ -153,10 +152,10 @@ public final class TextUtils {
      * @param meta The track meta.
      * @return A list of text for each line.
      */
-    public static List<Text> scoreboardMeta(BoatRaceTrack.Meta meta) {
-        List<Text> list = new ObjectArrayList<>();
+    public static List<Component> scoreboardMeta(BoatRaceTrack.Meta meta) {
+        List<Component> list = new ObjectArrayList<>();
 
-        list.add(Text.literal(" ").append(meta.name()).formatted(Formatting.BOLD));
+        list.add(Component.literal(" ").append(meta.name()).withStyle(ChatFormatting.BOLD));
 
         List<String> authorLines = new ObjectArrayList<>();
 
@@ -186,7 +185,7 @@ public final class TextUtils {
         }
 
         for (String line : authorLines) {
-            list.add(Text.literal(line).formatted(Formatting.GRAY, Formatting.ITALIC));
+            list.add(Component.literal(line).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         }
 
         return list;
@@ -199,12 +198,12 @@ public final class TextUtils {
      * @param maxLaps The total laps
      * @return The duration text.
      */
-    public static Text scoreboardLaps(int laps, int maxLaps) {
-        return Text.empty()
-                .append(Text.literal(" Laps: ").formatted(Formatting.RED))
-                .append(Text.literal(String.valueOf(Math.min(laps, maxLaps))))
-                .append(Text.literal(" / ").formatted(Formatting.ITALIC))
-                .append(Text.literal(String.valueOf(maxLaps)));
+    public static Component scoreboardLaps(int laps, int maxLaps) {
+        return Component.empty()
+                .append(Component.literal(" Laps: ").withStyle(ChatFormatting.RED))
+                .append(Component.literal(String.valueOf(Math.min(laps, maxLaps))))
+                .append(Component.literal(" / ").withStyle(ChatFormatting.ITALIC))
+                .append(Component.literal(String.valueOf(maxLaps)));
     }
 
     /**
@@ -214,15 +213,15 @@ public final class TextUtils {
      * @param maxDuration The remaining time.
      * @return The duration text.
      */
-    public static Text scoreboardDuration(long duration, long maxDuration) {
-        return Text.empty()
-                .append(Text.literal(" Duration: ").formatted(Formatting.RED))
-                .append(Text.literal(TimeUtils.formatTime(
+    public static Component scoreboardDuration(long duration, long maxDuration) {
+        return Component.empty()
+                .append(Component.literal(" Duration: ").withStyle(ChatFormatting.RED))
+                .append(Component.literal(TimeUtils.formatTime(
                         Math.min(duration, maxDuration),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.HOURS)),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.MILLISECONDS)))))
-                .append(Text.literal(" / ").formatted(Formatting.ITALIC))
-                .append(Text.literal(TimeUtils.formatTime(
+                .append(Component.literal(" / ").withStyle(ChatFormatting.ITALIC))
+                .append(Component.literal(TimeUtils.formatTime(
                         maxDuration,
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.HOURS)),
                         EnumSet.complementOf(EnumSet.of(TimeUtils.Selector.MILLISECONDS)))));
@@ -235,12 +234,12 @@ public final class TextUtils {
      * @param maxPits The total pits required.
      * @return The pits text.
      */
-    public static Text scoreboardPits(int pits, int maxPits) {
-        return Text.empty()
-                .append(Text.literal(" Pits: ").formatted(Formatting.RED))
-                .append(Text.literal(String.valueOf(Math.min(pits, maxPits))))
-                .append(Text.literal(" / ").formatted(Formatting.ITALIC))
-                .append(Text.literal(String.valueOf(maxPits)));
+    public static Component scoreboardPits(int pits, int maxPits) {
+        return Component.empty()
+                .append(Component.literal(" Pits: ").withStyle(ChatFormatting.RED))
+                .append(Component.literal(String.valueOf(Math.min(pits, maxPits))))
+                .append(Component.literal(" / ").withStyle(ChatFormatting.ITALIC))
+                .append(Component.literal(String.valueOf(maxPits)));
     }
 
     /**
@@ -249,11 +248,11 @@ public final class TextUtils {
      * @param pits The player's current pits.
      * @return The pits text.
      */
-    public static Text scoreboardLeaderboardPits(int pits) {
-        return Text.empty()
+    public static Component scoreboardLeaderboardPits(int pits) {
+        return Component.empty()
                 .append("| ")
-                .append(Text.literal(String.valueOf(pits)))
-                .formatted(Formatting.GRAY);
+                .append(Component.literal(String.valueOf(pits)))
+                .withStyle(ChatFormatting.GRAY);
     }
 
     /**
@@ -263,28 +262,28 @@ public final class TextUtils {
      * @param position    The track position.
      * @return The position text.
      */
-    public static Text scoreboardPosition(boolean highlighted, int position) {
-        MutableText text = Text.empty();
+    public static Component scoreboardPosition(boolean highlighted, int position) {
+        MutableComponent text = Component.empty();
 
-        MutableText P = Text.literal("P");
-        MutableText positionText = Text.literal(String.valueOf(position + 1));
+        MutableComponent P = Component.literal("P");
+        MutableComponent positionText = Component.literal(String.valueOf(position + 1));
 
         if (position == 0) {
-            text.append(P.formatted(Formatting.RED, Formatting.BOLD));
-            text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
+            text.append(P.withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
+            text.append(positionText.withStyle(ChatFormatting.BOLD, ChatFormatting.ITALIC));
         } else {
             if (position == 1) {
-                text.append(P.formatted(Formatting.GRAY, Formatting.BOLD));
-                text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
+                text.append(P.withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD));
+                text.append(positionText.withStyle(ChatFormatting.BOLD, ChatFormatting.ITALIC));
             } else if (position == 2) {
-                text.append(P.formatted(Formatting.GOLD, Formatting.BOLD));
-                text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
+                text.append(P.withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+                text.append(positionText.withStyle(ChatFormatting.BOLD, ChatFormatting.ITALIC));
             } else if (highlighted) {
-                text.append(P.formatted(Formatting.BOLD));
-                text.append(positionText.formatted(Formatting.BOLD, Formatting.ITALIC));
+                text.append(P.withStyle(ChatFormatting.BOLD));
+                text.append(positionText.withStyle(ChatFormatting.BOLD, ChatFormatting.ITALIC));
             } else {
-                text.append(P.formatted(Formatting.DARK_GRAY, Formatting.BOLD));
-                text.append(positionText.formatted(Formatting.DARK_GRAY, Formatting.BOLD, Formatting.ITALIC));
+                text.append(P.withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.BOLD));
+                text.append(positionText.withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.BOLD, ChatFormatting.ITALIC));
             }
         }
 
@@ -297,13 +296,13 @@ public final class TextUtils {
      * @param timer    The time to use.
      * @param position The track position.
      */
-    public static Text scoreboardAbsolute(long timer, int position) {
-        MutableText timeText = Text.literal(TimeUtils.formatTime(timer));
+    public static Component scoreboardAbsolute(long timer, int position) {
+        MutableComponent timeText = Component.literal(TimeUtils.formatTime(timer));
 
         if (position == 0) {
-            return timeText.formatted(Formatting.YELLOW);
+            return timeText.withStyle(ChatFormatting.YELLOW);
         } else {
-            return timeText.formatted(Formatting.WHITE);
+            return timeText.withStyle(ChatFormatting.WHITE);
         }
     }
 
@@ -312,18 +311,18 @@ public final class TextUtils {
      *
      * @param delta The time to use.
      */
-    public static Text scoreboardRelative(long delta) {
-        MutableText timeText = Text.literal(TimeUtils.formatTime(
+    public static Component scoreboardRelative(long delta) {
+        MutableComponent timeText = Component.literal(TimeUtils.formatTime(
                 delta,
                 EnumSet.of(TimeUtils.Selector.SECONDS, TimeUtils.Selector.MILLISECONDS),
                 EnumSet.allOf(TimeUtils.Selector.class)));
 
         if (delta > 0) {
-            return Text.literal("+").append(timeText).formatted(Formatting.RED);
+            return Component.literal("+").append(timeText).withStyle(ChatFormatting.RED);
         } else if (delta < 0) {
-            return Text.literal("-").append(timeText).formatted(Formatting.BLUE);
+            return Component.literal("-").append(timeText).withStyle(ChatFormatting.BLUE);
         } else {
-            return Text.literal("=").append(timeText).formatted(Formatting.GRAY);
+            return Component.literal("=").append(timeText).withStyle(ChatFormatting.GRAY);
         }
     }
 
@@ -335,19 +334,19 @@ public final class TextUtils {
      * @param highlighted Should this be highlighted.
      * @param position    The track position.
      */
-    public static Text scoreboardName(BoatRacePlayer player, GameTeamConfig teamConfig, boolean highlighted,
+    public static Component scoreboardName(BoatRacePlayer player, GameTeamConfig teamConfig, boolean highlighted,
             int position) {
-        MutableText nameText = Text.empty()
+        MutableComponent nameText = Component.empty()
                 .append(teamConfig.prefix())
                 .append(player.offlineName());
 
         if (position == 0) {
-            return nameText.formatted(Formatting.YELLOW, Formatting.BOLD);
+            return nameText.withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD);
         } else {
             if (highlighted) {
-                return nameText.formatted(Formatting.BOLD);
+                return nameText.withStyle(ChatFormatting.BOLD);
             } else {
-                return nameText.formatted(Formatting.GRAY);
+                return nameText.withStyle(ChatFormatting.GRAY);
             }
         }
     }
@@ -363,9 +362,9 @@ public final class TextUtils {
      * @param compared The indices ahead and behind to use.
      * @return The computed list with null for padding.
      */
-    public static <T> List<@Nullable Pair<Integer, T>> scoreboardAroundAndTop(List<T> list,
+    public static <T> List<@Nullable Tuple<Integer, T>> scoreboardAroundAndTop(List<T> list,
             int index, int top, int compared) {
-        List<Pair<Integer, T>> around = new ObjectArrayList<>();
+        List<Tuple<Integer, T>> around = new ObjectArrayList<>();
 
         // add padding if theres indices before the top for some reason
         if (top <= 0 && !list.isEmpty()) {
@@ -373,7 +372,7 @@ public final class TextUtils {
         }
 
         // add top values
-        for (Pair<Integer, T> pair : TextUtils.scoreboardAround(list, 0, top - 1)) {
+        for (Tuple<Integer, T> pair : TextUtils.scoreboardAround(list, 0, top - 1)) {
             around.add(pair);
         }
 
@@ -384,9 +383,9 @@ public final class TextUtils {
 
         // show indices around the player
         if (index > 0 && index + compared > top - 1) {
-            for (Pair<Integer, T> pair : TextUtils.scoreboardAround(list, index, compared)) {
+            for (Tuple<Integer, T> pair : TextUtils.scoreboardAround(list, index, compared)) {
                 // skip overlaps from top
-                if (pair.getLeft() > top - 1) {
+                if (pair.getA() > top - 1) {
                     around.add(pair);
                 }
             }
@@ -410,8 +409,8 @@ public final class TextUtils {
      * @param range The range before and after the index to fetch.
      * @return The computed list.
      */
-    public static <T> List<Pair<Integer, T>> scoreboardAround(List<T> list, int at, int range) {
-        List<Pair<Integer, T>> around = new ObjectArrayList<>();
+    public static <T> List<Tuple<Integer, T>> scoreboardAround(List<T> list, int at, int range) {
+        List<Tuple<Integer, T>> around = new ObjectArrayList<>();
 
         if (list == null || list.isEmpty()) {
             return around;
@@ -429,7 +428,7 @@ public final class TextUtils {
         int to = Math.min(list.size(), at + range + 1);
 
         for (int i = from; i < to; i++) {
-            around.add(new Pair<>(i, list.get(i)));
+            around.add(new Tuple<>(i, list.get(i)));
         }
 
         return around;
@@ -442,9 +441,9 @@ public final class TextUtils {
      * @param currentLaps The current player's laps.
      * @return A text.
      */
-    public static Text chatLapsDelta(int leadingLaps, int currentLaps) {
+    public static Component chatLapsDelta(int leadingLaps, int currentLaps) {
         int lapDelta = leadingLaps - currentLaps;
-        return Text.literal(String.format("+%d Lap(s)", lapDelta)).formatted(Formatting.BOLD);
+        return Component.literal(String.format("+%d Lap(s)", lapDelta)).withStyle(ChatFormatting.BOLD);
     }
 
     /**
@@ -454,15 +453,15 @@ public final class TextUtils {
      * @param position The player's position.
      * @return A text
      */
-    public static Text chatNewPersonalBest(PersonalBest pb, int position) {
-        return Text.empty()
-                .append(Text.literal(" >> ").formatted(Formatting.GOLD, Formatting.BOLD))
-                .append(Text.literal("[").formatted(Formatting.RED))
-                .append(Text.literal(pb.player().offlineName()).formatted(Formatting.WHITE, Formatting.BOLD))
-                .append(Text.literal("]  ").formatted(Formatting.RED))
+    public static Component chatNewPersonalBest(PersonalBest pb, int position) {
+        return Component.empty()
+                .append(Component.literal(" >> ").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                .append(Component.literal("[").withStyle(ChatFormatting.RED))
+                .append(Component.literal(pb.player().offlineName()).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD))
+                .append(Component.literal("]  ").withStyle(ChatFormatting.RED))
                 .append(TextUtils.scoreboardPosition(true, position))
-                .append(Text.literal(" ◇ ").formatted(Formatting.BOLD))
-                .append(Text.literal(TimeUtils.formatTime(pb.timer())).formatted(Formatting.BOLD));
+                .append(Component.literal(" ◇ ").withStyle(ChatFormatting.BOLD))
+                .append(Component.literal(TimeUtils.formatTime(pb.timer())).withStyle(ChatFormatting.BOLD));
     }
 
     /**
@@ -471,13 +470,13 @@ public final class TextUtils {
      * @param pb The player's pb.
      * @return A text
      */
-    public static Text chatNewFastestLap(PersonalBest pb) {
-        return Text.empty()
-                .append(Text.literal(" >> ").formatted(Formatting.GOLD, Formatting.BOLD))
-                .append(Text.literal("[").formatted(Formatting.RED))
-                .append(Text.literal(pb.player().offlineName()).formatted(Formatting.WHITE, Formatting.BOLD))
-                .append(Text.literal("]  ").formatted(Formatting.RED))
-                .append(Text.literal(TimeUtils.formatTime(pb.timer())).formatted(Formatting.BOLD));
+    public static Component chatNewFastestLap(PersonalBest pb) {
+        return Component.empty()
+                .append(Component.literal(" >> ").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                .append(Component.literal("[").withStyle(ChatFormatting.RED))
+                .append(Component.literal(pb.player().offlineName()).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD))
+                .append(Component.literal("]  ").withStyle(ChatFormatting.RED))
+                .append(Component.literal(TimeUtils.formatTime(pb.timer())).withStyle(ChatFormatting.BOLD));
     }
 
     /**
@@ -486,11 +485,11 @@ public final class TextUtils {
      * @param timer The player's timer.
      * @return A text
      */
-    public static Text chatNewTime(long timer) {
-        return Text.empty()
-                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
-                .append(Text.literal(TimeUtils.formatTime(timer)).formatted(Formatting.GRAY,
-                        Formatting.ITALIC));
+    public static Component chatNewTime(long timer) {
+        return Component.empty()
+                .append(Component.literal(" >> ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD))
+                .append(Component.literal(TimeUtils.formatTime(timer)).withStyle(ChatFormatting.GRAY,
+                        ChatFormatting.ITALIC));
     }
 
     /**
@@ -499,10 +498,10 @@ public final class TextUtils {
      * @param leaderboardType The leaderboard type.
      * @return A text with the formatted message.
      */
-    public static Text chatLeaderboardType(RaceWidgets.LeaderboardType leaderboardType) {
-        return Text.empty()
-                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
-                .append(Text.literal(leaderboardType.toString()).formatted(Formatting.ITALIC));
+    public static Component chatLeaderboardType(RaceWidgets.LeaderboardType leaderboardType) {
+        return Component.empty()
+                .append(Component.literal(" >> ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD))
+                .append(Component.literal(leaderboardType.toString()).withStyle(ChatFormatting.ITALIC));
     }
 
     /**
@@ -511,8 +510,8 @@ public final class TextUtils {
      * @param points The points.
      * @return The formatted text.
      */
-    public static Text chatPoints(int points) {
-        return Text.literal(String.format("+%d", points)).formatted(Formatting.GRAY, Formatting.ITALIC);
+    public static Component chatPoints(int points) {
+        return Component.literal(String.format("+%d", points)).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
     }
 
     /**
@@ -521,32 +520,32 @@ public final class TextUtils {
      * @param meta The track's metadata.
      * @return A list of chat message(s).
      */
-    public static List<Text> chatMeta(BoatRaceTrack.Meta meta) {
-        List<Text> lines = new ObjectArrayList<>();
+    public static List<Component> chatMeta(BoatRaceTrack.Meta meta) {
+        List<Component> lines = new ObjectArrayList<>();
 
-        MutableText titleText = Text.empty()
-                .append(Text.literal(meta.name()).formatted(Formatting.BOLD));
+        MutableComponent titleText = Component.empty()
+                .append(Component.literal(meta.name()).withStyle(ChatFormatting.BOLD));
 
         meta.url().ifPresent(url -> titleText.setStyle(Style.EMPTY
-                .withFormatting(Formatting.BLUE, Formatting.UNDERLINE)
+                .applyFormats(ChatFormatting.BLUE, ChatFormatting.UNDERLINE)
                 .withClickEvent(new ClickEvent.OpenUrl(URI.create(url)))
-                .withHoverEvent(new HoverEvent.ShowText(Text.of("Open track's website.")))));
+                .withHoverEvent(new HoverEvent.ShowText(Component.nullToEmpty("Open track's website.")))));
 
-        Text authorText = Text.empty()
+        Component authorText = Component.empty()
                 .append("By ")
                 .append(String.join(", ", meta.authors()))
-                .formatted(Formatting.GRAY, Formatting.ITALIC);
+                .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
-        lines.add(Text.empty()
-                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
+        lines.add(Component.empty()
+                .append(Component.literal(" >> ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD))
                 .append(titleText)
-                .append(Text.of(" "))
+                .append(Component.nullToEmpty(" "))
                 .append(authorText));
 
         meta.description().ifPresent(description -> {
-            lines.add(Text.empty()
-                    .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
-                    .append(Text.literal(description).formatted(Formatting.GRAY)));
+            lines.add(Component.empty()
+                    .append(Component.literal(" >> ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD))
+                    .append(Component.literal(description).withStyle(ChatFormatting.GRAY)));
         });
 
         return lines;
@@ -557,10 +556,10 @@ public final class TextUtils {
      *
      * @return The text.
      */
-    public static Text chatFinalLap() {
-        return Text.empty()
-                .append(Text.literal(" >> ").formatted(Formatting.RED, Formatting.BOLD))
-                .append(Text.literal("The leader has finished their race, this is your final lap."));
+    public static Component chatFinalLap() {
+        return Component.empty()
+                .append(Component.literal(" >> ").withStyle(ChatFormatting.RED, ChatFormatting.BOLD))
+                .append(Component.literal("The leader has finished their race, this is your final lap."));
     }
 
     /**
@@ -568,14 +567,14 @@ public final class TextUtils {
      *
      * @return The text.
      */
-    public static Text chatPitTime(long duration, boolean valid) {
-        MutableText text = Text.empty()
-                .append(Text.literal(" >> ").formatted(Formatting.DARK_GRAY, Formatting.BOLD))
-                .append(Text.literal("PitStop: "))
-                .append(Text.literal(TimeUtils.formatTime(duration)).formatted(Formatting.BOLD));
+    public static Component chatPitTime(long duration, boolean valid) {
+        MutableComponent text = Component.empty()
+                .append(Component.literal(" >> ").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.BOLD))
+                .append(Component.literal("PitStop: "))
+                .append(Component.literal(TimeUtils.formatTime(duration)).withStyle(ChatFormatting.BOLD));
 
         if (!valid) {
-            text.append(Text.literal(" (invalidated)").formatted(Formatting.GRAY, Formatting.ITALIC));
+            text.append(Component.literal(" (invalidated)").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         }
 
         return text;

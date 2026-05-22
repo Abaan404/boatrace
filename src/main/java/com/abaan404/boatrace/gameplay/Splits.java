@@ -4,14 +4,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import net.minecraft.server.level.ServerLevel;
 import com.abaan404.boatrace.BoatRacePlayer;
 
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.server.world.ServerWorld;
 
 /**
  * Records splits and times an active run.
@@ -45,10 +44,10 @@ public class Splits {
      *
      * @param world The world to fetch mspt from.
      */
-    public void tick(ServerWorld world) {
+    public void tick(ServerLevel world) {
         for (BoatRacePlayer player : this.running) {
             long timer = this.timer.getOrDefault(player, 0l);
-            timer += world.getTickManager().getMillisPerTick();
+            timer += world.tickRateManager().millisecondsPerTick();
             this.timer.put(player, timer);
         }
     }

@@ -1,7 +1,7 @@
 package com.abaan404.boatrace.events;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.StimulusEvent;
 
@@ -23,5 +23,5 @@ public interface PlayerDismountEvent {
         };
     });
 
-    public EventResult onDismount(ServerPlayerEntity player, Entity vehicle);
+    public EventResult onDismount(ServerPlayer player, Entity vehicle);
 }

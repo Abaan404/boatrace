@@ -2,20 +2,19 @@ package com.abaan404.boatrace.game.race;
 
 import java.util.List;
 import java.util.Map;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Tuple;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Pair;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.api.game.common.widget.SidebarWidget;
@@ -44,8 +43,8 @@ public class RaceWidgets {
      *
      * @param player The player to send the message to.
      */
-    public void sendTrackMessage(ServerPlayerEntity player) {
-        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+    public void sendTrackMessage(ServerPlayer player) {
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendSystemMessage);
     }
 
     /**
@@ -74,9 +73,9 @@ public class RaceWidgets {
             this.shownGo = true;
         }
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-            player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 30, 20));
-            player.networkHandler.sendPacket(new TitleS2CPacket(TextUtils.titleCountdown(countdown)));
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
+            player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 30, 20));
+            player.connection.send(new ClientboundSetTitleTextPacket(TextUtils.titleCountdown(countdown)));
         }
     }
 
@@ -93,7 +92,7 @@ public class RaceWidgets {
             case LINEAR -> this.track.getRegions().checkpoints().size() - 2;
         };
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
             if (!stageManager.isParticipant(bPlayer)) {
                 continue;
@@ -103,7 +102,7 @@ public class RaceWidgets {
             int position = stageManager.positions.getPosition(bPlayer);
             int checkpoint = stageManager.checkpoints.getCheckpointIndex(bPlayer);
 
-            MutableText actionBarText = Text.empty();
+            MutableComponent actionBarText = Component.empty();
 
             actionBarText.append(TextUtils.actionBarPosition(position)).append(" ");
             actionBarText.append(TextUtils.actionBarTimer(timer)).append(" ");
@@ -117,7 +116,7 @@ public class RaceWidgets {
 
             actionBarText.append(TextUtils.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
 
-            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
+            player.connection.send(new ClientboundSetActionBarTextPacket(actionBarText));
         }
     }
 
@@ -125,7 +124,7 @@ public class RaceWidgets {
      * Displays track meta and track leaderboard.
      */
     private void tickSidebar(RaceStageManager stageManager) {
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             if (!this.sidebars.containsKey(bPlayer)) {
@@ -139,9 +138,9 @@ public class RaceWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
-                content.add(Text.empty());
+                content.add(Component.empty());
                 TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
-                content.add(Text.empty());
+                content.add(Component.empty());
 
                 content.add(TextUtils.scoreboardLaps(
                         stageManager.checkpoints.getLaps(bPlayer),
@@ -156,20 +155,20 @@ public class RaceWidgets {
                 content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),
                         stageManager.getConfig().maxDuration()));
-                content.add(Text.empty());
+                content.add(Component.empty());
 
                 List<BoatRacePlayer> positions = stageManager.positions.getPositions();
 
                 if (positions.isEmpty()) {
-                    content.add(Text.literal(" No times submitted.")
-                            .formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
+                    content.add(Component.literal(" No times submitted.")
+                            .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
                     return;
                 }
 
                 int position = stageManager.positions.getPosition(bPlayer);
                 LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
 
-                for (Pair<Integer, BoatRacePlayer> pair : TextUtils.scoreboardAroundAndTop(
+                for (Tuple<Integer, BoatRacePlayer> pair : TextUtils.scoreboardAroundAndTop(
                         positions,
                         position,
                         SIDEBAR_RANKING_TOP,
@@ -179,9 +178,9 @@ public class RaceWidgets {
                         continue;
                     }
 
-                    MutableText text = Text.empty();
-                    BoatRacePlayer player2 = pair.getRight();
-                    int position2 = pair.getLeft();
+                    MutableComponent text = Component.empty();
+                    BoatRacePlayer player2 = pair.getB();
+                    int position2 = pair.getA();
                     boolean highlighted = bPlayer.equals(player2);
 
                     text.append(" ");
@@ -227,14 +226,14 @@ public class RaceWidgets {
      *
      * @param player The player whos leaderboard should be updated.
      */
-    public LeaderboardType cycleLeaderboard(ServerPlayerEntity player) {
+    public LeaderboardType cycleLeaderboard(ServerPlayer player) {
         BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
         LeaderboardType leaderboardType = this.leaderboardType.getOrDefault(bPlayer, LeaderboardType.PLAYER);
         leaderboardType = LeaderboardType.values()[(leaderboardType.ordinal() + 1) % LeaderboardType.values().length];
         this.leaderboardType.put(bPlayer, leaderboardType);
 
-        player.sendMessage(TextUtils.chatLeaderboardType(leaderboardType));
+        player.sendSystemMessage(TextUtils.chatLeaderboardType(leaderboardType));
         return leaderboardType;
     }
 

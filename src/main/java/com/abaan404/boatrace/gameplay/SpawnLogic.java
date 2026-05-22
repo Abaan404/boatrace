@@ -2,29 +2,27 @@ package com.abaan404.boatrace.gameplay;
 
 import java.util.Optional;
 import java.util.Set;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.AreaEffectCloud;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.vehicle.boat.Boat;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.Vec3;
 import com.abaan404.boatrace.BoatRaceTrack;
-
-import net.minecraft.entity.AreaEffectCloudEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityPosition;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.vehicle.BoatEntity;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
 
 /**
  * Manage entity spawns in the world.
  */
 public class SpawnLogic {
-    private final ServerWorld world;
+    private final ServerLevel world;
 
-    public SpawnLogic(ServerWorld world) {
+    public SpawnLogic(ServerLevel world) {
         this.world = world;
     }
 
@@ -33,9 +31,9 @@ public class SpawnLogic {
      *
      * @param player The player.
      */
-    public void resetPlayer(ServerPlayerEntity player, GameMode gameMode) {
-        player.changeGameMode(gameMode);
-        player.setVelocity(Vec3d.ZERO);
+    public void resetPlayer(ServerPlayer player, GameType gameMode) {
+        player.setGameMode(gameMode);
+        player.setDeltaMovement(Vec3.ZERO);
         player.fallDistance = 0.0f;
     }
 
@@ -45,14 +43,14 @@ public class SpawnLogic {
      * @param entity The entity to mount.
      * @return The boat entity spawned.
      */
-    public Optional<BoatEntity> spawnVehicleAndRide(Entity entity) {
-        BoatEntity boat = EntityType.OAK_BOAT.create(this.world, SpawnReason.COMMAND);
+    public Optional<Boat> spawnVehicleAndRide(Entity entity) {
+        Boat boat = EntityType.OAK_BOAT.create(this.world, EntitySpawnReason.COMMAND);
         if (boat == null) {
             return Optional.empty();
         }
 
-        boat.refreshPositionAndAngles(entity.getBlockPos(), entity.getYaw(), entity.getPitch());
-        this.world.spawnEntity(boat);
+        boat.snapTo(entity.blockPosition(), entity.getYRot(), entity.getXRot());
+        this.world.addFreshEntity(boat);
         entity.startRiding(boat);
         return Optional.of(boat);
     }
@@ -64,7 +62,7 @@ public class SpawnLogic {
      * @param entity The entity to dismount.
      */
     public void despawnVehicle(Entity entity) {
-        if (entity.hasVehicle()) {
+        if (entity.isPassenger()) {
             Entity vehicle = entity.getVehicle();
             this.despawnVehicle(vehicle);
 
@@ -79,18 +77,18 @@ public class SpawnLogic {
      * @param player  The player.
      * @param respawn The region to spawn in.
      */
-    public void spawnPlayer(ServerPlayerEntity player, BoatRaceTrack.RespawnRegion respawn) {
-        BlockPos center = BlockPos.ofFloored(respawn.bounds().center());
+    public void spawnPlayer(ServerPlayer player, BoatRaceTrack.RespawnRegion respawn) {
+        BlockPos center = BlockPos.containing(respawn.bounds().center());
         BlockPos spawn = center;
 
         // find a solid ground from the center
         boolean solidBlockFound = false;
         while (spawn.getY() >= respawn.bounds().min().getY()) {
-            if (!this.world.getBlockState(spawn.down()).isAir()) {
+            if (!this.world.getBlockState(spawn.below()).isAir()) {
                 solidBlockFound = true;
                 break;
             }
-            spawn = spawn.down();
+            spawn = spawn.below();
         }
 
         if (!solidBlockFound) {
@@ -100,9 +98,9 @@ public class SpawnLogic {
         // avoid accidental stray boats
         this.despawnVehicle(player);
 
-        player.networkHandler.requestTeleport(new EntityPosition(
-                spawn.toBottomCenterPos(),
-                Vec3d.ZERO,
+        player.connection.teleport(new PositionMoveRotation(
+                spawn.getBottomCenter(),
+                Vec3.ZERO,
                 respawn.yaw(),
                 respawn.pitch()), Set.of());
     }
@@ -113,25 +111,25 @@ public class SpawnLogic {
      * @param player The player's boat to freeze.
      * @return The entity the boat is now riding.
      */
-    public Optional<Entity> freezeVehicle(ServerPlayerEntity player) {
+    public Optional<Entity> freezeVehicle(ServerPlayer player) {
         Entity boat = player.getVehicle();
         if (boat == null) {
             return Optional.empty();
         }
 
-        if (boat.hasVehicle()) {
+        if (boat.isPassenger()) {
             return Optional.of(boat.getVehicle());
         }
 
-        AreaEffectCloudEntity aec = EntityType.AREA_EFFECT_CLOUD.create(this.world, SpawnReason.COMMAND);
+        AreaEffectCloud aec = EntityType.AREA_EFFECT_CLOUD.create(this.world, EntitySpawnReason.COMMAND);
         if (aec == null) {
             return Optional.empty();
         }
 
-        aec.setParticleType(ParticleTypes.DUST_PLUME); // why not
+        aec.setCustomParticle(ParticleTypes.DUST_PLUME); // why not
         aec.setRadius(1.0f);
-        aec.refreshPositionAndAngles(player.getBlockPos(), player.getYaw(), player.getPitch());
-        this.world.spawnEntity(aec);
+        aec.snapTo(player.blockPosition(), player.getYRot(), player.getXRot());
+        this.world.addFreshEntity(aec);
         boat.startRiding(aec);
         return Optional.of(aec);
     }
@@ -141,7 +139,7 @@ public class SpawnLogic {
      *
      * @param player THe player's boat to unfreeze.
      */
-    public void unfreezeVehicle(ServerPlayerEntity player) {
+    public void unfreezeVehicle(ServerPlayer player) {
         Entity boat = player.getVehicle();
         if (boat == null) {
             return;

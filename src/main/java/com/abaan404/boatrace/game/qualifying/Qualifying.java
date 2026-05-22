@@ -2,7 +2,14 @@ package com.abaan404.boatrace.game.qualifying;
 
 import java.util.Collections;
 import java.util.List;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.phys.Vec3;
 import com.abaan404.boatrace.BoatRaceConfig;
 import com.abaan404.boatrace.BoatRaceGameRules;
 import com.abaan404.boatrace.BoatRaceItems;
@@ -14,14 +21,6 @@ import com.abaan404.boatrace.gameplay.Teams;
 import com.mojang.authlib.GameProfile;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.rule.GameRules;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
@@ -44,20 +43,20 @@ public class Qualifying {
     private final QualifyingWidgets widgets;
 
     private Qualifying(GameSpace gameSpace, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            BoatRaceTrack track, Teams teams, ServerWorld world, GlobalWidgets widgets) {
+            BoatRaceTrack track, Teams teams, ServerLevel world, GlobalWidgets widgets) {
         this.stageManager = new QualifyingStageManager(gameSpace, config, configRace, world, track, teams);
         this.widgets = new QualifyingWidgets(gameSpace, world, widgets, track);
     }
 
     public static void open(GameActivity game, BoatRaceConfig.Qualifying config, BoatRaceConfig.Race configRace,
-            ServerWorld world, BoatRaceTrack track, Teams teams) {
+            ServerLevel world, BoatRaceTrack track, Teams teams) {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
         DesyncIndicator.addTo(game, world);
 
         Qualifying qualifying = new Qualifying(game.getGameSpace(), config, configRace, track, teams, world, widgets);
 
-        world.getGameRules().setValue(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
-        world.setTimeOfDay(track.getAttributes().timeOfDay());
+        world.getGameRules().set(GameRules.ADVANCE_TIME, false, game.getGameSpace().getServer());
+        world.setDayTime(track.getAttributes().timeOfDay());
 
         game.setRule(GameRuleType.PORTALS, EventResult.DENY);
         game.setRule(GameRuleType.ICE_MELT, EventResult.DENY);
@@ -78,7 +77,7 @@ public class Qualifying {
         game.listen(PlayerDismountEvent.EVENT, (player, vehicle) -> EventResult.DENY);
 
         game.listen(GamePlayerEvents.OFFER, qualifying::offerPlayer);
-        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
+        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3.ZERO));
         game.listen(GamePlayerEvents.ADD, qualifying::addPlayer);
         game.listen(GamePlayerEvents.REMOVE, qualifying::removePlayer);
 
@@ -111,25 +110,25 @@ public class Qualifying {
         return offer.accept();
     }
 
-    private void addPlayer(ServerPlayerEntity player) {
+    private void addPlayer(ServerPlayer player) {
         this.widgets.sendTrackMessage(player);
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
     }
 
-    private void removePlayer(ServerPlayerEntity player) {
+    private void removePlayer(ServerPlayer player) {
         this.stageManager.despawnPlayer(player);
     }
 
-    private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+    private EventResult onPlayerDeath(ServerPlayer player, DamageSource source) {
         player.setHealth(20.0f);
         this.stageManager.spawnPlayer(player);
         this.stageManager.updatePlayerInventory(player);
         return EventResult.DENY;
     }
 
-    private ActionResult onItemUse(ServerPlayerEntity player, Hand hand) {
-        ItemStack item = player.getStackInHand(hand);
+    private InteractionResult onItemUse(ServerPlayer player, InteractionHand hand) {
+        ItemStack item = player.getItemInHand(hand);
 
         // turn them into a participant and spawn them as if they just started
         if (item.getItem().equals(BoatRaceItems.RESET)) {
@@ -141,10 +140,10 @@ public class Qualifying {
             this.stageManager.splits.reset(bPlayer);
             this.stageManager.splits.stop(bPlayer);
 
-            return ActionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
 
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
     private void tick() {

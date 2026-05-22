@@ -13,8 +13,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 
 /**
  * Holds the leaderboard for a track stored persistently.
@@ -31,7 +31,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
             .apply(instance, Leaderboard::new));
 
     public static final AttachmentType<Leaderboard> ATTACHMENT = AttachmentRegistry.create(
-            Identifier.of(BoatRace.ID, "leaderboard"), builder -> builder
+            Identifier.fromNamespaceAndPath(BoatRace.ID, "leaderboard"), builder -> builder
                     .initializer(() -> new Leaderboard(Map.of()))
                     .persistent(Leaderboard.CODEC));
 
@@ -88,7 +88,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @param personalBest Personal best to submit.
      * @return A new leaderboard with the new personal best.
      */
-    public Leaderboard trySubmit(ServerWorld world, BoatRaceTrack track, PersonalBest personalBest) {
+    public Leaderboard trySubmit(ServerLevel world, BoatRaceTrack track, PersonalBest personalBest) {
         PersonalBest currentPersonalBest = this.getPersonalBest(track, personalBest.player());
         if (personalBest.timer() > currentPersonalBest.timer()) {
             // not a better pb
@@ -110,7 +110,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @param personalBest Personal best to submit.
      * @return A new leaderboard with the new personal best.
      */
-    public Leaderboard submit(ServerWorld world, BoatRaceTrack track, PersonalBest personalBest) {
+    public Leaderboard submit(ServerLevel world, BoatRaceTrack track, PersonalBest personalBest) {
         List<PersonalBest> newTrackLeaderboard = new ObjectArrayList<>(this.getLeaderboard(track));
 
         newTrackLeaderboard.removeIf(pb -> pb.player().equals(personalBest.player()));
@@ -133,7 +133,7 @@ public record Leaderboard(Map<String, List<PersonalBest>> leaderboard) {
      * @param player The player to delete for.
      * @return A new leaderboard with the new personal best.
      */
-    public Leaderboard delete(ServerWorld world, BoatRaceTrack track, BoatRacePlayer player) {
+    public Leaderboard delete(ServerLevel world, BoatRaceTrack track, BoatRacePlayer player) {
         List<PersonalBest> newTrackLeaderboard = new ObjectArrayList<>(this.getLeaderboard(track));
 
         if (!newTrackLeaderboard.removeIf(pb -> pb.player().equals(player))) {

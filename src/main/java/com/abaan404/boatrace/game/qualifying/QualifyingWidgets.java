@@ -2,7 +2,13 @@ package com.abaan404.boatrace.game.qualifying;
 
 import java.util.List;
 import java.util.Map;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Tuple;
 import com.abaan404.boatrace.BoatRacePlayer;
 import com.abaan404.boatrace.BoatRaceTrack;
 import com.abaan404.boatrace.leaderboard.Leaderboard;
@@ -10,20 +16,13 @@ import com.abaan404.boatrace.leaderboard.PersonalBest;
 import com.abaan404.boatrace.utils.TextUtils;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Pair;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.api.game.common.widget.SidebarWidget;
 
 public class QualifyingWidgets {
     private final GameSpace gameSpace;
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final GlobalWidgets widgets;
     private final BoatRaceTrack track;
 
@@ -32,7 +31,7 @@ public class QualifyingWidgets {
 
     private final Map<BoatRacePlayer, SidebarWidget> sidebars = new Object2ObjectOpenHashMap<>();
 
-    public QualifyingWidgets(GameSpace gameSpace, ServerWorld world, GlobalWidgets widgets, BoatRaceTrack track) {
+    public QualifyingWidgets(GameSpace gameSpace, ServerLevel world, GlobalWidgets widgets, BoatRaceTrack track) {
         this.gameSpace = gameSpace;
         this.world = world;
         this.track = track;
@@ -44,8 +43,8 @@ public class QualifyingWidgets {
      *
      * @param player The player to send the message to.
      */
-    public void sendTrackMessage(ServerPlayerEntity player) {
-        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendMessage);
+    public void sendTrackMessage(ServerPlayer player) {
+        TextUtils.chatMeta(this.track.getMeta()).forEach(player::sendSystemMessage);
     }
 
     /**
@@ -73,7 +72,7 @@ public class QualifyingWidgets {
             case LINEAR -> this.track.getRegions().checkpoints().size() - 2;
         };
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
             if (!stageManager.isParticipant(bPlayer)) {
                 continue;
@@ -87,7 +86,7 @@ public class QualifyingWidgets {
             int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
             int checkpoint = stageManager.checkpoints.getCheckpointIndex(bPlayer);
 
-            MutableText actionBarText = Text.empty();
+            MutableComponent actionBarText = Component.empty();
 
             // player has a position
             if (position >= 0) {
@@ -103,7 +102,7 @@ public class QualifyingWidgets {
             }
 
             actionBarText.append(TextUtils.actionBarCheckpoint(Math.max(0, checkpoint), maxCheckpoints));
-            player.networkHandler.sendPacket(new OverlayMessageS2CPacket(actionBarText));
+            player.connection.send(new ClientboundSetActionBarTextPacket(actionBarText));
         }
     }
 
@@ -113,7 +112,7 @@ public class QualifyingWidgets {
     private void tickSidebar(QualifyingStageManager stageManager) {
         Leaderboard leaderboard = this.world.getAttachedOrCreate(Leaderboard.ATTACHMENT);
 
-        for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
+        for (ServerPlayer player : this.gameSpace.getPlayers()) {
             BoatRacePlayer bPlayer = BoatRacePlayer.of(player);
 
             if (!this.sidebars.containsKey(bPlayer)) {
@@ -127,9 +126,9 @@ public class QualifyingWidgets {
             SidebarWidget sidebar = this.sidebars.get(bPlayer);
 
             sidebar.set(content -> {
-                content.add(Text.empty());
+                content.add(Component.empty());
                 TextUtils.scoreboardMeta(this.track.getMeta()).forEach(content::add);
-                content.add(Text.empty());
+                content.add(Component.empty());
 
                 stageManager.getConfig().laps().ifPresent(laps -> {
                     if (this.track.getAttributes().layout() != BoatRaceTrack.Layout.CIRCULAR) {
@@ -144,19 +143,19 @@ public class QualifyingWidgets {
                 content.add(TextUtils.scoreboardDuration(
                         stageManager.getDurationTimer(),
                         stageManager.getConfig().duration()));
-                content.add(Text.empty());
+                content.add(Component.empty());
 
                 List<PersonalBest> records = leaderboard.getLeaderboard(this.track);
 
                 if (records.isEmpty()) {
-                    content.add(Text.literal(" No times set.")
-                            .formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
+                    content.add(Component.literal(" No times set.")
+                            .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
                     return;
                 }
 
                 int position = leaderboard.getLeaderboardPosition(this.track, bPlayer);
 
-                for (Pair<Integer, PersonalBest> pair : TextUtils.scoreboardAroundAndTop(
+                for (Tuple<Integer, PersonalBest> pair : TextUtils.scoreboardAroundAndTop(
                         records,
                         position,
                         SIDEBAR_RANKING_TOP,
@@ -166,15 +165,15 @@ public class QualifyingWidgets {
                         continue;
                     }
 
-                    MutableText text = Text.empty();
-                    PersonalBest pb = pair.getRight();
+                    MutableComponent text = Component.empty();
+                    PersonalBest pb = pair.getB();
                     boolean highlighted = bPlayer.equals(pb.player());
 
                     text.append(" ");
-                    text.append(TextUtils.scoreboardPosition(highlighted, pair.getLeft())).append(" ");
-                    text.append(TextUtils.scoreboardAbsolute(pb.timer(), pair.getLeft())).append(" ");
+                    text.append(TextUtils.scoreboardPosition(highlighted, pair.getA())).append(" ");
+                    text.append(TextUtils.scoreboardAbsolute(pb.timer(), pair.getA())).append(" ");
                     text.append(TextUtils.scoreboardName(pb.player(), stageManager.teams.getConfig(pb.player()),
-                            highlighted, pair.getLeft()));
+                            highlighted, pair.getA()));
 
                     content.add(text);
                 }
