@@ -17,15 +17,19 @@
       lib = pkgs.lib;
     in
     {
-      devShells.${system}.default = pkgs.mkShell {
-
-        buildInputs = [
-          pkgs.jdk
+      devShells.${system}.default = pkgs.mkShell rec {
+        packages = [
+          pkgs.jetbrains.jdk-no-jcef
           pkgs.gradle
+          pkgs.flite
+          pkgs.libGL
+          pkgs.glfw3-minecraft
+          pkgs.libpulseaudio
         ];
 
         shellHook = ''
-          export LD_LIBRARY_PATH="${lib.makeLibraryPath [ pkgs.libGL ]}";
+          export LD_LIBRARY_PATH="${lib.makeLibraryPath packages}";
+          export JAVA_HOME = "${pkgs.jetbrains.jdk-no-jcef.home}";
         '';
       };
     };
