@@ -14,6 +14,7 @@
         "fabricloader": ">=0.17.3",
         "minecraft": "~1.21.4",
         "java": ">=21",
+        "plasmid": "0.6.3",
         "fabric-api": "*"
     },
     "breaks": {
